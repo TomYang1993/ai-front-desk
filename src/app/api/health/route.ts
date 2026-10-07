@@ -16,6 +16,7 @@ export async function GET(request: Request) {
     gemini: hasGemini() ? "configured" : "missing GEMINI_API_KEY",
     models: { small: env.geminiModelSmall, large: env.geminiModelLarge },
     database: hasRedis() ? "redis" : "in-memory (local only, data resets on restart)",
+    environment: process.env.VERCEL_ENV ?? "local",
   };
   if (!live) return Response.json({ ok: true, config });
 

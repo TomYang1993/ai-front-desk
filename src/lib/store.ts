@@ -21,7 +21,9 @@ export interface Store {
   incr(key: string, by?: number): Promise<number>;
 }
 
-const PREFIX = "afd:";
+// One database can serve production, previews and local development, so each
+// environment gets its own key space. Local testing never touches the live demo.
+const PREFIX = `afd:${process.env.VERCEL_ENV ?? "local"}:`;
 
 class RedisStore implements Store {
   readonly kind = "redis" as const;
