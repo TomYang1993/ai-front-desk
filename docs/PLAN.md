@@ -1,0 +1,206 @@
+# AI Front Desk: build plan
+
+A brightwheel take-home prototype. Hosted on Vercel, presented in a two-minute video.
+
+## 1. The pitch
+
+> A front desk that knows your child, shows its sources, hands off when it should, and learns from every handoff.
+
+Four behaviors carry the whole product:
+
+1. **Knows the family.** Answers use data brightwheel already holds: child, classroom, allergies, pickup list, billing.
+2. **Shows its sources.** Every answer cites the handbook section or table it came from, plus who last updated it and when. Dates, prices and menus come from structured data, never from model memory.
+3. **Knows its limits.** Three response modes: answer, hand off to a named staff member with an expected reply time, or immediate human handoff for urgent and sensitive topics.
+4. **Learns from every handoff.** The director's reply reaches the parent and, with one click, becomes a saved answer. The next parent gets it instantly.
+
+Who we design for, from the brightwheel primer:
+
+- **Director or owner.** Our operator. Usually the buyer. Runs a small independent business with no spare time.
+- **Parents.** Anxious, caring, on their phones, already opening the parent app every day. Childcare is a top household expense.
+- **Teachers.** Heaviest daily app users. Receive same-day child questions, but should not be interrupted for policy questions.
+
+## 2. Scope
+
+**In scope**
+- Parent experience inside a phone frame, for four enrolled families and a visitor mode per center.
+- Operator console per center: overview, handoff inbox with the "answer once" loop, knowledge editor, test box.
+- Set up a new center by pasting a handbook.
+- Two fictional centers in different regions with realistic local rules.
+- Replies in the parent's language: English, Spanish, Mandarin.
+- A scorecard of tricky test questions run against the answer engine.
+- Demo mode: parent phone and operator console side by side, for the video.
+
+**Out of scope for now, candidates for the bonus**
+- Voice, SMS and phone channels.
+- "Network suggestions": draft an answer from how similar centers answered.
+- Real login, roles, push notifications, brightwheel support tooling.
+
+**Cut list if time runs short, in order**
+1. Mandarin replies, keeping Spanish.
+2. Knowledge test box.
+3. Eight weeks of seeded history down to two.
+4. New-center setup flow becomes "import into the current center".
+
+## 3. The centers
+
+All facts below become each center's own handbook and tables, stated as center policy with an "updated" date. The AI quotes the handbook, not live law.
+
+| | Piñon Grove Early Learning | Quail Ridge Early Learning |
+|---|---|---|
+| City, time zone | Albuquerque, NM, Mountain | Seattle, WA, Pacific |
+| Size, rooms | About 90 children. Infants, Toddlers, Twos, Preschool, Pre-K | About 70 children. Infants, Toddlers, Preschool, Pre-K |
+| Hours | 7:00 am to 6:00 pm | 7:30 am to 6:00 pm |
+| Infant tuition | Listed about $950/month. NM Child Care Assistance pays the full cost for qualifying families with no copay | About $2,600/month. Infant waitlist about a year, $100 non-refundable waitlist fee |
+| Other money | No add-on fees for assistance families. Late pickups lead to a conference after three | Sibling discount 10%. Late pickup $1 per minute after 6:00. Working Connections subsidy accepted |
+| Meals | Breakfast, lunch and snack provided through the federal food program. Nut-aware | Families pack lunch. Center provides snacks and milk. Backup lunch $8, with allergens listed |
+| Fever rule | Stay home after a fever of 100.4°F or higher in the last 24 hours. Return after 24 hours fever-free without fever reducers | Stay home at 101°F or higher with other symptoms, per WA licensing. Return after 24 hours fever-free without fever reducers |
+| Weather | Follows Albuquerque Public Schools: two-hour delay means opening at 9:00 with no breakfast. Sunscreen required | Outdoor play in the rain, rain suit and boots stay at school. AQI 101+ from wildfire smoke moves play indoors. Follows Seattle Public Schools snow closures and late starts |
+| Veterans Day, Wed Nov 11 | **Open** | **Closed** |
+| Other closures | Labor Day, Thanksgiving Thu and Fri, Dec 24 to Jan 1, MLK Day, Memorial Day, July 5, one staff training day | Labor Day, Veterans Day, Thanksgiving and Native American Heritage Day Nov 26 and 27, Dec 24 to Jan 1, MLK Day, Presidents Day, Memorial Day, Juneteenth observed Fri Jun 18, July 5 |
+| Local life | Balloon Fiesta Oct 3 to 11, flexible drop-off until 9:30 that week. Indigenous Peoples' Day and Día de los Muertos in class | Lunar New Year in class. Grandparents often visit for months to help |
+| Languages | English, Spanish | English, Mandarin |
+| Tours | Tue and Thu, 9:30 am and 4:00 pm | Wed 10:00 am, Fri 3:30 pm |
+| Staff | Owner-director, assistant director for enrollment, lead teacher per room | Same structure |
+
+Every center also has: pickup authorization rules, medication rules, illness exclusion list, allergy plans, custody documentation rules, a grievance path, and an emergency procedure. These drive the handoff rules.
+
+## 4. Demo families
+
+| Center | Parent | Children | Demonstrates |
+|---|---|---|---|
+| Piñon Grove | Ana Martínez | Mia, 3, Preschool, peanut allergy. Leo, 10 months, Infants | State-covered care, fever rule, peanut-safe lunch, choosing between two children |
+| Piñon Grove | Rosa Chávez | Mateo, 4, Pre-K | Spanish. Halloween question that starts the "answer once" loop. Balloon Fiesta drop-off |
+| Quail Ridge | Priya Raman | Anika, 2, Toddlers, dairy allergy | Backup lunch with allergy check and fee, rain gear, fever rule under WA policy |
+| Quail Ridge | Wei Chen | Ethan, 4, Pre-K | Mandarin. Visiting grandparent not on the pickup list goes to staff |
+
+Visitor mode per center covers prospective families: tuition, waitlist, tours.
+
+## 5. Planted scenarios
+
+**Same question, different correct answers**
+- "Are you open on Veterans Day?" Piñon Grove open, Quail Ridge closed.
+- "I forgot to pack lunch." Piñon Grove: lunch is provided, here is Mia's peanut-safe meal. Quail Ridge: order a backup lunch, checked against Anika's dairy allergy, $8 added to the account.
+- "What is infant tuition?" Piñon Grove: listed price plus the state program, without promising eligibility. Quail Ridge: price plus waitlist and fee.
+- "100.6 this morning but acting fine." Piñon Grove: stay home, return time computed. Quail Ridge: may attend under policy if no other symptoms, teachers will call if anything changes.
+
+**One-center moments**
+- Halloween is Saturday Oct 31. "Can Mateo wear a costume Friday?" is not in the handbook, so it goes to the director. The director replies in English, Rosa receives it in Spanish, and the reply becomes a saved answer. Ana then asks and gets it instantly.
+- "My mother is visiting from China and will pick up Ethan today." Pickup permission is never the AI's call. Goes straight to staff with the next step: written authorization in the app plus photo ID.
+
+**Never answered by the AI, always handed off**
+Custody and restraining orders, pickup authorization changes, suspected abuse or neglect, injuries and incidents, behavior and expulsion, medication, complaints about staff, billing disputes, and anything about another family. Emergencies get "call 911" first, then a human.
+
+## 6. Parent experience
+
+- **Entry.** Pick a center and a family, or visitor mode. No real login, by design.
+- **Home.** Child cards, today's status, and quick-reply chips for common questions.
+- **Answer card.** Answer text, personalized facts, a source chip that opens the cited excerpt with "updated by" and date, an optional action button, and thumbs up or down.
+- **Three modes, visually distinct.**
+  - Answer, with source.
+  - "Not sure": names who will reply and when, based on the center's hours and time zone.
+  - Urgent or sensitive: immediate human handoff, with emergency guidance when relevant.
+- **Actions.** Report an absence with a computed return time. Order a backup lunch. Book a tour in visitor mode. Each action shows a confirmation and appears in the operator console.
+- **Two children.** When a question could apply to either child, the app asks which one with chips.
+- **Language.** Replies in the language the parent writes in. Source excerpts stay in the original with a translation toggle.
+
+### Look and feel
+
+- **Web only.** One responsive web app. No native apps for the demo.
+- **Phone layout.** Chat first. A small animated clerk sits in the header, with a status line that says what it is doing.
+- **Laptop and tablet layout.** Three panes: a simple lobby scene with the clerk at the desk, the chat, and a notice board. The notice board shows today's hours, today's menu, the next closure and the parent's open requests. It is the digital version of the parent bulletin board the Albuquerque handbook describes.
+- **One clerk, not several.** Parents build trust with one character. Real staff appear as people with names and initials, never as cartoons, so it is always clear who is AI and who is human.
+- **Character: Maple the bear.** A round, soft brown bear in a teal apron with the center's name tag and the handbook tucked in the apron pocket. Same Maple at both centers. Kept deliberately unthreatening: rounded shapes, small eyes, rosy cheeks, no teeth or claws.
+- **Maple's voice.** Warm, steady and plain. Short sentences, no baby talk, no exclamation marks in serious answers.
+- **Maple's states.** Ready: slow breathing and blinking. Listening: ears perk and head tilts while the parent types. Checking the handbook: reading glasses on, pages turning. Getting a person: holds a phone and gestures toward the director's door. Done: a small nod after an action is confirmed. Calm mode: still, soft eyes, paw on chest.
+- **Animation explains the work.** Each state maps to what the system is doing: ready, listening while the parent types, checking the handbook, getting a person during a handoff, and calm mode.
+- **Calm mode for hard moments.** On urgent or sensitive topics the clerk stops bouncing, the copy turns plain, and the human handoff takes center stage.
+- **Always labeled as AI.** The clerk never claims to be a person.
+- **Built as SVG with CSS animation.** Light, fully controllable, and respects reduced-motion settings. No 3D.
+
+## 7. Operator console
+
+- **Center switcher** for the demo only.
+- **Overview.** Questions this week, share answered without staff, estimated staff hours saved, after-hours answers, open handoffs, top topics over time, and a "gaps" list of questions the AI could not answer.
+- **Inbox.** Handoffs sorted urgent first. Each shows the family, child, the parent's words, why the AI handed off, and a suggested reply. Sending a reply delivers it to the parent, translated if needed, and offers "Save as answer", which drafts a general Q&A for the director to approve.
+- **Knowledge.** Handbook sections, structured tables for calendar, menu, tuition, hours and tour slots, and saved answers. Each item shows who updated it, when, and how many answers used it this week.
+- **Test box.** Ask as any family and see the answer and sources without logging it.
+- **Set up a new center.** Paste a handbook. The AI splits it into sections and extracts facts into tables, each with the quote it came from. The director approves or edits, and the center goes live in visitor mode.
+
+## 8. Answer engine: a router with lanes
+
+Code handles everything that is well defined. AI is used only to understand free text and to read the handbook when a question needs it. Each message takes the cheapest lane that can answer it correctly.
+
+| Lane | Who does the work | Used for | Rough tokens |
+|---|---|---|---|
+| Safety check | Code keyword rules, in English, Spanish and Mandarin | Emergencies, custody, abuse, injuries, pickup changes | 0 |
+| Quick facts | Code | Buttons and chips: today's lunch, hours, next closure, tuition | 0 |
+| Understand | Small, fast AI model | Every typed message. Returns intent, child, dates, symptoms and times, language, sensitive flags, and a matching saved answer if one exists | about 1,500 |
+| Look up | Code | Closures, menus and allergens, tuition and waitlist, tour slots, illness return times, billing items | 0 |
+| Read the handbook | Larger AI model with the whole handbook | Open policy questions that no table answers | about 13,000 |
+| Double-check | Code | Citations must exist. Every price, date and percentage must appear in a cited source. Failures become handoffs | 0 |
+| A person | Inbox | Sensitive topics, low confidence, not covered, failed checks, AI outages | 0 |
+
+How the lanes connect:
+
+1. **Safety check** runs first on every message. A match skips straight to a person, with "call 911" first for emergencies.
+2. **Quick facts** answer button taps with no AI at all.
+3. **Understand** runs on typed messages. Its sensitive flags back up the keyword list, because keyword lists can't cover every language and phrasing.
+4. If the intent is well defined, **Look up** computes the answer from tables and a template fills it in. The small model only rephrases it when the parent writes in Spanish or Mandarin.
+5. If a saved answer matches, it is returned directly. This is how the "answer once" loop makes the system both smarter and cheaper over time.
+6. Otherwise **Read the handbook** answers with citations, then **Double-check** verifies it.
+7. Anything unsure, uncovered or blocked goes to **a person**: the teacher for same-day child questions, the director for everything else.
+
+Context given to the larger model: the center's whole handbook with section IDs, tables rendered as text with weekdays filled in, today's date and time in the center's time zone, the family profile, and saved answers. Other families' data is never included.
+
+Logging: every question records center, family, lane, intent, confidence, sources, tokens and feedback. The console shows how many questions each lane handled, so the director sees how much needed AI.
+
+Free-tier protection: buttons never use AI, identical questions reuse answers, retries back off, and a rate-limit error becomes a polite handoff instead of a failure.
+
+Models: Gemini on the free tier, a Flash-Lite model for Understand and a Flash model for Read the handbook, chosen when the API key is created. Model IDs live in environment variables behind a small provider adapter, so OpenAI's GPT-5.6 Luna can be swapped in if needed. Data is fictional, so free-tier data use is acceptable.
+
+## 9. Tech stack
+
+- Next.js App Router with TypeScript, Tailwind, shadcn/ui components, lucide icons, Recharts.
+- Node 22 pinned to this project with Volta.
+- Upstash Redis from the Vercel Marketplace for shared state. An in-memory fallback for local development before the database exists.
+- Seed content lives in the repo as Markdown and JSON. A reset button restores it.
+- Seeded question history is generated relative to the current date, so the demo never looks stale.
+- Deployed on the user's Vercel account.
+
+Routes: landing page, parent app, operator console per center, demo split view, and API routes for asking, handoffs, knowledge, actions, setup and reset.
+
+## 10. Scorecard
+
+The scenarios in SCENARIOS.md become the test set. About thirty test questions across both centers, each with the expected route and facts that must appear. Includes trick cases: federal holiday assumptions, wrong-center facts, invented prices, sensitive topics phrased casually, two-children ambiguity, and non-English questions. A script runs them and prints pass or fail. The result is shown in the console and mentioned in the video.
+
+## 11. Two-minute video
+
+| Time | Scene |
+|---|---|
+| 0:00 | The problem: a director buried in repeat questions |
+| 0:12 | Two phones side by side ask the same questions at both centers and get different correct answers with sources |
+| 0:45 | Fever: Mia's return time is computed and the absence is logged |
+| 1:00 | Ethan's grandparent pickup goes straight to staff, in Mandarin |
+| 1:10 | Halloween: Rosa asks in Spanish, the director answers once, Ana gets it instantly |
+| 1:35 | A new center goes live from a pasted handbook, then the overview shows time saved and gaps |
+| 1:50 | Bonus teaser |
+
+## 12. Build phases and checkpoints
+
+| Phase | Work | Checkpoint with you |
+|---|---|---|
+| 0 | Scaffold project, pin Node, git. You: Vercel login, Gemini key, Redis | App runs locally |
+| 1 | Handbooks, tables, families, seeded history | You review both centers' content |
+| 2 | Answer engine and scorecard | Scorecard results |
+| 3 | Parent experience | Try it on your phone |
+| 4 | Operator console and "answer once" loop | Walk the full loop |
+| 5 | New-center setup from a handbook | Try a paste |
+| 6 | Demo view, deploy, polish, video shot list | Hosted URL ready to record |
+
+## 13. Risks
+
+- **Free-tier limits during review.** Caching, polite fallback, and the model ID can be swapped without code changes.
+- **Wrong answers.** Code answers well-defined questions, citation and number checks guard the rest, handoff when unsure, and the scorecard.
+- **Scope creep.** The video decides what gets built, and the cut list is ordered.
+- **Real-world facts going stale.** Facts live in each handbook with dates, and the director can edit them.
+- **Privacy.** Everything is fictional, and the app says so.
