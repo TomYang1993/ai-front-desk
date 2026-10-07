@@ -161,7 +161,7 @@ Models: Gemini on the free tier, a Flash-Lite model for Understand and a Flash m
 ## 9. Tech stack
 
 - Next.js App Router with TypeScript, Tailwind, shadcn/ui components, lucide icons, Recharts.
-- Node 22 pinned to this project with Volta.
+- Node 24 pinned to this project with Volta.
 - Upstash Redis from the Vercel Marketplace for shared state. An in-memory fallback for local development before the database exists.
 - Seed content lives in the repo as Markdown and JSON. A reset button restores it.
 - Seeded question history is generated relative to the current date, so the demo never looks stale.

@@ -1,0 +1,152 @@
+import type { Family } from "./types";
+
+export const families: Family[] = [
+  {
+    id: "martinez",
+    centerId: "pinon-grove",
+    parentName: "Ana Martínez",
+    parentFirstName: "Ana",
+    preferredLanguage: "en",
+    authorizedPickup: [
+      { name: "Ana Martínez", relation: "Parent" },
+      { name: "Teresa Gallegos", relation: "Grandmother" },
+      { name: "Sofia Martínez", relation: "Aunt" },
+    ],
+    emergencyContacts: [
+      { name: "Teresa Gallegos", relation: "Grandmother" },
+      { name: "Sofia Martínez", relation: "Aunt" },
+    ],
+    children: [
+      {
+        id: "mia",
+        firstName: "Mia",
+        lastName: "Martínez",
+        birthDate: "2023-05-14",
+        roomId: "coyotes",
+        allergies: ["peanut"],
+        allergyNote: "Peanut allergy. Allergy action plan and epinephrine auto-injector on file.",
+      },
+      {
+        id: "leo",
+        firstName: "Leo",
+        lastName: "Martínez",
+        birthDate: "2025-12-03",
+        roomId: "hummingbirds",
+        allergies: [],
+      },
+    ],
+    billing: {
+      plan: "New Mexico Child Care Assistance, $0 copay",
+      monthlyAmount: 0,
+      autopay: false,
+      ledger: [
+        { date: "2026-09-01", description: "September care for Mia and Leo, paid by NM Child Care Assistance", amount: 0 },
+        { date: "2026-10-01", description: "October care for Mia and Leo, paid by NM Child Care Assistance", amount: 0 },
+      ],
+    },
+    notesOnFile: ["No custody or court orders on file."],
+  },
+  {
+    id: "chavez",
+    centerId: "pinon-grove",
+    parentName: "Rosa Chávez",
+    parentFirstName: "Rosa",
+    preferredLanguage: "es",
+    authorizedPickup: [
+      { name: "Rosa Chávez", relation: "Parent" },
+      { name: "Javier Chávez", relation: "Parent" },
+      { name: "Ernesto Chávez", relation: "Grandfather" },
+    ],
+    emergencyContacts: [{ name: "Ernesto Chávez", relation: "Grandfather" }],
+    children: [
+      {
+        id: "mateo",
+        firstName: "Mateo",
+        lastName: "Chávez",
+        birthDate: "2022-03-21",
+        roomId: "sunflowers",
+        allergies: [],
+      },
+    ],
+    billing: {
+      plan: "NM Pre-K school day, with extended hours paid by NM Child Care Assistance, $0 copay",
+      monthlyAmount: 0,
+      autopay: false,
+      ledger: [
+        { date: "2026-09-01", description: "September care for Mateo, NM Pre-K and Child Care Assistance", amount: 0 },
+        { date: "2026-10-01", description: "October care for Mateo, NM Pre-K and Child Care Assistance", amount: 0 },
+      ],
+    },
+    notesOnFile: [],
+  },
+  {
+    id: "raman",
+    centerId: "quail-ridge",
+    parentName: "Priya Raman",
+    parentFirstName: "Priya",
+    preferredLanguage: "en",
+    authorizedPickup: [
+      { name: "Priya Raman", relation: "Parent" },
+      { name: "Arjun Raman", relation: "Parent" },
+    ],
+    emergencyContacts: [{ name: "Kavya Iyer", relation: "Aunt" }],
+    children: [
+      {
+        id: "anika",
+        firstName: "Anika",
+        lastName: "Raman",
+        birthDate: "2024-06-10",
+        roomId: "chickadees",
+        allergies: ["dairy"],
+        allergyNote: "Milk protein allergy. Care plan on file. Oat milk instead of cow's milk.",
+      },
+    ],
+    billing: {
+      plan: "Full-time tuition, Chickadees",
+      monthlyAmount: 2350,
+      autopay: true,
+      ledger: [
+        { date: "2026-09-01", description: "September tuition, Chickadees", amount: 2350 },
+        { date: "2026-09-01", description: "Autopay payment", amount: -2350 },
+        { date: "2026-09-18", description: "Backup lunch: chicken with rice and steamed broccoli", amount: 8 },
+        { date: "2026-10-01", description: "October tuition, Chickadees", amount: 2350 },
+        { date: "2026-10-01", description: "Autopay payment", amount: -2358 },
+      ],
+    },
+    notesOnFile: [],
+  },
+  {
+    id: "chen",
+    centerId: "quail-ridge",
+    parentName: "Wei Chen",
+    parentFirstName: "Wei",
+    preferredLanguage: "zh",
+    authorizedPickup: [
+      { name: "Wei Chen", relation: "Parent" },
+      { name: "Lin Zhou", relation: "Parent" },
+    ],
+    emergencyContacts: [{ name: "David Chen", relation: "Uncle" }],
+    children: [
+      {
+        id: "ethan",
+        firstName: "Ethan",
+        lastName: "Chen",
+        birthDate: "2022-01-18",
+        roomId: "orcas",
+        allergies: [],
+      },
+    ],
+    billing: {
+      plan: "Full-time tuition, Orcas",
+      monthlyAmount: 1950,
+      autopay: true,
+      ledger: [
+        { date: "2026-09-01", description: "September tuition, Orcas", amount: 1950 },
+        { date: "2026-09-01", description: "Autopay payment", amount: -1950 },
+        { date: "2026-10-01", description: "October tuition, Orcas", amount: 1950 },
+        { date: "2026-10-01", description: "Autopay payment", amount: -1950 },
+      ],
+    },
+    notesOnFile: [],
+  },
+];

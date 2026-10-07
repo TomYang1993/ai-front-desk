@@ -14,6 +14,8 @@ export interface Store {
   del(key: string): Promise<void>;
   /** Append to the end of a list. */
   push<T>(key: string, value: T): Promise<void>;
+  /** Append many values in as few round trips as possible. */
+  pushMany<T>(key: string, values: T[]): Promise<void>;
   /** Read a list; negative indexes count from the end, like Redis LRANGE. */
   range<T>(key: string, start?: number, stop?: number): Promise<T[]>;
   incr(key: string, by?: number): Promise<number>;
@@ -36,6 +38,12 @@ class RedisStore implements Store {
   async push<T>(key: string, value: T) {
     await this.redis.rpush(PREFIX + key, value);
   }
+  async pushMany<T>(key: string, values: T[]) {
+    for (let i = 0; i < values.length; i += 200) {
+      const chunk = values.slice(i, i + 200);
+      if (chunk.length) await this.redis.rpush(PREFIX + key, ...chunk);
+    }
+  }
   async range<T>(key: string, start = 0, stop = -1) {
     return this.redis.lrange<T>(PREFIX + key, start, stop);
   }
@@ -44,10 +52,19 @@ class RedisStore implements Store {
   }
 }
 
+interface MemoryData {
+  values: Map<string, unknown>;
+  lists: Map<string, unknown[]>;
+}
+
 class MemoryStore implements Store {
   readonly kind = "memory" as const;
-  private values = new Map<string, unknown>();
-  private lists = new Map<string, unknown[]>();
+  private values: Map<string, unknown>;
+  private lists: Map<string, unknown[]>;
+  constructor(data: MemoryData) {
+    this.values = data.values;
+    this.lists = data.lists;
+  }
   // Values are cloned so callers can't mutate stored state by accident,
   // matching how Redis round-trips through JSON.
   private clone<T>(v: T): T {
@@ -68,6 +85,9 @@ class MemoryStore implements Store {
     list.push(this.clone(value));
     this.lists.set(key, list);
   }
+  async pushMany<T>(key: string, values: T[]) {
+    for (const v of values) await this.push(key, v);
+  }
   async range<T>(key: string, start = 0, stop = -1) {
     const list = (this.lists.get(key) ?? []) as T[];
     const n = list.length;
@@ -82,14 +102,19 @@ class MemoryStore implements Store {
   }
 }
 
-// Keep one instance across hot reloads in development.
-const globalForStore = globalThis as unknown as { __afdStore?: Store };
+// In development, keep in-memory data across hot reloads but rebuild the
+// store object, so code changes to the class take effect.
+const globalForStore = globalThis as unknown as { __afdMemory?: MemoryData };
+let instance: Store | undefined;
 
 export function getStore(): Store {
-  if (!globalForStore.__afdStore) {
-    globalForStore.__afdStore = hasRedis()
-      ? new RedisStore(new Redis({ url: env.redisUrl!, token: env.redisToken! }))
-      : new MemoryStore();
+  if (!instance) {
+    if (hasRedis()) {
+      instance = new RedisStore(new Redis({ url: env.redisUrl!, token: env.redisToken! }));
+    } else {
+      globalForStore.__afdMemory ??= { values: new Map(), lists: new Map() };
+      instance = new MemoryStore(globalForStore.__afdMemory);
+    }
   }
-  return globalForStore.__afdStore;
+  return instance;
 }

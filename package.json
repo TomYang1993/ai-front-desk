@@ -4,10 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "predev": "node scripts/build-content.mjs",
     "build": "next build",
+    "prebuild": "node scripts/build-content.mjs",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pretypecheck": "node scripts/build-content.mjs",
+    "content": "node scripts/build-content.mjs",
+    "check:content": "node scripts/build-content.mjs && tsx scripts/check-content.ts"
   },
   "dependencies": {
     "@google/genai": "2.24.0",
@@ -26,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
+    "tsx": "4.23.15",
     "typescript": "^5"
   },
   "volta": {
