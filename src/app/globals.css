@@ -1,26 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf7f0;
+  --foreground: #2a2724;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-nunito);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* The desk window: balloons drift over Albuquerque, rain falls on Seattle. */
+.desk-balloon { animation: desk-drift 9s ease-in-out infinite; }
+.desk-balloon--late { animation-duration: 12s; animation-delay: -4s; }
+.desk-rain { animation: desk-rain 0.9s linear infinite; }
+
+@keyframes desk-drift { 0%, 100% { transform: translate(0, 0) } 50% { transform: translate(5px, -4px) } }
+@keyframes desk-rain { from { transform: translate(0, -12px) } to { transform: translate(-4px, 12px) } }
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-scene * { animation: none !important; transition: none !important; }
 }

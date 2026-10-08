@@ -22,7 +22,7 @@ Who we design for, from the brightwheel primer:
 ## 2. Scope
 
 **In scope**
-- Parent experience inside a phone frame, for four enrolled families and a visitor mode per center.
+- Parent experience for four enrolled families, behind a simulated sign-in. Visitor mode is deferred; see the Phase 3 redesign.
 - Operator console per center: overview, handoff inbox with the "answer once" loop, knowledge editor, test box.
 - Set up a new center by pasting a handbook.
 - Two fictional centers in different regions with realistic local rules.
@@ -117,6 +117,16 @@ Custody and restraining orders, pickup authorization changes, suspected abuse or
 - **Always labeled as AI.** The clerk never claims to be a person.
 - **Built as SVG with CSS animation.** Light, fully controllable, and respects reduced-motion settings. No 3D.
 
+### Phase 3 redesign, decided October 7
+
+Feedback on the first parent app: treat it as a real product, not a demo router.
+
+- **Sign-in is the front door.** An email and password form simulates sign-in, and a session cookie decides what each person sees. A clearly labeled "Demo accounts" panel signs reviewers in with one click as any parent or director. Real authentication can replace the mock later without changing the pages.
+- **Parents see only their own family.** The family comes from the session, never from the URL. Directors land in their center's console.
+- **No visitor mode for now.** Prospective-family flows are hidden from the interface. The engine still supports visitors, so they can return later as a public page per center.
+- **The front desk is the home screen.** On phones, the animated front desk with Maple is the hero, with information cards below: today, food, next closure, notices, your requests and your children. Tapping Maple opens the chat as a card that springs up while Maple moves from the desk into its header, using Motion's shared-layout animation. Maple acts out each state during the conversation, and closing the card returns her to the desk. On laptops, the desk and cards stay in view with the chat docked beside them.
+- **Maple, version 2.** Redrawn in code with more polish: softer shading, highlights and rounder proportions, with the same design and separately animated parts. Animated with the Motion library using springs, and a wave hello and happy hop added to the existing states. The component keeps its `state` and `size` interface, so a Rive-made Maple could replace it later.
+
 ## 7. Operator console
 
 - **Center switcher** for the demo only.
@@ -209,7 +219,7 @@ The scenarios in SCENARIOS.md become the test set. About thirty test questions a
 | 0 | Scaffold project, pin Node, git. You: Vercel login, Gemini key, Redis | App runs locally |
 | 1 | Handbooks, tables, families, seeded history | You review both centers' content |
 | 2 | Answer engine and scorecard | Scorecard results |
-| 3 | Parent experience | Try it on your phone |
+| 3 | Parent experience: simulated sign-in, front desk home, chat card, Maple version 2 | Try it on your phone |
 | 4 | Operator console and "answer once" loop | Walk the full loop |
 | 5 | New-center setup from a handbook | Try a paste |
 | 6 | Demo view, deploy, polish, video shot list | Hosted URL ready to record |

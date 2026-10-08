@@ -2,9 +2,11 @@ import { z } from "zod";
 import { ask } from "@/lib/engine";
 import { withModels } from "@/lib/llm";
 import { getFamily } from "@/lib/data";
+import { resolveParent } from "@/lib/session";
 
 const Body = z.object({
-  centerId: z.enum(["pinon-grove", "quail-ridge"]),
+  /** Read from the session; honored only for test scripts outside production. */
+  centerId: z.enum(["pinon-grove", "quail-ridge"]).optional(),
   familyId: z.string().nullable().optional(),
   message: z.string().max(1000).optional(),
   chip: z.enum(["today_lunch", "hours", "next_closure", "tuition", "tours"]).optional(),
@@ -25,7 +27,9 @@ export async function POST(request: Request) {
   if (!parsed.success) return Response.json({ error: "Invalid request", details: parsed.error.issues }, { status: 400 });
   const body = parsed.data;
   if (!body.chip && !body.message?.trim()) return Response.json({ error: "Message or chip required" }, { status: 400 });
-  if (body.familyId && !(await getFamily(body.centerId, body.familyId))) {
+  const asker = await resolveParent(body);
+  if (!asker) return Response.json({ error: "Sign in as a parent" }, { status: 401 });
+  if (asker.familyId && !(await getFamily(asker.centerId, asker.familyId))) {
     return Response.json({ error: "Unknown family for this center" }, { status: 400 });
   }
 
@@ -33,8 +37,8 @@ export async function POST(request: Request) {
   const split = (v?: string) => v?.split(",").map((m) => m.trim()).filter(Boolean);
   const override = !production && body.models ? { small: split(body.models.small), large: split(body.models.large) } : {};
   const reply = await withModels(override, () => ask({
-    centerId: body.centerId,
-    familyId: body.familyId ?? null,
+    centerId: asker.centerId,
+    familyId: asker.familyId,
     message: body.message,
     chip: body.chip,
     history: body.history,

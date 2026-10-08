@@ -298,7 +298,11 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   }
 
   /* 6. Saved answers from staff. */
-  const saved = u.savedAnswerId ? center.savedAnswers.find((s) => s.id === u.savedAnswerId) : undefined;
+  const picked = u.savedAnswerId ? center.savedAnswers.find((s) => s.id === u.savedAnswerId) : undefined;
+  // The intake model sometimes reaches for an unrelated saved answer, such as parking for a tuition question.
+  // In English, a saved answer must share one of its keywords with the message; other languages trust the model.
+  const lower = message.toLowerCase();
+  const saved = picked && (language !== "en" || picked.keywords.some((k) => lower.includes(k.toLowerCase()))) ? picked : undefined;
   if (saved) {
     return finish({ mode: "answer", text: await localize(saved.answer, language), language, calm: false, topic: "other", sources: [savedSource(saved)], actions: [] }, message, cacheKey);
   }
@@ -317,9 +321,13 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     case "hours": composed = composeHours(ctx); break;
     case "menu": composed = composeMenu(ctx, u.date); break;
     case "forgot_lunch": composed = enrolled ? composeForgotLunch(ctx, child) : null; break;
-    case "illness":
-      composed = enrolled && u.symptom ? composeIllness(ctx, child, u.symptom, u.symptom.lastAtIsEstimate) : null;
+    case "illness": {
+      const symptom = u.symptom
+        ? { ...u.symptom, lastAt: notInFuture(yesterdayIfSaid(u.symptom.lastAt, message, today), nowLocal.slice(0, 16)) }
+        : null;
+      composed = enrolled && symptom ? composeIllness(ctx, child, symptom, symptom.lastAtIsEstimate) : null;
       break;
+    }
     case "absence": composed = composeAbsence(ctx, child, u.dates); break;
     case "tuition":
       // Code answers prices and assistance; discounts and fee details need the handbook.
@@ -395,6 +403,25 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   const { text } = handoffText(kind, center, now, child, partial);
   const draft = await handoffDraft({ kind, language, child, messageText: message, englishText: text, partialLocalized: partial, sources: partial ? sources : [], topic });
   return finish({ ...draft, checks: check.problems }, message);
+}
+
+/** "Last night" or "yesterday" in any of the three languages pins the date to yesterday. */
+function yesterdayIfSaid(lastAt: string | null, message: string, today: string): string | null {
+  if (!lastAt || !lastAt.startsWith(today)) return lastAt;
+  if (!/last night|yesterday|anoche|ayer|昨晚|昨天|昨夜/i.test(message)) return lastAt;
+  return shiftDay(lastAt, -1);
+}
+
+function shiftDay(lastAt: string, days: number) {
+  const [date, time] = lastAt.split(" ");
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return `${d.toISOString().slice(0, 10)} ${time}`;
+}
+
+/** A symptom can't have happened in the future; a time later than now means yesterday. */
+function notInFuture(lastAt: string | null, nowLocal: string): string | null {
+  return !lastAt || lastAt <= nowLocal ? lastAt : shiftDay(lastAt, -1);
 }
 
 function chipCompose(ctx: ComposeContext, chip: ChipId): Composed {

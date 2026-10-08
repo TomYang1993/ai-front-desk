@@ -99,7 +99,7 @@ date: the single YYYY-MM-DD date the question is about, using the day list and n
 dates: all YYYY-MM-DD dates for an absence. Empty otherwise.
 symptom: for illness questions only, otherwise null.
 - temperatureF: in °F. Convert Celsius. Null if not given.
-- lastAt: local "YYYY-MM-DD HH:MM" when the symptom last happened, or the first antibiotic dose. If the time is vague, use the latest reasonable time in that period and set lastAtIsEstimate true. "Last night" means 23:00 yesterday. "This morning" means 08:00 today, or now if earlier. Null if no timing at all.
+- lastAt: local "YYYY-MM-DD HH:MM" when the symptom last happened, or the first antibiotic dose. It is always in the past. Use the time the parent gives: "9 last night" is 21:00 on yesterday's date, and "6 this morning" is 06:00 today. Only when no time is given, use the latest reasonable time in the period and set lastAtIsEstimate true: "last night" alone means 23:00 yesterday, and "this morning" alone means 08:00 today, or now if earlier. Null if there is no timing at all.
 - count24h: times vomited or loose stools in the past 24 hours, or null.
 - otherSymptoms: true if other signs of illness or a behavior change are mentioned, false if the parent says the child is acting normal or fine, null if unknown.
 program: for tuition or waitlist questions, the age group asked about: infant (under 12 months), toddler (12 to 24 months), twos, preschool (3) or prek (4 to 5). Null if unclear.

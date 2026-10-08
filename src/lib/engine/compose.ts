@@ -11,7 +11,7 @@ import {
   relativeDay,
   upcomingClosures,
 } from "../facts/calendar";
-import { allergyNote, menuFor, safeBackupLunch, ALLERGEN_LABEL } from "../facts/menu";
+import { allergyNote, menuFor, safeBackupLunch, ALLERGEN_LABEL, BACKUP_LUNCH_CUTOFF } from "../facts/menu";
 import { ageInMonths, decideIllness, type SymptomReport } from "../facts/illness";
 import { upcomingTourSlots } from "../facts/tours";
 import { balanceOf, findCharge, roomForProgram, usd } from "../facts/money";
@@ -186,7 +186,7 @@ export function composeForgotLunch(ctx: ComposeContext, child: Child | undefined
   if (!child && family && family.children.length > 1) {
     return whichChild(family, "meals", "Which child is the lunch for?");
   }
-  const cutoff = minutesOf("10:30");
+  const cutoff = minutesOf(BACKUP_LUNCH_CUTOFF);
   if (ctx.minute > cutoff) {
     return {
       ...answer("meals", `Backup lunch orders close at 10:30 am. Please call the front desk at ${center.phone}, and the team will make sure ${child?.firstName ?? "your child"} gets lunch.`, src, [{ type: "call_center", phone: center.phone }]),
@@ -253,13 +253,18 @@ export function composeIllness(ctx: ComposeContext, child: Child | undefined, re
   const stay = decision.status === "stay_home" ? decision.returnAfter : decision.ifStayHome;
   const earliest = decision.status === "stay_home" ? decision.earliest : decision.ifStayHome?.earliest;
   if (!stay || !earliest) return null;
+  const rel = relativeDay(earliest.date, today);
   const returnWhen = earliest.midday
-    ? `${relativeDay(earliest.date, today)} after ${formatTime(earliest.time)}`
-    : `${relativeDay(earliest.date, today)} morning`;
+    ? `${rel} after ${formatTime(earliest.time)}`
+    : rel === "today" || rel === "tomorrow"
+      ? `${rel} morning`
+      : `the morning of ${rel}`;
   const symptomEnd = `${relativeDay(stay.date, today)} at ${formatTime(stay.time)}`;
   const assumed = estimate ? " I've assumed the latest likely time, so let me know if it was earlier." : "";
+  // After closing time, today is already over, so the absence starts tomorrow.
+  const dayStillAhead = ctx.minute < minutesOf(center.hours.close);
   const absentDays: string[] = [];
-  for (let d = today; d < earliest.date; d = addDays(d, 1)) if (dayStatus(center, d).open) absentDays.push(d);
+  for (let d = dayStillAhead ? today : addDays(today, 1); d < earliest.date; d = addDays(d, 1)) if (dayStatus(center, d).open) absentDays.push(d);
   const actions: Action[] = absentDays.length
     ? [{ type: "log_absence", childId: child.id, childName: name, dates: absentDays, reason: `Illness: ${report.kind}` }]
     : [];
@@ -273,14 +278,18 @@ export function composeIllness(ctx: ComposeContext, child: Child | undefined, re
     );
   }
 
-  const today0 = earliest.date > today && dayStatus(center, today).open ? "Not today. " : "";
+  const today0 = earliest.date > today && dayStatus(center, today).open && dayStillAhead ? "Not today. " : "";
   const why =
     report.kind === "fever"
       ? `${center.shortName}'s policy asks children to stay home until 24 hours without a fever and without fever-reducing medicine.`
       : report.kind === "antibiotics"
         ? `${center.shortName}'s policy asks children to have ${center.illness.antibioticHoursToReturn} hours of antibiotics before returning.`
         : `${center.shortName}'s policy asks children to stay home until 24 hours without vomiting or diarrhea.`;
-  const clock = report.kind === "antibiotics" ? `That's ${symptomEnd}.` : `That 24 hours ends ${symptomEnd}.`;
+  const alreadyPast = stay.date < today || (stay.date === today && minutesOf(stay.time) <= ctx.minute);
+  const clock =
+    report.kind === "antibiotics"
+      ? `That ${alreadyPast ? "was" : "is"} ${symptomEnd}.`
+      : `That 24 hours ${alreadyPast ? "ended" : "ends"} ${symptomEnd}.`;
   return answer(
     "illness",
     `${today0}${why} ${clock} The earliest ${name} can come back is ${returnWhen}, as long as ${name} stays ${report.kind === "fever" ? "fever-free" : "symptom-free"}.${assumed}`,
@@ -298,7 +307,9 @@ export function composeAbsence(ctx: ComposeContext, child: Child | undefined, da
     if (family.children.length > 1) return whichChild(family, "absence", "Which child will be out?");
     return null;
   }
-  const days = (dates.length ? dates : [today]).filter((d) => dayStatus(center, d).open);
+  // With no date given, "today" only makes sense until closing time; after that, the next open day.
+  const fallback = openStatus(center, ctx.now).nextOpen.date;
+  const days = (dates.length ? dates : [fallback]).filter((d) => dayStatus(center, d).open);
   if (!days.length) {
     return answer("absence", `${center.shortName} is closed that day, so there's nothing to report.`, [tableSource(center, "calendar")]);
   }
