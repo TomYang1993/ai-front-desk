@@ -10,7 +10,8 @@ import { env, hasRedis } from "./env";
 export interface Store {
   readonly kind: "redis" | "memory";
   get<T>(key: string): Promise<T | null>;
-  set<T>(key: string, value: T): Promise<void>;
+  /** Optionally expires after a number of seconds. */
+  set<T>(key: string, value: T, ttlSeconds?: number): Promise<void>;
   del(key: string): Promise<void>;
   /** Append to the end of a list. */
   push<T>(key: string, value: T): Promise<void>;
@@ -31,8 +32,9 @@ class RedisStore implements Store {
   async get<T>(key: string) {
     return (await this.redis.get<T>(PREFIX + key)) ?? null;
   }
-  async set<T>(key: string, value: T) {
-    await this.redis.set(PREFIX + key, value);
+  async set<T>(key: string, value: T, ttlSeconds?: number) {
+    if (ttlSeconds) await this.redis.set(PREFIX + key, value, { ex: ttlSeconds });
+    else await this.redis.set(PREFIX + key, value);
   }
   async del(key: string) {
     await this.redis.del(PREFIX + key);
@@ -72,11 +74,19 @@ class MemoryStore implements Store {
   private clone<T>(v: T): T {
     return v === undefined ? v : (JSON.parse(JSON.stringify(v)) as T);
   }
+  private expires = new Map<string, number>();
   async get<T>(key: string) {
+    const exp = this.expires.get(key);
+    if (exp && exp < Date.now()) {
+      this.values.delete(key);
+      this.expires.delete(key);
+    }
     return this.values.has(key) ? this.clone(this.values.get(key) as T) : null;
   }
-  async set<T>(key: string, value: T) {
+  async set<T>(key: string, value: T, ttlSeconds?: number) {
     this.values.set(key, this.clone(value));
+    if (ttlSeconds) this.expires.set(key, Date.now() + ttlSeconds * 1000);
+    else this.expires.delete(key);
   }
   async del(key: string) {
     this.values.delete(key);

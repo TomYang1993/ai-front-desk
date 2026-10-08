@@ -132,6 +132,8 @@ export interface Fees {
   backupLunch: number | null;
 }
 
+export type TableId = "calendar" | "menu" | "tuition" | "tours" | "hours";
+
 export interface Center {
   id: CenterId;
   name: string;
@@ -159,6 +161,8 @@ export interface Center {
   illness: IllnessPolicy;
   announcements: Announcement[];
   savedAnswers: SavedAnswer[];
+  /** Who last updated each data table, shown on answers that cite it. */
+  tableUpdates: Record<TableId, { updatedAt: string; updatedBy: string }>;
 }
 
 export interface Child {

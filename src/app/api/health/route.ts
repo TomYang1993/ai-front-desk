@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { z } from "zod";
 import { env, hasGemini, hasRedis } from "@/lib/env";
 import { getStore } from "@/lib/store";
-import { generateJson, LlmUnavailableError, modelFor, type ModelTier } from "@/lib/llm";
+import { coolingModels, exhaustedModels, generateJson, LlmUnavailableError, modelFor, type ModelTier } from "@/lib/llm";
 
 /**
  * Setup check. GET /api/health shows what is configured.
@@ -14,7 +14,12 @@ export async function GET(request: Request) {
 
   const config = {
     gemini: hasGemini() ? "configured" : "missing GEMINI_API_KEY",
-    models: { small: env.geminiModelSmall, large: env.geminiModelLarge },
+    models: {
+      small: [env.geminiModelSmall, ...env.geminiSmallFallbacks],
+      large: [env.geminiModelLarge, ...env.geminiLargeFallbacks],
+      dailyLimitReached: exhaustedModels(),
+      coolingDown: coolingModels(),
+    },
     database: hasRedis() ? "redis" : "in-memory (local only, data resets on restart)",
     environment: process.env.VERCEL_ENV ?? "local",
   };

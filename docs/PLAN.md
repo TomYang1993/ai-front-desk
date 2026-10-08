@@ -134,10 +134,10 @@ Code handles everything that is well defined. AI is used only to understand free
 |---|---|---|---|
 | Safety check | Code keyword rules, in English, Spanish and Mandarin | Emergencies, custody, abuse, injuries, pickup changes | 0 |
 | Quick facts | Code | Buttons and chips: today's lunch, hours, next closure, tuition | 0 |
-| Understand | Small, fast AI model | Every typed message. Returns intent, child, dates, symptoms and times, language, sensitive flags, and a matching saved answer if one exists | about 1,500 |
+| Understand | Small, fast AI model | Every typed message. Returns intent, child, dates, symptoms and times, language, sensitive flags, and a matching saved answer if one exists | about 2,000 |
 | Look up | Code | Closures, menus and allergens, tuition and waitlist, tour slots, illness return times, billing items | 0 |
-| Read the handbook | Larger AI model with the whole handbook | Open policy questions that no table answers | about 13,000 |
-| Double-check | Code | Citations must exist. Every price, date and percentage must appear in a cited source. Failures become handoffs | 0 |
+| Read the handbook | Larger AI model with the whole handbook | Open policy questions that no table answers | about 5,000 |
+| Double-check | Code, then a small AI claim check | Citations must exist. Every price, date and percentage must appear in a cited source. Every claim must be stated in the cited text. Failures become handoffs | about 1,000 |
 | A person | Inbox | Sensitive topics, low confidence, not covered, failed checks, AI outages | 0 |
 
 How the lanes connect:
@@ -150,13 +150,28 @@ How the lanes connect:
 6. Otherwise **Read the handbook** answers with citations, then **Double-check** verifies it.
 7. Anything unsure, uncovered or blocked goes to **a person**: the teacher for same-day child questions, the director for everything else.
 
-Context given to the larger model: the center's whole handbook with section IDs, tables rendered as text with weekdays filled in, today's date and time in the center's time zone, the family profile, and saved answers. Other families' data is never included.
+Context given to the larger model: the center's whole handbook with section IDs, tables rendered as text with weekdays filled in, today's date and time in the center's time zone, the family profile, and saved answers. Other families' data is never included. In practice this is about 4,500 input tokens, so a handbook question costs about 7,500 tokens including the other steps.
 
-Logging: every question records center, family, lane, intent, confidence, sources, tokens and feedback. The console shows how many questions each lane handled, so the director sees how much needed AI.
+Guards written in code, added after the scorecard exposed gaps:
 
-Free-tier protection: buttons never use AI, identical questions reuse answers, retries back off, and a rate-limit error becomes a polite handoff instead of a failure.
+- **Child names.** With several children, a child counts only if the parent named them. Otherwise Maple asks which child.
+- **Weather.** A closure question that mentions snow, ice, smoke or storms always reads the weather policy instead of the calendar.
+- **Tuition.** Code answers prices and assistance. Discounts and fee details go to the handbook.
+- **Claim check.** After the numbers check, a small model compares each claim to the cited text. Stretching a policy to a case it doesn't mention, such as twins and a sibling discount, counts as unsupported and becomes a handoff.
+- **Gender.** Maple uses children's names and never guesses he or she.
 
-Models: Gemini on the free tier, a Flash-Lite model for Understand and a Flash model for Read the handbook, chosen when the API key is created. Model IDs live in environment variables behind a small provider adapter, so OpenAI's GPT-5.6 Luna can be swapped in if needed. Data is fictional, so free-tier data use is acceptable.
+Logging: every question records center, family, lane, intent, sources, real token counts and feedback. Non-production replies also include step timings.
+
+Free-tier protection: buttons never use AI, identical questions reuse answers for the day, and a rate-limit error becomes a polite handoff instead of a failure. Each AI call has a time limit: 7 seconds for the small step and 12 for the large. A model that times out or reports overload sits out for two minutes. A model that hits its daily quota sits out until the quota resets.
+
+Models: Gemini on the free tier, pinned to specific versions. Free-tier quotas are per model per day, and some are as low as 20, so each step falls back through several models:
+
+| Step | Models, in order |
+|---|---|
+| Understand, translate, claim check | gemini-3.5-flash-lite, gemini-3.1-flash-lite, gemini-2.5-flash-lite |
+| Read the handbook | gemini-3.6-flash, gemini-3.5-flash, gemini-3.5-flash-lite, gemini-3.1-flash-lite |
+
+Model IDs live in environment variables behind a small provider adapter, so OpenAI's GPT-5.6 Luna or a paid Gemini tier can be swapped in. Data is fictional, so free-tier data use is acceptable.
 
 ## 9. Tech stack
 

@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "pretypecheck": "node scripts/build-content.mjs",
     "content": "node scripts/build-content.mjs",
-    "check:content": "node scripts/build-content.mjs && tsx scripts/check-content.ts"
+    "check:content": "node scripts/build-content.mjs && tsx scripts/check-content.ts",
+    "scorecard": "tsx scripts/scorecard.mts"
   },
   "dependencies": {
     "@google/genai": "2.24.0",
@@ -21,6 +22,7 @@
     "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "server-only": "0.0.1",
     "zod": "4.6.5"
   },
   "devDependencies": {
