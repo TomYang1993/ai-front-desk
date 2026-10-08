@@ -14,7 +14,7 @@ These scenarios define how the front desk should behave. Each one becomes a scor
 | 8 | Ana, Piñon Grove | I forgot to pack Mia's lunch | Understand, Look up | Lunch is always provided, names today's peanut-safe meal |
 | 9 | Visitor, Quail Ridge | How much is infant care? | Understand, Look up | $2,600 a month, waitlist about a year, $100 non-refundable fee, offers a tour |
 | 10 | Visitor, Piñon Grove | How much is infant care? | Understand, Look up | Listed price plus the state program, without promising eligibility |
-| 11 | Visitor, Piñon Grove | Can I come see the center next week? | Understand, Look up | Offers open tour times in Mountain Time, booking appears in the console |
+| 11 | Visitor, Piñon Grove | Can I come see the center next week? | Understand, Look up | Offers open tour times in Mountain Time, booking appears in the control center |
 | 12 | Priya, Quail Ridge | Do the kids go outside when it rains? | Understand, Read the handbook, Double-check | Yes, daily, rain gear stays at school, indoors when smoke makes air unhealthy. Cites sections |
 | 13 | Rosa, Piñon Grove | Snow is forecast tomorrow. Will you be open? | Understand, Look up, Read the handbook | Explains the APS rule and when updates are posted. A posted closure overrides |
 | 14 | Rosa, Piñon Grove | ¿Mateo puede venir disfrazado el viernes por Halloween? | Understand, Read the handbook, A person | Says it is not covered, routes to the director, replies in Spanish. Director's reply is saved |

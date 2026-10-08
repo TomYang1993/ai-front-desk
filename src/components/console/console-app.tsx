@@ -21,7 +21,7 @@ const NAV: { tab: Tab; label: string; icon: React.ReactNode }[] = [
 ];
 
 /**
- * The director console shell: navigation, the signed-in director, and the active tab.
+ * The control center shell: navigation, the signed-in director, and the active tab.
  * The server sends every tab's data at once, and the URL says which tab to show, so switching tabs never waits on the server.
  */
 export function ConsoleApp({ view }: { view: ConsoleView }) {
@@ -46,10 +46,10 @@ export function ConsoleApp({ view }: { view: ConsoleView }) {
           <CenterLogo centerId={view.center.id} size={40} />
           <div className="min-w-0">
             <p className="text-sm font-extrabold leading-tight text-stone-900">{view.center.name}</p>
-            <p className="truncate text-xs text-stone-500">Director console</p>
+            <p className="truncate text-xs text-stone-500">Control center</p>
           </div>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-2 lg:flex-col lg:px-3 lg:pb-0" aria-label="Console">
+        <nav className="flex gap-1 overflow-x-auto px-3 pb-2 lg:flex-col lg:px-3 lg:pb-0" aria-label="Control center">
           {NAV.map((n) => (
             <ConsoleLink
               key={n.tab}

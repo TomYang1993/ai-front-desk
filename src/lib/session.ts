@@ -44,7 +44,7 @@ export async function resolveParent(body: { centerId?: CenterId; familyId?: stri
 }
 
 /**
- * Which center a console request is for. A signed-in director always gets
+ * Which center a control center request is for. A signed-in director always gets
  * their own center. Outside production, a request with no session may name
  * a center, acting as its director, so the scorecard can walk the
  * "answer once" loop.

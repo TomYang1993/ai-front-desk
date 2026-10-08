@@ -6,8 +6,8 @@ import { getStore } from "./store";
 
 /**
  * Data access for the demo. Everything lives in the shared store so the
- * parent app and operator console see the same state. The store seeds
- * itself on first use and can be reset from the console.
+ * parent app and control center see the same state. The store seeds
+ * itself on first use and can be reset from the control center.
  */
 
 // A fingerprint of the seed content. When the content in code changes,
@@ -136,7 +136,7 @@ export async function updateHandoff(centerId: CenterId, id: string, change: (h: 
   return updated;
 }
 
-/* Knowledge edits from the console. Each bumps the center's revision, so cached answers start fresh. */
+/* Knowledge edits from the control center. Each bumps the center's revision, so cached answers start fresh. */
 
 export async function saveSavedAnswers(centerId: CenterId, savedAnswers: SavedAnswer[]) {
   const center = await getCenter(centerId);

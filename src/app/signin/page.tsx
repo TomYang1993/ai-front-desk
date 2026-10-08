@@ -22,7 +22,7 @@ export default function SignInPage() {
           ? family.children
               .map((c) => `${c.firstName}, ${center.rooms.find((r) => r.id === c.roomId)?.name}${c.allergies.length ? `, ${c.allergies.join(" and ")} allergy` : ""}`)
               .join(" · ")
-          : "Opens the director console";
+          : "Opens the control center";
         return {
           email: a.email,
           name: a.name,

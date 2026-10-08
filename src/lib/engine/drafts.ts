@@ -8,7 +8,7 @@ import { renderFamily, renderHandbook, renderSaved, renderTables } from "./conte
 import { checkClaims } from "./handbook";
 
 /*
- * AI help for the director console. Each runs only when a director asks
+ * AI help for the control center. Each runs only when a director asks
  * for it, or once per new message, and is cached where repeats are likely.
  */
 

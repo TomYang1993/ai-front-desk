@@ -4,7 +4,7 @@ import type { CenterId } from "@/content";
 import { getCenter } from "./data";
 import { resolveDirector } from "./session";
 
-/** The director behind a console request, or a 401 response to return. */
+/** The director behind a control center request, or a 401 response to return. */
 export async function directorFor(body: { centerId?: CenterId | null } = {}) {
   const who = await resolveDirector(body);
   if (!who) return { error: Response.json({ error: "Sign in as a director" }, { status: 401 }) } as const;
