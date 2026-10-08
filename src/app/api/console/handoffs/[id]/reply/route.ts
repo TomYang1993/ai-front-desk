@@ -1,13 +1,14 @@
 import { z } from "zod";
-import { getFamily, getHandoffs, updateHandoff } from "@/lib/data";
+import { getHandoffs } from "@/lib/data";
 import { directorFor } from "@/lib/console-auth";
-import { keepNames } from "@/lib/engine/context";
-import { translate } from "@/lib/engine/translate";
+import { sendReply } from "@/lib/console-reply";
 
 const Body = z.object({
   /** Read from the session; honored only for test scripts outside production. */
   centerId: z.enum(["pinon-grove", "quail-ridge"]).optional(),
   text: z.string().trim().min(1).max(2000),
+  /** Set when the director sends an answer already saved for this question. */
+  savedAnswerId: z.string().optional(),
 });
 
 /**
@@ -20,22 +21,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/console/han
   if (!parsed.success) return Response.json({ error: "Write a reply first" }, { status: 400 });
   const who = await directorFor(parsed.data);
   if ("error" in who) return who.error;
-  const { center, staffName } = who;
-  const handoff = (await getHandoffs(center.id)).find((h) => h.id === id);
+  const handoff = (await getHandoffs(who.center.id)).find((h) => h.id === id);
   if (!handoff) return Response.json({ error: "Unknown handoff" }, { status: 404 });
-
-  const family = handoff.familyId ? await getFamily(center.id, handoff.familyId) : undefined;
-  let translated: { language: typeof handoff.language; text: string } | undefined;
-  let kept = false;
-  if (handoff.language !== "en") {
-    const t = await translate(parsed.data.text, handoff.language, keepNames(center, family));
-    if (t.ok) translated = { language: handoff.language, text: t.text };
-    else kept = true;
-  }
-  const updated = await updateHandoff(center.id, id, (h) => ({
-    ...h,
-    status: "answered",
-    reply: { text: parsed.data.text, by: staffName, at: new Date().toISOString(), ...(translated ? { translated } : {}) },
-  }));
-  return Response.json({ handoff: updated, keptEnglish: kept });
+  const savedAnswerId = parsed.data.savedAnswerId && who.center.savedAnswers.some((a) => a.id === parsed.data.savedAnswerId) ? parsed.data.savedAnswerId : undefined;
+  return Response.json(await sendReply(who.center, who.staffName, handoff, parsed.data.text, savedAnswerId));
 }

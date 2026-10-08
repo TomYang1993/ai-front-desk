@@ -1,6 +1,6 @@
 # Handoff: where the project stands
 
-Last updated October 8, 2026. Read this first in a new session, then `docs/PLAN.md` and `docs/SCENARIOS.md`.
+Last updated October 8, 2026, evening. Read this first in a new session, then `docs/PLAN.md` and `docs/SCENARIOS.md`.
 
 ## Status
 
@@ -8,8 +8,8 @@ Last updated October 8, 2026. Read this first in a new session, then `docs/PLAN.
 |---|---|
 | Live site | https://ai-front-desk-xi.vercel.app, deployed from `main` |
 | Repo | https://github.com/TomYang1993/ai-front-desk |
-| `main` | Phases 0 to 3 and Hindi, merged through pull requests #1 to #4 |
-| `phase-4-director-console` | Phase 4 in progress: the director console, plus the restyled Maple and front desk |
+| `main` | Phases 0 to 4 and Hindi, merged through pull requests #1 to #5 and live |
+| `inbox-similar-questions` | Follow-up to Phase 4: repeated questions in the inbox, and the overview's gaps section removed. In its own pull request |
 
 ## How we work
 
@@ -137,6 +137,18 @@ Known gaps:
   - Saving the answer, then Ana gets it instantly with no handbook read.
   - The overview, Source of truth editing, the test box (nothing logged), and "Talk to a person".
 
+## Repeated questions in the inbox (branch `inbox-similar-questions`)
+
+The user wanted one place that saves answers: the inbox. So:
+- **Overview.** The "Gaps Maple couldn't answer" section is removed; it duplicated the inbox. "Write a better answer" is also gone from the unhelpful list. "To fix" now counts only unhelpful answers.
+- **Grouping repeated questions.** `groupSimilar()` in `engine/drafts.ts` groups general-question handoffs from the last 4 weeks that one answer would satisfy, using one small-model call on their English text. It's cached by content, and falls back to identical wording. "General" means the reasons in `GENERAL_REASONS` (`src/lib/console-constants.ts`).
+- **Inbox items** carry `similar` (the other messages in the group) and `existingAnswer` (a saved answer already linked to the group).
+- **In the inbox:**
+  - A "Repeated question" panel lists the similar messages, and each one opens.
+  - When an answer is already saved, "Send it to {parent}" sends it.
+  - The save form has "Also send this answer to the others still waiting", all ticked. Saving sends each of them the general answer in their language, through `sendReply()` in `src/lib/console-reply.ts`, and marks them answered with `reply.savedAnswerId`.
+- **Checked** by script and API: grouping on Piñon Grove's data (swim lessons, inhaler, volunteering), and saving once with a reply to the waiting family. Not yet clicked through in the browser.
+
 ## Next steps
 
 Decided with the user; details in `docs/PLAN.md`, "Phase 3 redesign."
@@ -149,9 +161,9 @@ Phase 3, all done:
 4. **Done: Maple version 2.** Redraw the SVG with more polish and separately animated parts. Animate with Motion springs and add wave and hop moments. Keep the `<Maple state size />` interface, and respect reduced-motion settings. Pick a Motion version at least two weeks old, and read its current docs.
 5. **Done: finish Phase 3.** Test the action buttons at phone size, fix the known gaps, run all checks, and open the pull request.
 
-Then Phase 4, the director console: an inbox with the "answer once" loop, an overview, a knowledge editor and a test box. Scenario 15 becomes testable then. Its decisions are in `docs/PLAN.md`, "Phase 4 decisions".
+Phase 4, the director console, is done and merged (#5). Its decisions are in `docs/PLAN.md`, "Phase 4 decisions".
 
-After Phase 4 merges, Phase 5 is debugging and organizing the app: fix the bugs found so far, tidy the code and docs, and re-run every check. Onboarding a new center from a pasted handbook is no longer planned.
+Phase 4 is merged. Next, Phase 5 is debugging and organizing the app: fix the bugs found so far, tidy the code and docs, and re-run every check. Onboarding a new center from a pasted handbook is no longer planned.
 
 ## Phase 5 backlog: debug and organize
 
@@ -172,6 +184,8 @@ Collected while building, for the phase after Phase 4 merges.
 - Scenario 13 (snow) is flaky. The claim check rejects common-sense lines ("if APS stays open, we keep our normal hours"), possibly because Rosa's answer is in Spanish while the sources are English. Also, heavy testing on one day exhausts Groq's large model, and Gemini sometimes returns "high demand".
 - The two-thumbs-down offer of "Talk to a person" hasn't been clicked through in the browser yet; the pane was in use.
 - Menu editing: the user may want a small tool of its own for it, possibly for kitchen staff. Tour times stay view-only for now.
+- Local test data from October 8: several open handoffs (repeated "Snow tomorrow" from scorecard runs, test custody and staff-concern messages) and a saved "swim lessons" answer. Reset local data before recording anything.
+- The browser pane is shared with the user, so a session can find it signed in as someone else or signed out. To check a page without changing their sign-in, render it on a temporary public page (temporarily add the path to `PUBLIC` in `src/proxy.ts`) in a separate tab, then remove it.
 
 **Organizing**
 - Three separate language-name maps (`engine/handbook.ts`, `engine/translate.ts`, `engine/drafts.ts`). Make one.

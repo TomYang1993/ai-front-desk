@@ -6,8 +6,8 @@ import { ALLERGEN_LABEL, menuFor } from "./facts/menu";
 import { upcomingTourSlots } from "./facts/tours";
 import { menuWeek } from "./engine/compose";
 import { usd } from "./facts/money";
-import { toEnglish } from "./engine/drafts";
-import { MINUTES_PER_ANSWER } from "./console-constants";
+import { groupSimilar, toEnglish } from "./engine/drafts";
+import { GENERAL_REASONS, MINUTES_PER_ANSWER } from "./console-constants";
 import { zonedParts } from "./time";
 
 /**
@@ -35,8 +35,12 @@ export interface InboxItem {
   to: "director" | "teacher";
   toName: string;
   status: "open" | "answered";
-  reply: { text: string; by: string; at: string; translated: string | null } | null;
+  reply: { text: string; by: string; at: string; translated: string | null; withSavedAnswer: boolean } | null;
   savedAnswerId: string | null;
+  /** Other families' messages asking essentially the same thing, from the last 4 weeks. */
+  similar: { id: string; from: string; text: string; createdAt: string; status: "open" | "answered" }[];
+  /** An answer already saved for this question, ready to send. */
+  existingAnswer: { id: string; question: string; answer: string } | null;
 }
 
 export interface Overview {
@@ -52,7 +56,6 @@ export interface Overview {
   topics: { topic: Topic; label: string; count: number; before: number }[];
   languages: { language: Lang; count: number }[];
   /** Questions Maple couldn't answer, grouped when families asked the same thing. */
-  gaps: { id: string; text: string; textEnglish: string | null; at: string; count: number; status: "open" | "answered"; saved: boolean }[];
   notHelpful: {
     id: string;
     text: string;
@@ -64,8 +67,8 @@ export interface Overview {
     sources: { id: string; label: string; sectionId: string | null }[];
     handled: HandledFeedback | null;
   }[];
-  /** Problems with a fix waiting: gaps nobody saved an answer for, and unhelpful answers not yet handled. */
-  toFix: { gaps: number; unhelpful: number };
+  /** Unhelpful answers not yet handled. Questions Maple couldn't answer live in the inbox. */
+  toFix: { unhelpful: number };
 }
 
 export interface KnowledgeView {
@@ -98,7 +101,6 @@ export const TOPIC_LABEL: Record<Topic, string> = {
 };
 
 const TABLE_LABEL: Record<TableId, string> = { calendar: "Calendar and closures", menu: "Menu", tuition: "Tuition and rooms", tours: "Tour times", hours: "Hours" };
-const GAP_REASONS = new Set(["Not covered by the handbook", "Maple wasn't sure"]);
 const handled = (l: QuestionLog) => l.outcome === "answered" || l.outcome === "declined";
 
 export async function getConsoleView(centerId: CenterId, staffId: string | null, now = new Date()): Promise<ConsoleView> {
@@ -124,11 +126,11 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
   /* Inbox: open first, urgent first, then whoever has waited longest. Recent answered ones follow. */
   const open = handoffs.filter((h) => h.status === "open").sort((a, b) => (a.priority === b.priority ? a.createdAt.localeCompare(b.createdAt) : a.priority === "urgent" ? -1 : 1));
   const answered = handoffs.filter((h) => h.status === "answered").sort((a, b) => (b.reply?.at ?? b.createdAt).localeCompare(a.reply?.at ?? a.createdAt)).slice(0, 25);
-  const gapHandoffs = handoffs.filter((h) => GAP_REASONS.has(h.reason) && inWindow(h.createdAt, 28, 0)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  // Gap links open the message in the inbox, so every gap's latest message is listed there too.
+  // General questions from the last 4 weeks, checked for repeats. Each is listed in the inbox so it can be opened.
+  const general = handoffs.filter((h) => GENERAL_REASONS.has(h.reason) && inWindow(h.createdAt, 28, 0)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const shown = [...open, ...answered];
   const listed = new Set(shown.map((h) => h.id));
-  for (const h of gapHandoffs) {
+  for (const h of general) {
     if (listed.has(h.id)) continue;
     shown.push(h);
     listed.add(h.id);
@@ -153,6 +155,12 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
     return { id, label: id, sectionId: null };
   };
   const savedFrom = new Map(center.savedAnswers.filter((a) => a.fromHandoffId).map((a) => [a.fromHandoffId!, a.id]));
+  for (const h of handoffs) if (h.reply?.savedAnswerId) savedFrom.set(h.id, h.reply.savedAnswerId);
+  const groups = await withTimeout(groupSimilar(general.map((h) => ({ id: h.id, text: english.get(h.text) ?? h.text }))), [] as string[][]);
+  const groupOf = new Map<string, string[]>();
+  for (const g of groups) for (const id of g) groupOf.set(id, g);
+  const byId = new Map(handoffs.map((h) => [h.id, h]));
+  const fromLabel = (h: Handoff) => (h.familyId ? families.find((f) => f.id === h.familyId)?.parentName : undefined) ?? h.askedBy ?? "A parent";
 
   const inboxItem = (h: Handoff): InboxItem => {
     const family = h.familyId ? families.find((f) => f.id === h.familyId) : undefined;
@@ -175,8 +183,17 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
       to: h.to,
       toName: teacher?.name ?? (h.to === "teacher" ? "the lead teacher" : me.name),
       status: h.status,
-      reply: h.reply ? { text: h.reply.text, by: h.reply.by, at: h.reply.at, translated: h.reply.translated?.text ?? null } : null,
+      reply: h.reply ? { text: h.reply.text, by: h.reply.by, at: h.reply.at, translated: h.reply.translated?.text ?? null, withSavedAnswer: Boolean(h.reply.savedAnswerId) } : null,
       savedAnswerId: savedFrom.get(h.id) ?? null,
+      similar: (groupOf.get(h.id) ?? [])
+        .filter((id) => id !== h.id)
+        .map((id) => byId.get(id)!)
+        .map((x) => ({ id: x.id, from: fromLabel(x), text: english.get(x.text) ?? x.text, createdAt: x.createdAt, status: x.status })),
+      existingAnswer: (() => {
+        const savedId = (groupOf.get(h.id) ?? [h.id]).map((id) => savedFrom.get(id)).find(Boolean);
+        const saved = savedId ? center.savedAnswers.find((a) => a.id === savedId) : undefined;
+        return saved ? { id: saved.id, question: saved.question, answer: saved.answer } : null;
+      })(),
     };
   };
 
@@ -192,11 +209,6 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
   const topicNow = count(week, (l) => l.topic);
   const topicBefore = count(weekBefore, (l) => l.topic);
   const languages = count(week, (l) => l.language);
-  const gapGroups = new Map<string, Handoff[]>();
-  for (const h of gapHandoffs) {
-    const key = (english.get(h.text) ?? h.text).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, "").trim();
-    gapGroups.set(key, [...(gapGroups.get(key) ?? []), h]);
-  }
 
   /* Knowledge, with how often each source was used this week */
   const uses = (id: string) => week.filter((l) => l.sources.includes(id)).length;
@@ -233,21 +245,6 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
         .slice(0, 6)
         .map(([topic, n]) => ({ topic, label: TOPIC_LABEL[topic], count: n, before: topicBefore.get(topic) ?? 0 })),
       languages: [...languages.entries()].sort((a, b) => b[1] - a[1]).map(([language, n]) => ({ language, count: n })),
-      gaps: [...gapGroups.values()]
-        .map((list) => {
-          const latest = list[0];
-          return {
-            id: latest.id,
-            text: latest.text,
-            textEnglish: latest.language === "en" ? null : english.get(latest.text) ?? null,
-            at: latest.createdAt,
-            count: list.length,
-            status: list.some((h) => h.status === "open") ? ("open" as const) : ("answered" as const),
-            saved: list.some((h) => savedFrom.has(h.id)),
-          };
-        })
-        .sort((a, b) => b.count - a.count || b.at.localeCompare(a.at))
-        .slice(0, 8),
       notHelpful: down.map((l) => ({
         id: l.id,
         text: l.text,
@@ -258,10 +255,7 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
         sources: l.sources.map(sourceLabel),
         handled: handledFeedback[l.id] ?? null,
       })),
-      toFix: {
-        gaps: [...gapGroups.values()].filter((list) => !list.some((h) => savedFrom.has(h.id))).length,
-        unhelpful: down.filter((l) => !handledFeedback[l.id]).length,
-      },
+      toFix: { unhelpful: down.filter((l) => !handledFeedback[l.id]).length },
     },
     knowledge: {
       sections: sections.map((s) => ({ id: s.id, title: s.title, body: s.body, updatedAt: s.updatedAt, updatedBy: s.updatedBy, uses: uses(`handbook:${s.id}`) })),

@@ -3,12 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, CheckCircle2, CircleAlert, Languages, LoaderCircle, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, CircleAlert, Languages, LoaderCircle, Repeat2, Send, Sparkles } from "lucide-react";
+import { GENERAL_REASONS } from "@/lib/console-constants";
 import type { InboxItem } from "@/lib/console-view";
 import { ago, LANGUAGE, post } from "./shared";
-
-/** Questions anyone might ask again. Replies about one family's child, pickup or safety stay private. */
-const GENERAL_REASONS = new Set(["Not covered by the handbook", "Maple wasn't sure", "AI unavailable"]);
 
 export function Inbox({ items, me, selectedId }: { items: InboxItem[]; me: { name: string; firstName: string }; selectedId: string | null }) {
   const [filter, setFilter] = useState<"open" | "answered">(() => (items.find((i) => i.id === selectedId)?.status ?? "open"));
@@ -74,7 +72,16 @@ export function Inbox({ items, me, selectedId }: { items: InboxItem[]; me: { nam
 
         <section className={`${openId ? "" : "hidden lg:block"} mt-4 lg:mt-0`} aria-label="Message">
           {selected ? (
-            <Detail key={selected.id} item={selected} me={me} onBack={() => setOpenId(null)} />
+            <Detail
+              key={selected.id}
+              item={selected}
+              me={me}
+              onBack={() => setOpenId(null)}
+              onOpen={(id) => {
+                setOpenId(id);
+                setFilter(items.find((i) => i.id === id)?.status ?? "open");
+              }}
+            />
           ) : (
             <p className="rounded-3xl border border-dashed border-stone-300 p-10 text-center text-stone-500">Pick a message to read and reply.</p>
           )}
@@ -84,7 +91,7 @@ export function Inbox({ items, me, selectedId }: { items: InboxItem[]; me: { nam
   );
 }
 
-function Detail({ item, me, onBack }: { item: InboxItem; me: { name: string; firstName: string }; onBack: () => void }) {
+function Detail({ item, me, onBack, onOpen }: { item: InboxItem; me: { name: string; firstName: string }; onBack: () => void; onOpen: (id: string) => void }) {
   const router = useRouter();
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState<"draft" | "send" | null>(null);
@@ -155,6 +162,10 @@ function Detail({ item, me, onBack }: { item: InboxItem; me: { name: string; fir
         )}
       </blockquote>
 
+      {item.similar.length > 0 && <Similar item={item} onOpen={onOpen} />}
+
+      {item.status === "open" && item.existingAnswer && <UseSavedAnswer item={item} />}
+
       {item.context && (
         <div className="mt-3 rounded-2xl border border-stone-200 px-4 py-3 text-sm text-stone-600">
           <p className="mb-1 text-xs font-semibold text-stone-500">What Maple said just before</p>
@@ -204,7 +215,7 @@ function Detail({ item, me, onBack }: { item: InboxItem; me: { name: string; fir
         item.reply && (
           <div className="mt-5">
             <p className="flex items-center gap-1.5 text-sm font-bold text-teal-800">
-              <CheckCircle2 size={16} /> {item.reply.by === me.name ? "You replied" : `${item.reply.by} replied`} · {ago(item.reply.at)}
+              <CheckCircle2 size={16} /> {item.reply.withSavedAnswer ? "Answered with your saved answer" : item.reply.by === me.name ? "You replied" : `${item.reply.by} replied`} · {ago(item.reply.at)}
             </p>
             <p className="mt-2 whitespace-pre-line rounded-2xl border border-teal-100 bg-teal-50/50 px-4 py-3 text-[15px] leading-relaxed">{item.reply.text}</p>
             {item.reply.translated && (
@@ -215,7 +226,7 @@ function Detail({ item, me, onBack }: { item: InboxItem; me: { name: string; fir
                 {item.reply.translated}
               </div>
             )}
-            {GENERAL_REASONS.has(item.reason) && <SaveAsAnswer item={item} />}
+            {GENERAL_REASONS.has(item.reason) && !item.reply.withSavedAnswer && <SaveAsAnswer item={item} />}
           </div>
         )
       )}
@@ -227,6 +238,8 @@ function Detail({ item, me, onBack }: { item: InboxItem; me: { name: string; fir
 function SaveAsAnswer({ item }: { item: InboxItem }) {
   const router = useRouter();
   const [form, setForm] = useState<{ question: string; answer: string; keywords: string } | null>(null);
+  const waiting = item.similar.filter((x) => x.status === "open");
+  const [alsoTo, setAlsoTo] = useState<string[]>(() => waiting.map((x) => x.id));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -267,6 +280,7 @@ function SaveAsAnswer({ item }: { item: InboxItem }) {
         answer: form.answer,
         keywords: form.keywords.split(",").map((k) => k.trim()).filter(Boolean),
         fromHandoffId: item.id,
+        alsoReplyTo: alsoTo,
       });
       router.refresh();
     } catch (e) {
@@ -291,10 +305,30 @@ function SaveAsAnswer({ item }: { item: InboxItem }) {
           <Field label="Question" value={form.question} onChange={(v) => setForm({ ...form, question: v })} />
           <Field label="Answer" value={form.answer} onChange={(v) => setForm({ ...form, answer: v })} rows={4} />
           <Field label="Words parents might use, separated by commas" value={form.keywords} onChange={(v) => setForm({ ...form, keywords: v })} />
+          {waiting.length > 0 && (
+            <fieldset className="rounded-xl bg-teal-50/60 px-3 py-2">
+              <legend className="px-1 text-sm font-semibold text-stone-800">Also send this answer to the others still waiting</legend>
+              {waiting.map((x) => (
+                <label key={x.id} className="flex items-start gap-2 py-1 text-sm text-stone-700">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={alsoTo.includes(x.id)}
+                    onChange={(e) => setAlsoTo((list) => (e.target.checked ? [...list, x.id] : list.filter((id) => id !== x.id)))}
+                  />
+                  <span>
+                    <span className="font-semibold">{x.from}</span> · {ago(x.createdAt)}
+                    <span className="block text-stone-500">{x.text}</span>
+                  </span>
+                </label>
+              ))}
+              <p className="mt-1 text-xs text-stone-500">Each family gets the answer in their own language.</p>
+            </fieldset>
+          )}
           <div className="flex gap-2">
             <button onClick={save} disabled={busy || !form.question.trim() || !form.answer.trim()} className="flex items-center gap-1.5 rounded-full bg-teal-700 px-4 py-2 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-40">
               {busy ? <LoaderCircle size={16} className="animate-spin" /> : <Check size={16} />}
-              Save answer
+              {alsoTo.length ? `Save and send to ${alsoTo.length} more` : "Save answer"}
             </button>
             <button onClick={() => setForm(null)} disabled={busy} className="rounded-full px-4 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-100">
               Cancel
@@ -313,5 +347,73 @@ export function Field({ label, value, onChange, rows }: { label: string; value: 
       {label}
       {rows ? <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className={cls} /> : <input value={value} onChange={(e) => onChange(e.target.value)} className={cls} />}
     </label>
+  );
+}
+
+/** Other families asked the same thing. Open any of them, or answer them all at once when saving. */
+function Similar({ item, onOpen }: { item: InboxItem; onOpen: (id: string) => void }) {
+  const [all, setAll] = useState(false);
+  const n = item.similar.length;
+  const shown = all ? item.similar : item.similar.slice(0, 3);
+  return (
+    <div className="mt-3 rounded-2xl border border-teal-200 bg-teal-50/50 px-4 py-3">
+      <p className="flex items-center gap-2 text-sm font-bold text-teal-900">
+        <Repeat2 size={16} aria-hidden /> Repeated question: {n} other {n === 1 ? "message asks" : "messages ask"} something similar
+      </p>
+      <ul className="mt-2 divide-y divide-teal-100">
+        {shown.map((x) => (
+          <li key={x.id}>
+            <button onClick={() => onOpen(x.id)} className="w-full py-1.5 text-left text-sm hover:underline">
+              <span className="font-semibold text-stone-800">{x.from}</span>
+              <span className="text-stone-500">
+                {" "}
+                · {ago(x.createdAt)} · {x.status === "open" ? "Waiting" : "Answered"}
+              </span>
+              <span className="block truncate text-stone-600">{x.text}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {n > 3 && (
+        <button onClick={() => setAll((a) => !a)} className="mt-1 text-xs font-semibold text-teal-800 hover:underline">
+          {all ? "Show fewer" : `Show all ${n}`}
+        </button>
+      )}
+      {GENERAL_REASONS.has(item.reason) && !item.existingAnswer && (
+        <p className="mt-2 text-xs text-teal-900/80">
+          Reply to this family as usual. When you save your reply as an answer, you can send it to the others still waiting, too.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** An answer is already saved for this question: send it as is. */
+function UseSavedAnswer({ item }: { item: InboxItem }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const saved = item.existingAnswer!;
+  const parentFirst = item.from.split(" ")[0];
+  async function sendIt() {
+    setBusy(true);
+    setError("");
+    try {
+      await post(`/api/console/handoffs/${item.id}/reply`, { text: saved.answer, savedAnswerId: saved.id });
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="mt-3 rounded-2xl border border-teal-200 px-4 py-3">
+      <p className="text-sm font-bold text-stone-900">You already saved an answer for this question</p>
+      <p className="mt-1 whitespace-pre-line text-sm text-stone-700">{saved.answer}</p>
+      {error && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
+      <button onClick={sendIt} disabled={busy} className="mt-2 flex items-center gap-1.5 rounded-full bg-teal-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-50">
+        {busy ? <LoaderCircle size={15} className="animate-spin" /> : <Send size={15} />} Send it to {parentFirst}
+      </button>
+    </div>
   );
 }

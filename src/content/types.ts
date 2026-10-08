@@ -296,5 +296,7 @@ export interface Handoff {
     at: string;
     /** What the parent sees, when their language isn't English. */
     translated?: { language: Lang; text: string };
+    /** The saved answer sent as this reply, when one was. */
+    savedAnswerId?: string;
   };
 }
