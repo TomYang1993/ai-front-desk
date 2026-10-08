@@ -350,7 +350,14 @@ export function FrontDesk({ view }: { view: ParentView }) {
     </motion.div>
   );
 
-  const bubbleText = wide ? statusText : unread[0]?.reply ? s.home.replied(unread[0].reply.by.split(" ")[0]) : s.home.bubble;
+  // Idle, Maple greets the same way on every screen. A laptop's bubble also narrates her work (reading, checking), which a phone's chat card shows in its header.
+  const bubbleText = wide
+    ? statusText === s.status.ready
+      ? s.home.bubble
+      : statusText
+    : unread[0]?.reply
+      ? s.home.replied(unread[0].reply.by.split(" ")[0])
+      : s.home.bubble;
   const bubble = (
     <motion.button
       key={bubbleText}
