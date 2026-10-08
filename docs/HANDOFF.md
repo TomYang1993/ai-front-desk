@@ -8,8 +8,8 @@ Last updated October 8, 2026, evening. Read this first in a new session, then `d
 |---|---|
 | Live site | https://ai-front-desk-xi.vercel.app, deployed from `main` |
 | Repo | https://github.com/TomYang1993/ai-front-desk |
-| `main` | Phases 0 to 4 and Hindi, merged through pull requests #1 to #5 and live |
-| `inbox-similar-questions` | Follow-up to Phase 4: repeated questions in the inbox, and the overview's gaps section removed. In its own pull request |
+| `main` | Phases 0 to 4, Hindi and repeated questions in the inbox, merged through pull requests #1 to #6 and live |
+| `phase-5-debug` | Phase 5, debugging. Started October 8; see "Phase 5 so far" |
 
 ## How we work
 
@@ -149,6 +149,15 @@ The user wanted one place that saves answers: the inbox. So:
   - The save form has "Also send this answer to the others still waiting", all ticked. Saving sends each of them the general answer in their language, through `sendReply()` in `src/lib/console-reply.ts`, and marks them answered with `reply.savedAnswerId`.
 - **Checked** by script and API: grouping on Piñon Grove's data (swim lessons, inhaler, volunteering), and saving once with a reply to the waiting family. Not yet clicked through in the browser.
 
+## Phase 5 so far (branch `phase-5-debug`)
+
+Found by the user in the deployed app on October 8:
+- **Console tabs were slow online.** Each tab was a link to `/console?tab=…`, so every click re-rendered the whole page on the server (about 250 to 330 ms on Vercel, plus a 65 to 90 KB payload) even though the page already holds every tab's data. Tabs now switch on the client: `ConsoleApp` reads the tab from `useSearchParams`, and `ConsoleLink` (`console-link.tsx`) calls `history.pushState`, which Next keeps in step. Back and forward work, and a click took 15 to 45 ms with no request. The 20-second `router.refresh()` still brings in new data. Use `ConsoleLink`, not `next/link`, for links inside the console.
+- **Button cursors were inconsistent.** Tailwind 4 no longer gives buttons a pointer cursor, so links had one and buttons didn't. `globals.css` now sets it for every enabled button, select, checkbox, radio and summary.
+- **No "Fix" button on some unhelpful answers.** The button only appears when Maple used a handbook section. Answers from center data (hours, calendar, tuition, menu, tour times) have nothing to edit yet, because those tables are read-only. Those rows now have "Check “Hours”", which opens the table's card in Source of truth. Editing the tables is still open; hours and closures are probably what a director changes most.
+- **Local and deployed data are separate.** The store prefix is `afd:` plus `VERCEL_ENV`, so local is `afd:local:` and production is `afd:production:`. They are seeded from the same content, but whatever people ask on the live site only exists there.
+- **Local testing and the live site share the AI keys.** The keys pulled from Vercel are the same ones the live site uses. On October 8 the local health check showed Groq's small model and Gemini's 2.5 flash-lite at their daily limits, so a question became a handoff. Avoid scorecard runs close to recording or review.
+
 ## Next steps
 
 Decided with the user; details in `docs/PLAN.md`, "Phase 3 redesign."
@@ -184,7 +193,7 @@ Collected while building, for the phase after Phase 4 merges.
 - Scenario 13 (snow) is flaky. The claim check rejects common-sense lines ("if APS stays open, we keep our normal hours"), possibly because Rosa's answer is in Spanish while the sources are English. Also, heavy testing on one day exhausts Groq's large model, and Gemini sometimes returns "high demand".
 - The two-thumbs-down offer of "Talk to a person" hasn't been clicked through in the browser yet; the pane was in use.
 - Menu editing: the user may want a small tool of its own for it, possibly for kitchen staff. Tour times stay view-only for now.
-- Local test data from October 8: several open handoffs (repeated "Snow tomorrow" from scorecard runs, test custody and staff-concern messages) and a saved "swim lessons" answer. Reset local data before recording anything.
+- Local test data from October 8 (also a thumbs-down on the Hours chip and a rate-limited "What time do you close?" handoff from Ana, from checking the table link): several open handoffs (repeated "Snow tomorrow" from scorecard runs, test custody and staff-concern messages) and a saved "swim lessons" answer. Reset local data before recording anything.
 - The browser pane is shared with the user, so a session can find it signed in as someone else or signed out. To check a page without changing their sign-in, render it on a temporary public page (temporarily add the path to `PUBLIC` in `src/proxy.ts`) in a separate tab, then remove it.
 
 **Organizing**
