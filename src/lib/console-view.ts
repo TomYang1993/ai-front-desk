@@ -11,7 +11,7 @@ import { GENERAL_REASONS, MINUTES_PER_ANSWER } from "./console-constants";
 import { zonedParts } from "./time";
 
 /**
- * Everything the director console shows, for one center. Built on the
+ * Everything the control center shows, for one center. Built on the
  * server from the shared store, so it always matches what parents see.
  */
 
@@ -296,7 +296,7 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
   };
 }
 
-/** The console never waits long on the AI; untranslated text is fine. */
+/** The control center never waits long on the AI; untranslated text is fine. */
 function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 5000): Promise<T> {
   return Promise.race([promise, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))]);
 }

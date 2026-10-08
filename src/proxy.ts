@@ -4,7 +4,7 @@ import { homeFor, SESSION_COOKIE, verifySession } from "@/lib/session-token";
 /**
  * Sends people to the right place before a page renders: signed-out
  * visitors to /signin, parents to their front desk, directors to the
- * console. API routes check the session themselves.
+ * control center. API routes check the session themselves.
  */
 const PUBLIC = ["/signin", "/status"];
 

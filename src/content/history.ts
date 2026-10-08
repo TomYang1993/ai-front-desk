@@ -2,7 +2,7 @@ import { addDays, inRange, minutesOf, weekdayOf, zonedParts, zonedToUtc } from "
 import type { Center, CenterId, Handoff, Lane, Lang, Outcome, QuestionLog, Topic } from "./types";
 
 /**
- * Generates a believable question history for the operator console.
+ * Generates a believable question history for the control center.
  * The history is deterministic for a given day and always ends at "now",
  * so the demo never looks stale. Demo families are left out on purpose;
  * their chats start fresh.

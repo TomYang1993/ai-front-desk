@@ -106,7 +106,7 @@ Known gaps:
 - **Names survive translation.** The small Groq model wrote "Hannah" and "Quail Ridge" in Devanagari. `translate()` now takes the center's, staff's and family's names, tells the model to keep them in Latin letters, and rejects a translation that changes them, as it does for numbers. It tries the small model, then a small model from another provider (Gemini, which keeps names and Maple's feminine verb forms), then the large chain, before keeping English. Hindi replies usually come from Gemini, so they use its daily free quota.
 - Scorecard scenarios 31 (low fever, in Hindi) and 32 (grandparent pickup, in Hindi) are added, and both require Devanagari so an English fallback can't pass. The full run on this branch: 30 passed and scenario 15 pending, before the name fix; after it, all six translated scenarios pass.
 
-## Director console, Phase 4 (branch `phase-4-director-console`)
+## Control center, Phase 4 (branch `phase-4-director-console`)
 
 - **Routes.** `/console?tab=inbox|overview|source|test`, server-rendered by `src/app/console/page.tsx` from `src/lib/console-view.ts`. `?item=` opens an inbox message, and `?section=&fix=` opens a handbook section to fix an unhelpful answer. Client components are in `src/components/console/`.
 - **APIs** under `src/app/api/console/`:
@@ -152,7 +152,8 @@ The user wanted one place that saves answers: the inbox. So:
 ## Phase 5 so far (branch `phase-5-debug`)
 
 Found by the user in the deployed app on October 8:
-- **Console tabs were slow online.** Each tab was a link to `/console?tab=…`, so every click re-rendered the whole page on the server (about 250 to 330 ms on Vercel, plus a 65 to 90 KB payload) even though the page already holds every tab's data. Tabs now switch on the client: `ConsoleApp` reads the tab from `useSearchParams`, and `ConsoleLink` (`console-link.tsx`) calls `history.pushState`, which Next keeps in step. Back and forward work, and a click took 15 to 45 ms with no request. The 20-second `router.refresh()` still brings in new data. Use `ConsoleLink`, not `next/link`, for links inside the console.
+- **Naming.** The product says "Control center" everywhere a person reads it: the sidebar, the page title, the sign-in panel and the docs. The URL (`/console`), the API (`/api/console/…`) and the code identifiers (`ConsoleApp`, `console-view.ts`) keep the old word; renaming them is a separate, optional change.
+- **Control center tabs were slow online.** Each tab was a link to `/console?tab=…`, so every click re-rendered the whole page on the server (about 250 to 330 ms on Vercel, plus a 65 to 90 KB payload) even though the page already holds every tab's data. Tabs now switch on the client: `ConsoleApp` reads the tab from `useSearchParams`, and `ConsoleLink` (`console-link.tsx`) calls `history.pushState`, which Next keeps in step. Back and forward work, and a click took 15 to 45 ms with no request. The 20-second `router.refresh()` still brings in new data. Use `ConsoleLink`, not `next/link`, for links inside the control center.
 - **Button cursors were inconsistent.** Tailwind 4 no longer gives buttons a pointer cursor, so links had one and buttons didn't. `globals.css` now sets it for every enabled button, select, checkbox, radio and summary.
 - **No "Fix" button on some unhelpful answers.** The button only appears when Maple used a handbook section. Answers from center data (hours, calendar, tuition, menu, tour times) have nothing to edit yet, because those tables are read-only. Those rows now have "Read only for now, check “Hours”", which opens the table's card in Source of truth. Every other row, whatever section it used, has the same "Fix source of truth" button. Editing the tables is still open; hours and closures are probably what a director changes most.
 - **Maple's idle bubble differed by screen size.** Laptops showed the status text ("Here to help") and phones showed "Hi! Tap me with any question." Both now show the greeting when idle. On laptops the bubble still narrates her work (listening, reading, checking, handoff). The chat header keeps "Here to help".
@@ -171,7 +172,7 @@ Phase 3, all done:
 4. **Done: Maple version 2.** Redraw the SVG with more polish and separately animated parts. Animate with Motion springs and add wave and hop moments. Keep the `<Maple state size />` interface, and respect reduced-motion settings. Pick a Motion version at least two weeks old, and read its current docs.
 5. **Done: finish Phase 3.** Test the action buttons at phone size, fix the known gaps, run all checks, and open the pull request.
 
-Phase 4, the director console, is done and merged (#5). Its decisions are in `docs/PLAN.md`, "Phase 4 decisions".
+Phase 4, the control center, is done and merged (#5). Its decisions are in `docs/PLAN.md`, "Phase 4 decisions".
 
 Phase 4 is merged. Next, Phase 5 is debugging and organizing the app: fix the bugs found so far, tidy the code and docs, and re-run every check. Onboarding a new center from a pasted handbook is no longer planned.
 
@@ -201,4 +202,4 @@ Collected while building, for the phase after Phase 4 merges.
 - Three separate language-name maps (`engine/handbook.ts`, `engine/translate.ts`, `engine/drafts.ts`). Make one.
 - Large files: `i18n.ts` (one file for four languages), `components/front-desk.tsx`, `engine/index.ts` and `engine/compose.ts` are each around 450 to 500 lines.
 - `/status` uses the scaffold's neutral styling and dark-mode classes, unlike the rest of the app.
-- The README predates sign-in, the console and Hindi.
+- The README predates sign-in, the control center and Hindi.

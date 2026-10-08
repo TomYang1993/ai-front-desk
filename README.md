@@ -2,7 +2,7 @@
 
 A prototype AI front desk for early education centers, built as a brightwheel take-home.
 Parents chat with Maple, a friendly bear clerk who answers from each center's own handbook
-and data, shows its sources, and hands off to staff when it should. Directors get a console
+and data, shows its sources, and hands off to staff when it should. Directors get a control center
 to see questions, answer handoffs once, and keep the source of truth current.
 
 Everything here is fictional: Piñon Grove Early Learning in Albuquerque, Quail Ridge Early

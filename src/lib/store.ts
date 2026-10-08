@@ -3,7 +3,7 @@ import { Redis } from "@upstash/redis";
 import { env, hasRedis } from "./env";
 
 /**
- * A small key-value store shared by the parent app and the operator console.
+ * A small key-value store shared by the parent app and the control center.
  * Uses Upstash Redis when configured, otherwise an in-memory map that lives
  * only as long as the local dev server.
  */

@@ -16,7 +16,7 @@ export function ago(iso: string, now = Date.now()) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-/** Sends JSON to a console route and returns the parsed body, or throws with the server's message. */
+/** Sends JSON to a control center route and returns the parsed body, or throws with the server's message. */
 export async function post<T>(url: string, body: unknown, method = "POST"): Promise<T> {
   const res = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));

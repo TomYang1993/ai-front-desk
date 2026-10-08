@@ -23,11 +23,11 @@ Who we design for, from the brightwheel primer:
 
 **In scope**
 - Parent experience for five enrolled families, behind a simulated sign-in. Visitor mode is deferred; see the Phase 3 redesign.
-- Operator console per center: overview, handoff inbox with the "answer once" loop, knowledge editor, test box.
+- Control center per center: overview, handoff inbox with the "answer once" loop, knowledge editor, test box.
 - Two fictional centers in different regions with realistic local rules.
 - Replies in the parent's language: English, Spanish, Mandarin, Hindi.
 - A scorecard of tricky test questions run against the answer engine.
-- Demo mode: parent phone and operator console side by side, for the video.
+- Demo mode: parent phone and control center side by side, for the video.
 
 **Out of scope for now, candidates for the bonus**
 - Voice, SMS and phone channels.
@@ -99,7 +99,7 @@ Custody and restraining orders, pickup authorization changes, suspected abuse or
   - Answer, with source.
   - "Not sure": names who will reply and when, based on the center's hours and time zone.
   - Urgent or sensitive: immediate human handoff, with emergency guidance when relevant.
-- **Actions.** Report an absence with a computed return time. Order a backup lunch. Book a tour in visitor mode. Each action shows a confirmation and appears in the operator console.
+- **Actions.** Report an absence with a computed return time. Order a backup lunch. Book a tour in visitor mode. Each action shows a confirmation and appears in the control center.
 - **Two children.** When a question could apply to either child, the app asks which one with chips.
 - **Language.** Replies in the language the parent writes in. Source excerpts stay in the original with a translation toggle.
 
@@ -122,13 +122,13 @@ Custody and restraining orders, pickup authorization changes, suspected abuse or
 Feedback on the first parent app: treat it as a real product, not a demo router.
 
 - **Sign-in is the front door.** An email and password form simulates sign-in, and a session cookie decides what each person sees. A clearly labeled "Demo accounts" panel signs reviewers in with one click as any parent or director. Real authentication can replace the mock later without changing the pages.
-- **Parents see only their own family.** The family comes from the session, never from the URL. Directors land in their center's console.
+- **Parents see only their own family.** The family comes from the session, never from the URL. Directors land in their center's control center.
 - **No visitor mode for now.** Prospective-family flows are hidden from the interface. The engine still supports visitors, so they can return later as a public page per center.
 - **The front desk is the home screen.** On phones, the animated front desk with Maple is the hero, with information cards below: today, food, next closure, notices, your requests and your children. Tapping Maple opens the chat as a card that springs up while Maple moves from the desk into its header, using Motion's shared-layout animation. Maple acts out each state during the conversation, and closing the card returns her to the desk. On laptops, the desk and cards stay in view with the chat docked beside them.
 - **Maple, version 2.** Redrawn in code with more polish: softer shading, highlights and rounder proportions, with the same design and separately animated parts. Animated with the Motion library using springs, and a wave hello and happy hop added to the existing states. The component keeps its `state` and `size` interface, so a Rive-made Maple could replace it later.
 - **Maple and the desk, restyled October 8.** From a reference the user shared: Maple stands full body in a flat, grainy illustration style, and the front desk matches, with Maple standing beside a low counter instead of behind it.
 
-## 7. Operator console
+## 7. Control center
 
 - **Center switcher** for the demo only.
 - **Overview.** Questions this week, share answered without staff, estimated staff hours saved, after-hours answers, open handoffs, top topics over time, and a "gaps" list of questions the AI could not answer.
@@ -147,7 +147,7 @@ Feedback on the first parent app: treat it as a real product, not a demo router.
 
 Added after the first walkthrough, October 8:
 
-- **Each center's own logo** in the console, on sign-in and on the parent home. Maple stays the parents' assistant; staff tools carry the center's brand.
+- **Each center's own logo** in the control center, on sign-in and on the parent home. Maple stays the parents' assistant; staff tools carry the center's brand.
 - **"Knowledge" is called "Source of truth",** matching the brief's wording. It explains its three kinds: answers you wrote once (remembered and reused for any family), the family handbook (policies Maple reads, answers from and double-checks), and center data (scheduled facts looked up without AI). Maple checks them in that order: your answers, then center data, then the handbook, then asks you.
 - **The test box keeps its own tab,** "Test Maple", for checking answers after an edit.
 - **"Talk to a person" appears after two thumbs down.** An always-visible button would pull parents away from answers Maple can give. After a second thumbs down in a conversation, Maple apologizes and offers to reach the director, and the button stays in the chip row for that conversation. It goes straight to the director with Maple's last answer as context, with no AI involved.
@@ -216,11 +216,11 @@ Groq goes first. On the scorecard it answered every question it received correct
 - Seeded question history is generated relative to the current date, so the demo never looks stale.
 - Deployed on the user's Vercel account.
 
-Routes: landing page, parent app, operator console per center, demo split view, and API routes for asking, handoffs, knowledge, actions and reset.
+Routes: landing page, parent app, control center per center, demo split view, and API routes for asking, handoffs, knowledge, actions and reset.
 
 ## 10. Scorecard
 
-The scenarios in SCENARIOS.md become the test set. About thirty test questions across both centers, each with the expected route and facts that must appear. Includes trick cases: federal holiday assumptions, wrong-center facts, invented prices, sensitive topics phrased casually, two-children ambiguity, and non-English questions. A script runs them and prints pass or fail. The result is shown in the console and mentioned in the video.
+The scenarios in SCENARIOS.md become the test set. About thirty test questions across both centers, each with the expected route and facts that must appear. Includes trick cases: federal holiday assumptions, wrong-center facts, invented prices, sensitive topics phrased casually, two-children ambiguity, and non-English questions. A script runs them and prints pass or fail. The result is shown in the control center and mentioned in the video.
 
 ## 11. Two-minute video
 
@@ -242,7 +242,7 @@ The scenarios in SCENARIOS.md become the test set. About thirty test questions a
 | 1 | Handbooks, tables, families, seeded history | You review both centers' content |
 | 2 | Answer engine and scorecard | Scorecard results |
 | 3 | Parent experience: simulated sign-in, front desk home, chat card, Maple version 2 | Try it on your phone |
-| 4 | Operator console and "answer once" loop | Walk the full loop |
+| 4 | Control center and "answer once" loop | Walk the full loop |
 | 5 | Debug and organize: fix bugs found so far, tidy the code and docs, and re-run every check on the merged app | Clean scorecard and a walk through every screen |
 | 6 | Demo view, deploy, polish, video shot list | Hosted URL ready to record |
 
