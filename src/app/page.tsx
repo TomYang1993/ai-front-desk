@@ -1,14 +1,15 @@
 import { connection } from "next/server";
-import { env, hasGemini, hasRedis } from "@/lib/env";
+import { hasRedis } from "@/lib/env";
+import { configuredProviders, modelFor } from "@/lib/llm";
 
 // Temporary setup page for Phase 0. Replaced by the parent app in Phase 3.
 export default async function Home() {
   await connection();
   const items = [
     {
-      label: "Gemini API key",
-      ok: hasGemini(),
-      hint: "Add GEMINI_API_KEY to .env.local",
+      label: "AI providers",
+      ok: configuredProviders().length > 0,
+      hint: "Add GEMINI_API_KEY or GROQ_API_KEY in Vercel, then pull the env vars",
     },
     {
       label: "Shared database",
@@ -46,8 +47,8 @@ export default async function Home() {
       </ul>
 
       <p className="mt-6 text-sm text-neutral-500">
-        Models: {env.geminiModelSmall} for understanding, {env.geminiModelLarge} for the
-        handbook. Run a live check at{" "}
+        Providers: {configuredProviders().join(", ") || "none"}. First choices: {modelFor("small")} for
+        understanding, {modelFor("large")} for the handbook. Run a live check at{" "}
         <a className="underline" href="/api/health?live=1">
           /api/health?live=1
         </a>

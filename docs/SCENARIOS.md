@@ -39,7 +39,14 @@ These scenarios define how the front desk should behave. Each one becomes a scor
 
 `npm run scorecard` runs these scenarios against the API with the clock pinned to Tuesday, October 13, 2026 at 8:10 am local time. It prints each result and writes a full report to `scorecard-results/latest.md`, which git ignores. Pass scenario numbers to run only those, for example `npm run scorecard -- 4 21`.
 
-**Last full run, October 7, 2026:** 26 of 29 passed, with scenario 15 pending until Phase 4. The three failures were fixed and rerun individually. A full rerun is waiting on a separate development API key, because Gemini's free tier allows as few as 20 requests per model per day.
+**Last full runs, October 7, 2026:**
+
+| Models | Passed | Notes |
+|---|---|---|
+| Gemini only | 26 of 29 | The three failures were fixed and rerun individually |
+| Groq only, GPT-OSS 20B and 120B | 24 of 29 | Every question that reached a model was answered correctly, in about a second. All five failures were Groq's per-minute token limit, and each became a polite handoff |
+
+Scenario 15 is pending until Phase 4. `SCORECARD_SMALL` and `SCORECARD_LARGE` set the model order for a run, so models can be compared without restarting the server.
 
 ## Bugs found while testing
 

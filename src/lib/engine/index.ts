@@ -1,8 +1,7 @@
 import "server-only";
 import type { Center, Child, Family, Lane, Lang, Outcome, QuestionLog, Topic } from "@/content";
 import { addHandoff, appendLog, getCached, getCenter, getFamily, getHandbook, getTourBookings, setCached } from "../data";
-import { hasGemini } from "../env";
-import { LlmUnavailableError } from "../llm";
+import { configuredProviders, LlmUnavailableError } from "../llm";
 import { weekdayName } from "../facts/calendar";
 import { zonedParts } from "../time";
 import { screen } from "./safety";
@@ -246,7 +245,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     return finish(draft, message);
   };
   const allowSimulation = process.env.VERCEL_ENV !== "production";
-  if ((req.simulateOutage && allowSimulation) || !hasGemini()) return outage();
+  if ((req.simulateOutage && allowSimulation) || !configuredProviders().length) return outage();
 
   /* 4. Understand the message with the small model. */
   let u: Understanding;
