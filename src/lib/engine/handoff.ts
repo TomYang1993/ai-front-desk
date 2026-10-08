@@ -93,16 +93,16 @@ const FIXED: Record<"emergency" | "custody" | "abuse" | "outage" | "person", Rec
     hi: (f) => `अगर यह आपात स्थिति है, तो अभी 911 पर कॉल करें। फिर ${f.center} को ${f.phone} पर कॉल करें। मैंने ${f.director} को भी सूचित कर दिया है।`,
   },
   custody: {
-    en: (f) => `Thank you for telling us. This needs a person, so I've alerted ${f.director} right away. ${f.center} follows the custody documents on file, so if there's a court order, please share a copy with ${f.directorFirst}. For anything urgent today, call ${f.phone}.`,
-    es: (f) => `Gracias por avisarnos. Esto lo debe atender una persona, así que le avisé a ${f.director} de inmediato. ${f.center} sigue los documentos de custodia que tiene en su expediente; si hay una orden judicial, por favor comparta una copia con ${f.directorFirst}. Para algo urgente hoy, llame al ${f.phone}.`,
-    zh: (f) => `谢谢您告诉我们。这件事需要由工作人员处理，我已经立即通知了${f.director}。${f.center}只遵循存档的监护文件；如果有法院命令，请将副本交给${f.directorFirst}。如有紧急情况，请致电${f.phone}。`,
-    hi: (f) => `हमें बताने के लिए धन्यवाद। इसे एक व्यक्ति को ही संभालना चाहिए, इसलिए मैंने तुरंत ${f.director} को सूचित कर दिया है। ${f.center} फ़ाइल में मौजूद कस्टडी दस्तावेज़ों का पालन करता है, इसलिए अगर कोई अदालती आदेश है, तो कृपया उसकी एक कॉपी ${f.directorFirst} को दें। आज कुछ भी ज़रूरी हो तो ${f.phone} पर कॉल करें।`,
+    en: (f) => `Thank you for telling us. You don't have to handle this alone: I've alerted ${f.director} right away, and what you shared stays private with ${f.directorFirst}. ${f.center} follows the custody documents on file, so if there's a court order, please share a copy with ${f.directorFirst}. For anything urgent today, call ${f.phone}.`,
+    es: (f) => `Gracias por avisarnos. No tiene que resolver esto sin apoyo: le avisé a ${f.director} de inmediato, y lo que compartió queda en privado con ${f.directorFirst}. ${f.center} sigue los documentos de custodia que tiene en su expediente; si hay una orden judicial, por favor comparta una copia con ${f.directorFirst}. Para algo urgente hoy, llame al ${f.phone}.`,
+    zh: (f) => `谢谢您告诉我们。您不必独自面对这件事：我已经立即通知了${f.director}，您分享的内容只会由${f.directorFirst}保密处理。${f.center}只遵循存档的监护文件；如果有法院命令，请将副本交给${f.directorFirst}。如有紧急情况，请致电${f.phone}。`,
+    hi: (f) => `हमें बताने के लिए धन्यवाद। आपको इसे अकेले नहीं संभालना है: मैंने तुरंत ${f.director} को सूचित कर दिया है, और आपकी बात ${f.directorFirst} के पास निजी रहेगी। ${f.center} फ़ाइल में मौजूद कस्टडी दस्तावेज़ों का पालन करता है, इसलिए अगर कोई अदालती आदेश है, तो कृपया उसकी एक कॉपी ${f.directorFirst} को दें। आज कुछ भी ज़रूरी हो तो ${f.phone} पर कॉल करें।`,
   },
   abuse: {
-    en: (f) => `Thank you for raising this. I've alerted ${f.director} right away, and ${f.directorFirst} will follow up with you directly. If a child is in danger right now, call 911.`,
-    es: (f) => `Gracias por decírnoslo. Le avisé a ${f.director} de inmediato y ${f.directorFirst} se comunicará con usted directamente. Si un niño está en peligro ahora mismo, llame al 911.`,
-    zh: (f) => `谢谢您告诉我们。我已经立即通知了${f.director}，${f.directorFirst}会直接与您联系。如果孩子现在有危险，请拨打911。`,
-    hi: (f) => `यह बताने के लिए धन्यवाद। मैंने तुरंत ${f.director} को सूचित कर दिया है, और ${f.directorFirst} सीधे आपसे संपर्क करेंगे। अगर कोई बच्चा अभी खतरे में है, तो 911 पर कॉल करें।`,
+    en: (f) => `Thank you for raising this. You did the right thing by telling us. I've alerted ${f.director} right away, and ${f.directorFirst} will handle it privately and follow up with you directly. If a child is in danger right now, call 911.`,
+    es: (f) => `Gracias por decírnoslo. Hizo lo correcto al avisarnos. Le avisé a ${f.director} de inmediato, y ${f.directorFirst} lo atenderá con discreción y se comunicará con usted directamente. Si un niño está en peligro ahora mismo, llame al 911.`,
+    zh: (f) => `谢谢您告诉我们，您这样做是对的。我已经立即通知了${f.director}，${f.directorFirst}会保密处理，并直接与您联系。如果孩子现在有危险，请拨打911。`,
+    hi: (f) => `यह बताने के लिए धन्यवाद। आपने हमें बताकर सही किया। मैंने तुरंत ${f.director} को सूचित कर दिया है, और ${f.directorFirst} इसे गोपनीय रूप से संभालेंगे और सीधे आपसे संपर्क करेंगे। अगर कोई बच्चा अभी खतरे में है, तो 911 पर कॉल करें।`,
   },
   outage: {
     en: (f) => `I'm having trouble answering right now, so I've passed your question to the ${f.center} team. ${f.directorFirst} ${f.eta}. For anything urgent, call ${f.phone}.`,
@@ -147,24 +147,27 @@ export function handoffText(
     case "pickup": {
       const passport = center.id === "quail-ridge" ? " A passport works as ID." : "";
       return {
-        text: `${center.shortName} releases children only to adults 18 or older on the authorized pickup list, and staff check photo ID.${passport} To add someone, add their name to the pickup list in the app. A same-day change also needs a phone call with ${first(d.name)} or ${first(a.name)}. I can't approve pickups myself, so I've let ${first(d.name)} know, and the office will confirm with you.`,
+        text: `${center.shortName} releases children only to adults 18 or older on the authorized pickup list, and staff check photo ID.${passport} To add someone, add their name to the pickup list in the app. A same-day change also needs a phone call with ${first(d.name)} or ${first(a.name)}. I can't approve pickups myself, so I've let ${first(d.name)} know, and the office will confirm with you. This stays between you and the office.`,
         staffName: d.name,
       };
     }
     case "incident":
       return {
-        text: `I'm sorry, I don't have details about what happened. I've asked ${teacher ? `${teacher.name} and ` : ""}${d.name} to follow up with you. ${center.shortName} writes an incident report for every injury and shares it with families the same day.`,
+        text: `I'm sorry, I don't have details about what happened. I've asked ${teacher ? `${teacher.name} and ` : ""}${d.name} to follow up with you, and they'll take care of it. ${center.shortName} writes an incident report for every injury and shares it with families the same day. What you shared stays private between you and our staff.`,
         staffName: d.name,
       };
     case "staff_complaint":
-      return { text: `Thank you for telling us. I've passed this to ${d.name}, the director, who will follow up with you personally. ${first(d.name)} ${eta}.`, staffName: d.name };
+      return {
+        text: `Thank you for telling us. We take every concern seriously. I've passed this privately to ${d.name}, the director, and no one else, so you can speak openly. ${first(d.name)} ${eta} and will follow up with you personally.`,
+        staffName: d.name,
+      };
     case "behavior":
       return {
-        text: `Thanks for sharing that. ${teacher ? `${teacher.name} sees ${child!.firstName} every day` : "The teacher sees the class every day"}, so I've passed your question along. ${teacher ? first(teacher.name) : "The teacher"} ${teacherEta}.`,
+        text: `Thanks for telling us, and please don't worry. ${teacher ? `${teacher.name} sees ${child!.firstName} every day` : "The teacher sees the class every day"} and will work through this with you. I've passed your message along privately: only ${teacher ? first(teacher.name) : "the teacher"} and ${first(d.name)} can see it. ${teacher ? first(teacher.name) : "The teacher"} ${teacherEta}.`,
         staffName: teacher?.name ?? d.name,
       };
     case "billing_dispute":
-      return { text: `I've passed this to ${a.name}, who handles billing, so the charge can be reviewed. ${first(a.name)} ${eta}.`, staffName: a.name };
+      return { text: `I've passed this to ${a.name}, who handles billing, so the charge can be reviewed. Your account details stay private between you and the office. ${first(a.name)} ${eta}.`, staffName: a.name };
     case "child_day":
       return {
         text: `${teacher ? `${teacher.name}, ${child!.firstName}'s lead teacher,` : "Your child's teacher"} knows how today is going. I've passed your question along, and ${teacher ? first(teacher.name) : "the teacher"} ${teacherEta}.`,

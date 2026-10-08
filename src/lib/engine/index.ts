@@ -220,7 +220,8 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   const hit = screen(message);
   if (hit) {
     const language = detectLanguage(message);
-    const sources = hit === "custody" ? sectionSources(sections, ["custody"]) : hit === "abuse" ? sectionSources(sections, ["safety"]) : [];
+    // Sensitive handoffs also cite the handbook's privacy promise ("We keep information about every child and family private").
+    const sources = hit === "custody" ? sectionSources(sections, ["custody", "concerns"]) : hit === "abuse" ? sectionSources(sections, ["safety", "concerns"]) : [];
     const child = family?.children.find((c) => message.toLowerCase().includes(c.firstName.toLowerCase())) ?? (family?.children.length === 1 ? family.children[0] : undefined);
     return finish(
       await handoffDraft({ kind: hit, language, child, messageText: message, fixedText: fixedReply(hit, center, now, language), sources, topic: hit === "custody" ? "custody" : "incident" }),
@@ -283,7 +284,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   }
   if (u.sensitive === "custody" || u.sensitive === "abuse_or_neglect") {
     const kind = u.sensitive === "custody" ? "custody" : "abuse";
-    return finish(await handoffDraft({ kind, language, child, messageText: message, fixedText: fixedReply(kind, center, now, language), sources: sectionSources(sections, [kind === "custody" ? "custody" : "safety"]) }), message);
+    return finish(await handoffDraft({ kind, language, child, messageText: message, fixedText: fixedReply(kind, center, now, language), sources: sectionSources(sections, [kind === "custody" ? "custody" : "safety", "concerns"]) }), message);
   }
   if (u.aboutOtherFamily) return finishComposed(composeOtherFamily(ctx, child), "lookup");
   if (u.asksForPrivateInfo) return finishComposed(composePrivateInfo(ctx), "lookup");
@@ -298,7 +299,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   if (personKind && personKind !== "outage") {
     const { text } = handoffText(personKind as Exclude<HandoffKind, "emergency" | "custody" | "abuse" | "outage" | "person">, center, now, child);
     if (personKind === "pickup") lanes.push("lookup");
-    const sourceIds = { pickup: ["pickup"], incident: ["safety"], staff_complaint: ["concerns"], billing_dispute: ["tuition"], behavior: ["behavior"] }[personKind as string] ?? [];
+    const sourceIds = { pickup: ["pickup", "concerns"], incident: ["safety", "concerns"], staff_complaint: ["concerns"], billing_dispute: ["tuition", "concerns"], behavior: ["behavior", "concerns"] }[personKind as string] ?? [];
     return finish(await handoffDraft({ kind: personKind, language, child, messageText: message, englishText: text, sources: sectionSources(sections, sourceIds) }), message);
   }
 
