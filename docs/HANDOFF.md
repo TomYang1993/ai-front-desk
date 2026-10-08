@@ -9,7 +9,7 @@ Last updated October 7, 2026. Read this first in a new session, then `docs/PLAN.
 | Live site | https://ai-front-desk-xi.vercel.app, deployed from `main` |
 | Repo | https://github.com/TomYang1993/ai-front-desk |
 | `main` | Phases 0 to 2 and the Groq provider, merged through pull requests #1 and #2 |
-| `phase-3-parent-app` | Pushed, no pull request yet. First version of the parent app, now being redesigned. Phase 3 is done, in pull request #3: sign-in, removing visitor mode, the front desk home, Maple version 2, and the finishing pass |
+| `phase-3-parent-app` | Phase 3 is done, in pull request #3: sign-in, removing visitor mode, the front desk home, Maple version 2, and the finishing pass |
 
 ## How we work
 
