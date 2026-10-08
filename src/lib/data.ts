@@ -28,6 +28,9 @@ const keys = {
   logs: (id: CenterId) => `logs:${id}`,
   handoffs: (id: CenterId) => `handoffs:${id}`,
   tours: (id: CenterId) => `tours:${id}`,
+  absences: (id: CenterId) => `absences:${id}`,
+  lunches: (id: CenterId) => `lunches:${id}`,
+  feedback: (id: CenterId) => `feedback:${id}`,
   cache: (key: string) => `cache:${key}`,
 };
 
@@ -47,7 +50,9 @@ export async function resetDemo(now = new Date()) {
     await store.pushMany(keys.logs(center.id), logs);
     await store.set(keys.handoffs(center.id), handoffs);
   }
-  for (const center of centers) await store.del(keys.tours(center.id));
+  for (const center of centers) {
+    for (const key of [keys.tours, keys.absences, keys.lunches, keys.feedback]) await store.del(key(center.id));
+  }
   await store.set(keys.seededAt, now.toISOString());
   await store.set(keys.version, SEED_VERSION);
 }
@@ -140,4 +145,84 @@ export async function getCached<T>(key: string): Promise<T | null> {
 
 export async function setCached<T>(key: string, value: T, ttlSeconds = 12 * 3600) {
   await getStore().set(keys.cache(key), value, ttlSeconds);
+}
+
+export async function saveFamilies(id: CenterId, list: Family[]) {
+  await getStore().set(keys.families(id), list);
+}
+
+/* Things parents do from the chat. Each list holds every family's records for one center. */
+
+export interface AbsenceRecord {
+  id: string;
+  familyId: string;
+  childId: string;
+  childName: string;
+  dates: string[];
+  reason: string;
+  createdAt: string;
+}
+
+export interface LunchOrder {
+  id: string;
+  familyId: string;
+  childId: string;
+  childName: string;
+  item: string;
+  price: number;
+  date: string;
+  createdAt: string;
+}
+
+export interface TourBookingRecord extends TourBooking {
+  id: string;
+  familyId: string | null;
+}
+
+async function readList<T>(key: string): Promise<T[]> {
+  await ensureSeeded();
+  return (await getStore().get<T[]>(key)) ?? [];
+}
+
+export const getAbsences = (id: CenterId) => readList<AbsenceRecord>(keys.absences(id));
+export const getLunchOrders = (id: CenterId) => readList<LunchOrder>(keys.lunches(id));
+
+export async function addAbsence(centerId: CenterId, record: AbsenceRecord) {
+  await getStore().set(keys.absences(centerId), [...(await getAbsences(centerId)), record]);
+}
+
+/** Records the order and adds the charge to the family's account. */
+export async function addLunchOrder(centerId: CenterId, order: LunchOrder) {
+  await getStore().set(keys.lunches(centerId), [...(await getLunchOrders(centerId)), order]);
+  const list = await getFamilies(centerId);
+  const updated = list.map((f) =>
+    f.id === order.familyId
+      ? {
+          ...f,
+          billing: {
+            ...f.billing,
+            ledger: [...f.billing.ledger, { date: order.date, description: `Backup lunch: ${order.item.toLowerCase()}`, amount: order.price }],
+          },
+        }
+      : f,
+  );
+  await saveFamilies(centerId, updated);
+}
+
+export async function addTourBooking(centerId: CenterId, booking: TourBookingRecord) {
+  const existing = (await getTourBookings(centerId)) as TourBookingRecord[];
+  if (existing.some((b) => b.slotId === booking.slotId)) return false;
+  await saveTourBookings(centerId, [...existing, booking]);
+  return true;
+}
+
+/** Thumbs up or down on a reply, keyed by its log id. */
+export async function setFeedback(centerId: CenterId, logId: string, value: "up" | "down") {
+  const all = (await getStore().get<Record<string, "up" | "down">>(keys.feedback(centerId))) ?? {};
+  all[logId] = value;
+  await getStore().set(keys.feedback(centerId), all);
+}
+
+export async function getFeedback(centerId: CenterId) {
+  return (await getStore().get<Record<string, "up" | "down">>(keys.feedback(centerId))) ?? {};
 }

@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf7f0;
+  --foreground: #2a2724;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-nunito);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Maple's animations. Each state moves only what it needs. */
+.maple .maple-body { transform-box: view-box; transform-origin: 100px 190px; }
+.maple .maple-head { transform-box: view-box; transform-origin: 100px 120px; transition: transform 300ms ease; }
+.maple .maple-ears { transform-box: view-box; transform-origin: 100px 60px; transition: transform 300ms ease; }
+.maple .maple-eyes { transform-box: view-box; transform-origin: 100px 76px; }
+.maple .maple-page { transform-box: view-box; transform-origin: 100px 155px; }
+
+.maple--ready .maple-body, .maple--done .maple-body { animation: maple-breathe 3.2s ease-in-out infinite; }
+.maple--ready .maple-eyes, .maple--listening .maple-eyes, .maple--done .maple-eyes { animation: maple-blink 4.5s infinite; }
+.maple--listening .maple-head { transform: rotate(-7deg); }
+.maple--listening .maple-ears { transform: scaleY(1.12); }
+.maple--thinking .maple-page { animation: maple-page 1.4s ease-in-out infinite; }
+.maple--thinking .maple-head { transform: rotate(4deg); }
+.maple--handoff .maple-head { transform: rotate(-4deg); }
+.maple--done .maple-head { animation: maple-nod 0.9s ease-in-out 1; }
+
+@keyframes maple-breathe { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-2.5px) } }
+@keyframes maple-blink { 0%, 93%, 100% { transform: scaleY(1) } 96% { transform: scaleY(0.1) } }
+@keyframes maple-page { 0%, 100% { transform: scaleX(1) } 50% { transform: scaleX(-0.15) } }
+@keyframes maple-nod { 0%, 100% { transform: rotate(0) } 35% { transform: rotate(9deg) } 70% { transform: rotate(-2deg) } }
+
+@media (prefers-reduced-motion: reduce) {
+  .maple * { animation: none !important; transition: none !important; }
 }
