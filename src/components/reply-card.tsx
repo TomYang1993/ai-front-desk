@@ -11,8 +11,11 @@ export type ActionResult = { ok: boolean; text: string };
 
 function howLine(reply: AskReply, s: Strings) {
   const l = reply.lanes;
+  // Code wrote the answer; for other languages, AI translated it.
   const how = l.includes("quick_facts")
-    ? s.how.facts
+    ? reply.models.length
+      ? s.how.factsTranslated
+      : s.how.facts
     : l.includes("handbook")
       ? s.how.handbook
       : l.includes("person") && !l.includes("understand")
