@@ -153,10 +153,17 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     return reply;
   };
 
+  // Names that must come back from translation exactly as written.
+  const names = [
+    center.name,
+    center.shortName,
+    ...center.staff.flatMap((s) => [s.name, s.name.split(" ")[0]]),
+    ...(family ? [family.parentName, family.parentFirstName, ...family.children.map((c) => c.firstName)] : []),
+  ];
   const localize = async (text: string, language: Lang) => {
     if (language === "en") return text;
     const started = Date.now();
-    const t = await translate(text, language);
+    const t = await translate(text, language, names);
     tokens += t.tokens;
     if (t.model) models.add(t.model);
     timings.push(`translate ${Date.now() - started}ms ${t.model}${t.ok ? "" : " (kept English)"}`);
