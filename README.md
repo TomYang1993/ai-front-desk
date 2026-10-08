@@ -21,24 +21,25 @@ cp .env.example .env.local   # then add your GEMINI_API_KEY
 npm run dev
 ```
 
-Open http://localhost:3000. Check setup at http://localhost:3000/api/health?live=1.
+Open http://localhost:3000. Check setup at http://localhost:3000/api/health?live=1, or
+http://localhost:3000/api/health?live=all to call every configured model once.
 
 Without a database configured, the app uses a temporary in-memory store that resets when
 the dev server restarts.
 
 ## Accounts and deployment
 
-1. **Gemini API key.** Create a free key at https://aistudio.google.com/apikey and put it in
-   `.env.local` as `GEMINI_API_KEY`.
+1. **AI provider keys.** Create a free Gemini key at https://aistudio.google.com/apikey and,
+   optionally, a free Groq key at https://console.groq.com/keys. Groq adds a second provider
+   with its own quota, so the live site keeps answering when Gemini's daily limits run out.
 2. **Vercel.** Sign in and link this folder:
    ```bash
    npx vercel login
    npx vercel link
    ```
-3. **Gemini key on Vercel.** Add it to all environments:
-   ```bash
-   npx vercel env add GEMINI_API_KEY
-   ```
+3. **Keys on Vercel.** Add `GEMINI_API_KEY` and `GROQ_API_KEY` to all environments in the
+   project's Environment Variables settings. Leave "Sensitive" off, so the values can be pulled
+   for local development.
 4. **Database.** In the Vercel dashboard, open the project, go to Storage, create an
    Upstash for Redis database on the free plan, and connect it to the project.
 5. **Pull everything locally.** This overwrites `.env.local` with the values stored in

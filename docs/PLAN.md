@@ -164,14 +164,14 @@ Logging: every question records center, family, lane, intent, sources, real toke
 
 Free-tier protection: buttons never use AI, identical questions reuse answers for the day, and a rate-limit error becomes a polite handoff instead of a failure. Each AI call has a time limit: 7 seconds for the small step and 12 for the large. A model that times out or reports overload sits out for two minutes. A model that hits its daily quota sits out until the quota resets.
 
-Models: Gemini on the free tier, pinned to specific versions. Free-tier quotas are per model per day, and some are as low as 20, so each step falls back through several models:
+Models: free tiers from two providers, pinned to specific versions. Free-tier quotas are per model per day, and some are as low as 20, so each step falls back through several models across Google Gemini and Groq. A provider without a key is skipped.
 
 | Step | Models, in order |
 |---|---|
-| Understand, translate, claim check | gemini-3.5-flash-lite, gemini-3.1-flash-lite, gemini-2.5-flash-lite |
-| Read the handbook | gemini-3.6-flash, gemini-3.5-flash, gemini-3.5-flash-lite, gemini-3.1-flash-lite |
+| Understand, translate, claim check | gemini-3.5-flash-lite, groq openai/gpt-oss-20b, gemini-3.1-flash-lite, gemini-2.5-flash-lite |
+| Read the handbook | gemini-3.6-flash, groq openai/gpt-oss-120b, gemini-3.5-flash, gemini-3.5-flash-lite, gemini-3.1-flash-lite |
 
-Model IDs live in environment variables behind a small provider adapter, so OpenAI's GPT-5.6 Luna or a paid Gemini tier can be swapped in. Data is fictional, so free-tier data use is acceptable.
+`src/lib/providers.ts` talks to each provider: Gemini through Google's SDK, and Groq through a generic adapter for OpenAI-style APIs that also covers Ollama and OpenRouter. `src/lib/llm.ts` holds the shared logic: model order, time limits, cooldowns, quota tracking and JSON validation. The `MODELS_SMALL` and `MODELS_LARGE` environment variables override the order, which also makes it easy to run the scorecard against a single model. Data is fictional, so free-tier data use is acceptable.
 
 ## 9. Tech stack
 
