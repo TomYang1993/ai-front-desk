@@ -9,7 +9,7 @@ Last updated October 7, 2026. Read this first in a new session, then `docs/PLAN.
 | Live site | https://ai-front-desk-xi.vercel.app, deployed from `main` |
 | Repo | https://github.com/TomYang1993/ai-front-desk |
 | `main` | Phases 0 to 2 and the Groq provider, merged through pull requests #1 and #2 |
-| `phase-3-parent-app` | Pushed, no pull request yet. First version of the parent app, now being redesigned. Redesign steps 1 and 2, sign-in and removing visitor mode, are done |
+| `phase-3-parent-app` | Pushed, no pull request yet. First version of the parent app, now being redesigned. Redesign steps 1 to 3 are done: sign-in, removing visitor mode, and the front desk home |
 
 ## How we work
 
@@ -42,7 +42,7 @@ Working and checked in the browser:
 
 Known gaps:
 - The absence and backup lunch buttons haven't been tested at phone size.
-- The children list on the notice board says "with" in English for all languages, and the board's data, such as menus, is English for Spanish and Mandarin families.
+- The children card says "with" in English for all languages, and the cards' data, such as menus, is English for Spanish and Mandarin families. So are the desk scene's "Front desk" and "Handbook" labels.
 - One unidentified 404 appeared in the dev console on first load.
 - `POST /api/admin/reset` has no protection, so anyone can reset the live data. Limit it to directors or to non-production.
 
@@ -64,13 +64,24 @@ Known gaps:
 - `/api/requests` serves enrolled families only and no longer takes visitor `ids`.
 - Kept on purpose: the engine still answers visitors, and `/api/actions` still books tours, because the engine offers tour times to enrolled parents too, for example for a friend or relative. The tour time picker in the reply card stays.
 
+## Front desk home, redesign step 3
+
+- Motion is pinned at 13.4.1, the newest release at least two weeks old. Its `framer-motion`, `motion-dom` and `motion-utils` dependencies use caret ranges, so `overrides` in `package.json` pins them too. Import from `motion/react`.
+- Components: `desk-scene.tsx` draws the desk, `info-cards.tsx` holds the cards (formerly the notice board), `chat.tsx` has the chat header, thread and composer, and `front-desk.tsx` owns the state and both layouts. `lobby.tsx` and `notice-board.tsx` are gone.
+- Phones and tablets, below 1024 px: a greeting bar with sign-out, the desk scene with Maple and a speech bubble, quick chips, and the cards. A fixed "Ask Maple" pill sits at the bottom. Tapping Maple, the bubble, a chip or the pill opens the chat card. The pill and the card share `layoutId="chat-card"`, and Maple moves between the desk and the card header with `layoutId="maple"`. Maple's header copy sits outside the card's fading content so she stays visible in flight, and she gets a raised z-index while flying back to the desk. While the card is open, the page behind is `inert` and can't scroll, Escape closes the card, and focus moves into it. Only the pill focuses the text box, because focusing it opens the phone keyboard.
+- Laptops, 1024 px and up: the desk and cards in two columns on the left, and the chat docked on the right. Maple stays at the desk, and her bubble shows what she's doing.
+- When staff reply, Maple's bubble on phones turns amber and says who replied. Seen replies are stored with the chat; opening the chat or having it visible marks them seen.
+- The desk window shows each city: the Sandias and balloons for Albuquerque, rain and evergreens for Seattle. The director's door shows the director's first name and lights up during a handoff.
+- `MotionConfig reducedMotion="user"`, plus CSS rules that stop the window and Maple animations for people who prefer reduced motion.
+- Checked in the browser at phone and laptop sizes. The pane was hidden, so the motion was checked by sampling positions every 40 ms: Maple travels from the desk to the header in about 300 ms and back, and the card grows from the pill and shrinks back into it. Also checked: chips, the pill, Escape, the scroll lock, `inert`, the unread-reply bubble (with a patched `fetch`), Mandarin and the Seattle window, and no sideways scrolling.
+
 ## Next steps: the Phase 3 redesign
 
 Decided with the user; details in `docs/PLAN.md`, "Phase 3 redesign."
 
 1. **Done: simulated sign-in.** A `/signin` page with an email and password form, plus a labeled "Demo accounts" panel for Ana, Rosa, Priya, Wei, Elena and Hannah. Store the role, center and family or staff id in an httpOnly session cookie. Protect app routes with `proxy.ts`. Derive the family from the session, never from the URL. Add sign-out. Directors go to `/console`, which is Phase 4.
 2. **Done: remove visitor mode from the interface.** Keep engine support for visitors.
-3. **Front desk home.** The animated desk scene with Maple is the hero, with information cards. Tapping Maple opens the chat card with a Motion shared-layout animation, Maple acts out states in the chat header, and closing it returns her to the desk. Laptops keep the desk and cards visible with the chat docked.
+3. **Done: front desk home.** The animated desk scene with Maple is the hero, with information cards. Tapping Maple opens the chat card with a Motion shared-layout animation, Maple acts out states in the chat header, and closing it returns her to the desk. Laptops keep the desk and cards visible with the chat docked.
 4. **Maple version 2.** Redraw the SVG with more polish and separately animated parts. Animate with Motion springs and add wave and hop moments. Keep the `<Maple state size />` interface, and respect reduced-motion settings. Pick a Motion version at least two weeks old, and read its current docs.
 5. **Finish Phase 3.** Test the action buttons at phone size, fix the known gaps, run all checks, and open the pull request.
 

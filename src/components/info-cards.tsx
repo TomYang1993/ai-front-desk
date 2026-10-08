@@ -15,7 +15,7 @@ export interface Requests {
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+    <section className="mb-3 break-inside-avoid rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
       <h3 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-stone-500">
         {icon}
         {title}
@@ -25,7 +25,11 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
   );
 }
 
-export function NoticeBoard({ view, requests, s, lang }: { view: ParentView; requests: Requests | null; s: Strings; lang: Lang }) {
+/**
+ * The information cards on the front desk home: today, food, the next
+ * closure, notices, the family's requests and their children.
+ */
+export function InfoCards({ view, requests, s, lang, className }: { view: ParentView; requests: Requests | null; s: Strings; lang: Lang; className?: string }) {
   const { board, family } = view;
   const items = requests
     ? [
@@ -42,7 +46,7 @@ export function NoticeBoard({ view, requests, s, lang }: { view: ParentView; req
     : [];
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={className}>
       <Section icon={<Clock size={14} />} title={s.board.today}>
         <p className="font-semibold text-stone-800">{board.dateLabel}</p>
         <p className={board.open ? "text-teal-700" : "text-stone-500"}>{board.statusLine}</p>
@@ -79,17 +83,6 @@ export function NoticeBoard({ view, requests, s, lang }: { view: ParentView; req
         </Section>
       )}
 
-      <Section icon={<Users size={14} />} title={s.board.children}>
-        <ul className="space-y-1.5">
-          {family.children.map((c) => (
-            <li key={c.id}>
-              <span className="font-semibold text-stone-800">{c.firstName}</span>, {c.age}, {c.roomName} with {c.teacherName}
-              {c.allergies.length > 0 && <span className="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 ring-1 ring-red-200">{c.allergies.join(", ")} allergy</span>}
-            </li>
-          ))}
-        </ul>
-      </Section>
-
       <Section icon={<MessageSquareReply size={14} />} title={s.board.requests}>
         {items.length === 0 ? (
           <p className="text-stone-500">{s.board.noRequests}</p>
@@ -103,6 +96,17 @@ export function NoticeBoard({ view, requests, s, lang }: { view: ParentView; req
             ))}
           </ul>
         )}
+      </Section>
+
+      <Section icon={<Users size={14} />} title={s.board.children}>
+        <ul className="space-y-1.5">
+          {family.children.map((c) => (
+            <li key={c.id}>
+              <span className="font-semibold text-stone-800">{c.firstName}</span>, {c.age}, {c.roomName} with {c.teacherName}
+              {c.allergies.length > 0 && <span className="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 ring-1 ring-red-200">{c.allergies.join(", ")} allergy</span>}
+            </li>
+          ))}
+        </ul>
       </Section>
     </div>
   );

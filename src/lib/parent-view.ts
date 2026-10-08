@@ -16,6 +16,7 @@ export interface ParentView {
     shortName: string;
     city: string;
     state: string;
+    timeZone: string;
     phone: string;
     email: string;
     hoursLine: string;
@@ -87,6 +88,7 @@ export async function getParentView(centerId: CenterId, familyId: string, now = 
       shortName: center.shortName,
       city: center.city,
       state: center.state,
+      timeZone: center.timeZone,
       phone: center.phone,
       email: center.email,
       hoursLine: hoursLine(center),

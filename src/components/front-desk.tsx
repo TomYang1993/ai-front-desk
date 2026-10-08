@@ -1,32 +1,53 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, LogOut, RotateCcw, SendHorizontal } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { AnimatePresence, MotionConfig, motion, type Transition } from "motion/react";
+import { LogOut, MessageCircle } from "lucide-react";
 import type { Lang } from "@/content/types";
 import type { Action, AskReply, ChipId, HistoryTurn } from "@/lib/engine/types";
 import type { ParentView } from "@/lib/parent-view";
-import { STRINGS } from "@/lib/i18n";
+import { STRINGS, type DayPart } from "@/lib/i18n";
 import { signOut } from "@/lib/auth-actions";
 import { formatSlot, listDays } from "@/lib/format";
 import { Maple, type MapleState } from "./maple";
-import { Lobby } from "./lobby";
-import { NoticeBoard, type Requests } from "./notice-board";
-import { ReplyCard, type ActionResult } from "./reply-card";
-
-type ChatItem =
-  | { kind: "greeting"; id: string }
-  | { kind: "parent"; id: string; text: string }
-  | { kind: "reply"; id: string; reply: AskReply }
-  | { kind: "error"; id: string };
+import { DeskScene } from "./desk-scene";
+import { InfoCards, type Requests } from "./info-cards";
+import { ChatHeader, ChatThread, Composer, type ChatItem } from "./chat";
+import type { ActionResult } from "./reply-card";
 
 interface Saved {
   items: ChatItem[];
   done: Record<string, Record<number, ActionResult>>;
   feedback: Record<string, "up" | "down">;
+  /** Handoffs whose staff reply the parent has already seen. */
+  seenReplies: string[];
 }
 
 const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const storageKey = (view: ParentView) => `afd:chat:${view.center.id}:${view.family.id}`;
+
+/** Springs for the chat card and for Maple moving between the desk and the card. */
+const CARD_SPRING: Transition = { type: "spring", stiffness: 380, damping: 36 };
+const MAPLE_SPRING: Transition = { type: "spring", stiffness: 260, damping: 26 };
+
+/** Laptops dock the chat beside the desk; smaller screens open it as a card. */
+const WIDE = "(min-width: 1024px)";
+function useWide() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const query = matchMedia(WIDE);
+      query.addEventListener("change", onChange);
+      return () => query.removeEventListener("change", onChange);
+    },
+    () => matchMedia(WIDE).matches,
+    () => false,
+  );
+}
+
+function dayPart(timeZone: string): DayPart {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone }).format(new Date()));
+  return hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+}
 
 /** On sign-out, so the next person on this device doesn't see the conversation. */
 function forgetChats() {
@@ -38,7 +59,7 @@ function forgetChats() {
 }
 
 function load(view: ParentView): Saved {
-  const empty: Saved = { items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {} };
+  const empty: Saved = { items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {}, seenReplies: [] };
   try {
     const raw = localStorage.getItem(storageKey(view));
     return raw ? { ...empty, ...JSON.parse(raw) } : empty;
@@ -50,7 +71,10 @@ function load(view: ParentView): Saved {
 export function FrontDesk({ view }: { view: ParentView }) {
   const lang: Lang = view.family.language;
   const s = STRINGS[lang];
+  const wide = useWide();
   const [saved, setSaved] = useState<Saved>(() => load(view));
+  const [open, setOpen] = useState(false);
+  const [flying, setFlying] = useState(false);
   const [input, setInput] = useState("");
   const [focused, setFocused] = useState(false);
   const [pending, setPending] = useState(false);
@@ -58,9 +82,11 @@ export function FrontDesk({ view }: { view: ParentView }) {
   const [maple, setMaple] = useState<MapleState>("ready");
   const [handoffName, setHandoffName] = useState("");
   const [requests, setRequests] = useState<Requests | null>(null);
-  const [boardOpen, setBoardOpen] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const dialog = useRef<HTMLElement>(null);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatVisible = wide || open;
 
   // Keep the conversation in this browser, so a refresh doesn't lose it.
   useEffect(() => {
@@ -73,7 +99,21 @@ export function FrontDesk({ view }: { view: ParentView }) {
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
-  }, [saved.items.length, pending]);
+  }, [saved.items.length, pending, chatVisible]);
+
+  // While the card is open on a phone, the page behind it stays put, and Escape closes it.
+  useEffect(() => {
+    if (!open || wide) return;
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeChat();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      root.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, wide]);
 
   const moodFor = useCallback((next: MapleState, ms?: number) => {
     if (resetTimer.current) clearTimeout(resetTimer.current);
@@ -81,15 +121,30 @@ export function FrontDesk({ view }: { view: ParentView }) {
     if (ms) resetTimer.current = setTimeout(() => setMaple("ready"), ms);
   }, []);
 
-  // Staff replies and requests, for the notice board and the chat.
+  /** Seeing the chat counts as reading the staff replies in it. */
+  const markRepliesSeen = useCallback((data: Requests | null) => {
+    const ids = (data?.handoffs ?? []).filter((h) => h.reply).map((h) => h.id);
+    if (ids.length) setSaved((prev) => (ids.every((id) => prev.seenReplies.includes(id)) ? prev : { ...prev, seenReplies: [...new Set([...prev.seenReplies, ...ids])] }));
+  }, []);
+
+  // Whether the chat is on screen, read by refresh without restarting its timer.
+  const chatVisibleRef = useRef(chatVisible);
+  useEffect(() => {
+    chatVisibleRef.current = chatVisible;
+  }, [chatVisible]);
+
+  // Staff replies and requests, for the cards and the chat.
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/requests");
-      if (res.ok) setRequests(await res.json());
+      if (!res.ok) return;
+      const data = (await res.json()) as Requests;
+      setRequests(data);
+      if (chatVisibleRef.current) markRepliesSeen(data);
     } catch {
-      /* The board just stays as it was. */
+      /* The cards just stay as they were. */
     }
-  }, []);
+  }, [markRepliesSeen]);
 
   useEffect(() => {
     const first = setTimeout(refresh, 0);
@@ -193,7 +248,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
   }
 
   function startOver() {
-    setSaved({ items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {} });
+    setSaved((prev) => ({ ...prev, items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {} }));
     moodFor("ready");
   }
 
@@ -208,159 +263,225 @@ export function FrontDesk({ view }: { view: ParentView }) {
   }, [pending, slow, mood, handoffName, s]);
 
   const greeting = s.greetingFamily(view.family.parentFirstName, view.center.shortName);
+  const [part] = useState(() => dayPart(view.center.timeZone));
+  const directorFirstName = view.center.directorName.split(" ")[0];
+
+  // Staff replies the parent hasn't seen yet, announced in Maple's bubble on phones.
+  const unread = (requests?.handoffs ?? []).filter((h) => h.reply && !saved.seenReplies.includes(h.id));
+
+  function openChat(opts: { focus?: boolean } = {}) {
+    markRepliesSeen(requests);
+    setOpen(true);
+    // Typing opens the keyboard, so only the "Ask Maple" bar focuses the text box.
+    setTimeout(() => (opts.focus ? textarea.current : dialog.current)?.focus({ preventScroll: true }), opts.focus ? 380 : 50);
+  }
+
+  function closeChat() {
+    setFlying(true);
+    setOpen(false);
+    // Reduced motion skips the flight, so don't wait for it to finish.
+    setTimeout(() => setFlying(false), 900);
+  }
+
+  function askFromHome(chip: ChipId) {
+    if (!wide) openChat();
+    send({ chip });
+  }
+
+  /** Maple herself. The shared layoutId moves her between the desk and the chat card. */
+  const mapleFigure = (
+    <motion.div
+      layoutId="maple"
+      transition={MAPLE_SPRING}
+      onLayoutAnimationComplete={() => setFlying(false)}
+      className="relative h-full w-full [&>svg]:h-full [&>svg]:w-full"
+      style={{ zIndex: flying ? 60 : undefined }}
+    >
+      <Maple state={mood} size={120} />
+    </motion.div>
+  );
+
+  const bubbleText = wide ? statusText : unread[0]?.reply ? s.home.replied(unread[0].reply.by.split(" ")[0]) : s.home.bubble;
+  const bubble = (
+    <motion.button
+      key={bubbleText}
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2 }}
+      onClick={() => (wide ? textarea.current?.focus() : openChat())}
+      className={`absolute left-1/2 top-[3%] max-w-[44%] -translate-x-1/2 rounded-2xl px-2.5 py-1.5 text-center text-[11px] font-semibold leading-snug shadow-sm ring-1 sm:text-sm ${
+        unread.length && !wide ? "bg-amber-50 text-amber-900 ring-amber-200" : "bg-white text-stone-700 ring-stone-200"
+      }`}
+      aria-live="polite"
+    >
+      {unread.length > 0 && !wide && <span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500 align-middle" aria-hidden />}
+      {bubbleText}
+    </motion.button>
+  );
+
+  const desk = (
+    <DeskScene
+      centerId={view.center.id}
+      centerName={view.center.shortName}
+      directorFirstName={directorFirstName}
+      doorLit={mood === "handoff" || mood === "calm"}
+      bubble={open && !wide ? null : bubble}
+      maple={
+        open && !wide ? null : (
+          <button
+            onClick={() => (wide ? textarea.current?.focus() : openChat())}
+            aria-label={s.home.chatWith}
+            className="h-full w-full rounded-full outline-offset-4 transition-transform hover:scale-[1.03] active:scale-[0.98]"
+          >
+            {mapleFigure}
+          </button>
+        )
+      }
+    />
+  );
+
+  const topBar = (
+    <header className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="truncate text-xs font-bold uppercase tracking-wide text-teal-700">{view.center.name}</p>
+        <h1 className="truncate text-xl font-extrabold text-stone-900 sm:text-2xl">{s.home.greeting(view.family.parentFirstName, part)}</h1>
+      </div>
+      <form action={signOut} onSubmit={forgetChats}>
+        <button type="submit" className="flex items-center gap-1.5 rounded-full border border-stone-300 bg-white/70 px-3 py-1.5 text-sm font-semibold text-stone-600 hover:bg-white" aria-label={s.signOut}>
+          <LogOut size={16} />
+          <span className="hidden sm:inline">{s.signOut}</span>
+        </button>
+      </form>
+    </header>
+  );
+
+  const thread = (
+    <ChatThread
+      items={saved.items}
+      greeting={greeting}
+      s={s}
+      lang={lang}
+      done={saved.done}
+      feedback={saved.feedback}
+      staffReplies={staffReplies}
+      pending={pending}
+      statusText={statusText}
+      scroller={scroller}
+      onAction={runAction}
+      onOption={(o) => send({ text: o })}
+      onFeedback={giveFeedback}
+    />
+  );
+
+  const composer = (
+    <Composer s={s} chips={view.chips} pending={pending} input={input} textarea={textarea} onInput={setInput} onFocusChange={setFocused} onSend={send} />
+  );
+
+  if (wide) {
+    return (
+      <MotionConfig reducedMotion="user">
+        <div className="grid h-dvh grid-cols-[minmax(0,1fr)_minmax(380px,440px)] gap-6 bg-[#FBF7F0] p-6 text-stone-800">
+          <main className="min-h-0 overflow-y-auto pr-1">
+            <div className="mx-auto flex max-w-3xl flex-col gap-5">
+              {topBar}
+              <div className="mx-auto w-full max-w-[560px]">{desk}</div>
+              <InfoCards view={view} requests={requests} s={s} lang={lang} className="columns-2 gap-3" />
+            </div>
+          </main>
+          <section aria-label={s.home.chatWith} className="flex min-h-0 flex-col rounded-[28px] border border-stone-200 bg-white/60 shadow-sm">
+            <ChatHeader s={s} centerName={view.center.name} statusText={statusText} onStartOver={startOver} />
+            {thread}
+            {composer}
+          </section>
+        </div>
+      </MotionConfig>
+    );
+  }
 
   return (
-    <div className="flex h-dvh flex-col bg-[#FBF7F0] text-stone-800 lg:grid lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)_minmax(0,320px)] lg:gap-6 lg:p-6">
-      {/* Lobby, laptop and up */}
-      <aside className="hidden lg:flex lg:flex-col lg:items-center lg:justify-center lg:gap-4">
-        <Lobby state={mood} centerName={view.center.shortName} directorName={view.center.directorName} />
-        <p className="text-center text-sm text-stone-500">{statusText}</p>
-      </aside>
-
-      {/* Chat */}
-      <main className="flex min-h-0 flex-1 flex-col lg:rounded-3xl lg:border lg:border-stone-200 lg:bg-white/60 lg:shadow-sm">
-        <header className="flex items-center gap-3 border-b border-stone-200 bg-white/90 px-4 py-3 backdrop-blur lg:rounded-t-3xl">
-          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#F6EBD9] lg:hidden">
-            <Maple state={mood} size={48} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="flex items-baseline gap-2 font-bold text-stone-900">
-              Maple <span className="truncate text-xs font-semibold text-teal-700">{s.aiLabel}</span>
-            </p>
-            <p className="truncate text-xs text-stone-500" aria-live="polite">
-              {view.center.name} · {statusText}
-            </p>
-          </div>
-          <button onClick={startOver} className="rounded-full p-2 text-stone-500 hover:bg-stone-100" aria-label={s.startOver} title={s.startOver}>
-            <RotateCcw size={18} />
-          </button>
-          <form action={signOut} onSubmit={forgetChats}>
-            <button type="submit" className="rounded-full p-2 text-stone-500 hover:bg-stone-100" aria-label={s.signOut} title={s.signOut}>
-              <LogOut size={18} />
-            </button>
-          </form>
-        </header>
-
-        {/* Today, phones and tablets */}
-        <div className="border-b border-stone-200 bg-white/70 lg:hidden">
-          <button onClick={() => setBoardOpen((o) => !o)} className="flex w-full items-center justify-between px-4 py-2 text-left text-sm" aria-expanded={boardOpen}>
-            <span className="truncate">
-              <span className="font-semibold text-stone-800">{s.board.today}:</span> <span className="text-stone-600">{view.board.statusLine}</span>
-            </span>
-            <ChevronDown size={16} className={`shrink-0 transition-transform ${boardOpen ? "rotate-180" : ""}`} />
-          </button>
-          {boardOpen && (
-            <div className="max-h-[50dvh] overflow-y-auto px-4 pb-4">
-              <NoticeBoard view={view} requests={requests} s={s} lang={lang} />
-            </div>
-          )}
-        </div>
-
-        <div ref={scroller} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
-          {saved.items.map((item) => {
-            if (item.kind === "greeting") {
-              return (
-                <div key={item.id} className="max-w-[92%] rounded-2xl rounded-tl-md border border-stone-200 bg-white px-4 py-3 text-[15px] leading-relaxed shadow-sm">
-                  {greeting}
-                </div>
-              );
-            }
-            if (item.kind === "parent") {
-              return (
-                <div key={item.id} className="max-w-[85%] self-end whitespace-pre-line rounded-2xl rounded-tr-md bg-teal-700 px-4 py-2.5 text-[15px] leading-relaxed text-white shadow-sm">
-                  {item.text}
-                </div>
-              );
-            }
-            if (item.kind === "error") {
-              return (
-                <div key={item.id} className="max-w-[92%] rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                  {s.error}
-                </div>
-              );
-            }
-            const staff = item.reply.handoff && staffReplies.get(item.reply.handoff.id);
-            return (
-              <div key={item.id} className="flex flex-col gap-3">
-              <ReplyCard
-                reply={item.reply}
-                lang={lang}
-                s={s}
-                done={saved.done[item.id] ?? {}}
-                onAction={(i, a, extra) => runAction(item.id, i, a, extra)}
-                onOption={(o) => send({ text: o })}
-                feedback={saved.feedback[item.id]}
-                onFeedback={(v) => giveFeedback(item.id, item.reply.logId, v)}
-              />
-              {staff && (
-                <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] leading-relaxed shadow-sm">
-                  <p className="mb-1 text-xs font-bold text-amber-900">{staff.by}</p>
-                  {staff.text}
-                </div>
-              )}
-              </div>
-            );
-          })}
-          {pending && (
-            <div className="flex items-center gap-2 text-sm text-stone-500">
-              <span className="flex gap-1">
-                <span className="h-2 w-2 animate-bounce rounded-full bg-teal-600 [animation-delay:-0.3s]" />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-teal-600 [animation-delay:-0.15s]" />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-teal-600" />
-              </span>
-              {statusText}
-            </div>
-          )}
-        </div>
-
-        <div className="border-t border-stone-200 bg-white/90 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 lg:rounded-b-3xl">
-          <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-dvh bg-[#FBF7F0] px-4 pb-28 pt-5 text-stone-800" inert={open}>
+        <div className="mx-auto flex max-w-xl flex-col gap-4">
+          {topBar}
+          {desk}
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
             {view.chips.map((c) => (
               <button
                 key={c}
-                onClick={() => send({ chip: c })}
+                onClick={() => askFromHome(c)}
                 disabled={pending}
-                className="shrink-0 rounded-full border border-stone-300 bg-white px-3 py-1 text-sm font-semibold text-stone-700 hover:border-teal-600 hover:text-teal-700 disabled:opacity-50"
+                className="shrink-0 rounded-full border border-stone-300 bg-white px-3.5 py-1.5 text-sm font-semibold text-stone-700 hover:border-teal-600 hover:text-teal-700 disabled:opacity-50"
               >
                 {s.chips[c]}
               </button>
             ))}
           </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send({ text: input });
-            }}
-            className="flex items-end gap-2"
-          >
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  send({ text: input });
-                }
-              }}
-              rows={1}
-              maxLength={1000}
-              placeholder={s.placeholder}
-              aria-label={s.placeholder}
-              className="max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-[15px] outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20"
-            />
-            <button type="submit" disabled={pending || !input.trim()} aria-label={s.send} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-40">
-              <SendHorizontal size={18} />
-            </button>
-          </form>
+          <InfoCards view={view} requests={requests} s={s} lang={lang} />
         </div>
-      </main>
+      </div>
 
-      {/* Notice board, laptop and up */}
-      <aside className="hidden min-h-0 overflow-y-auto lg:block">
-        <NoticeBoard view={view} requests={requests} s={s} lang={lang} />
-      </aside>
-    </div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="backdrop"
+            className="fixed inset-0 z-40 bg-stone-900/25"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeChat}
+            aria-hidden
+          />
+        )}
+        {open && (
+          <motion.section
+            key="chat"
+            ref={dialog}
+            tabIndex={-1}
+            layoutId="chat-card"
+            transition={CARD_SPRING}
+            role="dialog"
+            aria-modal="true"
+            aria-label={s.home.chatWith}
+            className="fixed inset-x-2 bottom-2 top-2 z-50 mx-auto flex max-w-xl flex-col bg-[#FBF7F0] shadow-2xl outline-none sm:inset-x-4 sm:bottom-4 sm:top-4"
+            style={{ borderRadius: 28 }}
+          >
+            <motion.div
+              className="flex min-h-0 flex-1 flex-col"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.18 } }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
+            >
+              <ChatHeader
+                s={s}
+                centerName={view.center.name}
+                statusText={statusText}
+                avatar={<span className="h-12 w-12 shrink-0 rounded-full bg-[#F6EBD9]" aria-hidden />}
+                onStartOver={startOver}
+                onClose={closeChat}
+              />
+              {thread}
+              {composer}
+            </motion.div>
+            {/* Maple sits over the avatar circle, outside the fade, so she is visible the whole way from the desk. */}
+            <div className="pointer-events-none absolute left-4 top-3 h-12 w-12">{mapleFigure}</div>
+          </motion.section>
+        )}
+      </AnimatePresence>
+
+      {!open && (
+        <motion.button
+          layoutId="chat-card"
+          transition={CARD_SPRING}
+          onClick={() => openChat({ focus: true })}
+          className="fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),16px)] z-30 mx-auto flex h-14 max-w-xl items-center gap-3 bg-white px-5 text-left text-[15px] text-stone-500 shadow-lg ring-1 ring-stone-200"
+          style={{ borderRadius: 28 }}
+        >
+          <motion.span className="flex flex-1 items-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.15 } }}>
+            <MessageCircle size={20} className="text-teal-700" />
+            {s.home.ask}
+          </motion.span>
+        </motion.button>
+      )}
+    </MotionConfig>
   );
 }

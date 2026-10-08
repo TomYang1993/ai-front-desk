@@ -2,6 +2,8 @@ import type { Lang } from "@/content/types";
 import type { ChipId } from "./engine/types";
 
 /** Interface text for the parent app. Maple's replies are translated by the engine. */
+export type DayPart = "morning" | "afternoon" | "evening";
+
 type Strings = {
   chips: Record<ChipId, string>;
   placeholder: string;
@@ -29,6 +31,14 @@ type Strings = {
   board: { today: string; meals: string; nextClosure: string; notices: string; requests: string; noRequests: string; waiting: (name: string) => string; replied: (name: string) => string; absence: (child: string, dates: string) => string; lunch: (item: string, child: string) => string; tour: (when: string) => string; children: string };
   startOver: string;
   signOut: string;
+  home: {
+    greeting: (name: string, part: DayPart) => string;
+    bubble: string;
+    replied: (name: string) => string;
+    ask: string;
+    close: string;
+    chatWith: string;
+  };
   error: string;
 };
 
@@ -87,6 +97,14 @@ const en: Strings = {
   },
   startOver: "Start over",
   signOut: "Sign out",
+  home: {
+    greeting: (n, p) => `Good ${p}, ${n}`,
+    bubble: "Hi! Tap me with any question.",
+    replied: (n) => `${n} replied. Tap me to read it.`,
+    ask: "Ask Maple anything…",
+    close: "Close chat",
+    chatWith: "Chat with Maple",
+  },
   error: "Something went wrong. Please try again, or call the front desk.",
 };
 
@@ -139,6 +157,14 @@ const es: Strings = {
   },
   startOver: "Empezar de nuevo",
   signOut: "Cerrar sesión",
+  home: {
+    greeting: (n, p) => `${p === "morning" ? "Buenos días" : p === "afternoon" ? "Buenas tardes" : "Buenas noches"}, ${n}`,
+    bubble: "¡Hola! Tócame para preguntar.",
+    replied: (n) => `${n} respondió. Tócame para leerlo.`,
+    ask: "Pregúntale a Maple…",
+    close: "Cerrar chat",
+    chatWith: "Chatear con Maple",
+  },
   error: "Algo salió mal. Intente de nuevo o llame a la recepción.",
 };
 
@@ -188,6 +214,14 @@ const zh: Strings = {
   },
   startOver: "重新开始",
   signOut: "退出登录",
+  home: {
+    greeting: (n, p) => `${n}，${p === "morning" ? "早上好" : p === "afternoon" ? "下午好" : "晚上好"}`,
+    bubble: "您好！有问题就点我。",
+    replied: (n) => `${n}回复了您，点我查看。`,
+    ask: "向 Maple 提问…",
+    close: "关闭聊天",
+    chatWith: "和 Maple 聊天",
+  },
   error: "出错了。请重试或致电前台。",
 };
 
