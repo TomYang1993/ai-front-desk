@@ -27,7 +27,7 @@ export interface ParentView {
     parentFirstName: string;
     language: Lang;
     children: { id: string; firstName: string; roomName: string; teacherName: string; age: string; allergies: string[] }[];
-  } | null;
+  };
   board: {
     dateLabel: string;
     open: boolean;
@@ -41,10 +41,10 @@ export interface ParentView {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export async function getParentView(centerId: CenterId, familyId: string | null, now = new Date()): Promise<ParentView | null> {
+export async function getParentView(centerId: CenterId, familyId: string, now = new Date()): Promise<ParentView | null> {
   const center = await getCenter(centerId);
-  const family = familyId ? await getFamily(centerId, familyId) : undefined;
-  if (familyId && !family) return null;
+  const family = await getFamily(centerId, familyId);
+  if (!family) return null;
   const today = zonedParts(now, center.timeZone).date;
   const status = openStatus(center, now);
 
@@ -92,26 +92,24 @@ export async function getParentView(centerId: CenterId, familyId: string | null,
       hoursLine: hoursLine(center),
       directorName: director.name,
     },
-    family: family
-      ? {
-          id: family.id,
-          parentName: family.parentName,
-          parentFirstName: family.parentFirstName,
-          language: family.preferredLanguage,
-          children: family.children.map((c) => {
-            const room = center.rooms.find((r) => r.id === c.roomId)!;
-            return {
-              id: c.id,
-              firstName: c.firstName,
-              roomName: room.name,
-              teacherName: center.staff.find((s) => s.id === room.leadTeacherId)?.name ?? "",
-              age: ageLabel(c.birthDate, today),
-              allergies: c.allergies.map((a) => cap(ALLERGEN_LABEL[a])),
-            };
-          }),
-        }
-      : null,
+    family: {
+      id: family.id,
+      parentName: family.parentName,
+      parentFirstName: family.parentFirstName,
+      language: family.preferredLanguage,
+      children: family.children.map((c) => {
+        const room = center.rooms.find((r) => r.id === c.roomId)!;
+        return {
+          id: c.id,
+          firstName: c.firstName,
+          roomName: room.name,
+          teacherName: center.staff.find((s) => s.id === room.leadTeacherId)?.name ?? "",
+          age: ageLabel(c.birthDate, today),
+          allergies: c.allergies.map((a) => cap(ALLERGEN_LABEL[a])),
+        };
+      }),
+    },
     board: { dateLabel: formatDate(today), open: status.today.open, statusLine, menu, nextClosure, announcements },
-    chips: family ? ["today_lunch", "next_closure", "hours"] : ["tuition", "tours", "hours", "next_closure"],
+    chips: ["today_lunch", "next_closure", "hours"],
   };
 }

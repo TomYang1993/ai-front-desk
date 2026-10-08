@@ -9,7 +9,6 @@ type Strings = {
   aiLabel: string;
   status: { ready: string; listening: string; reading: string; checking: string; handoff: (name: string) => string; calm: string; done: string };
   greetingFamily: (parent: string, center: string) => string;
-  greetingVisitor: (center: string) => string;
   sources: string;
   updated: (date: string, by?: string) => string;
   helpful: string;
@@ -48,7 +47,6 @@ const en: Strings = {
     done: "Done",
   },
   greetingFamily: (p, c) => `Hi ${p}, I'm Maple, ${c}'s AI front desk assistant. I can answer from the family handbook, check today's food and the calendar, and pass anything else to the right person.`,
-  greetingVisitor: (c) => `Hi, I'm Maple, ${c}'s AI front desk assistant. I can help with tuition, the waitlist, tours and our policies, and pass anything else to the team.`,
   sources: "Sources",
   updated: (d, by) => `Updated ${d}${by ? ` by ${by}` : ""}`,
   helpful: "Was this helpful?",

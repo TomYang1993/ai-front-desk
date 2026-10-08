@@ -79,18 +79,16 @@ export function NoticeBoard({ view, requests, s, lang }: { view: ParentView; req
         </Section>
       )}
 
-      {family && (
-        <Section icon={<Users size={14} />} title={s.board.children}>
-          <ul className="space-y-1.5">
-            {family.children.map((c) => (
-              <li key={c.id}>
-                <span className="font-semibold text-stone-800">{c.firstName}</span>, {c.age}, {c.roomName} with {c.teacherName}
-                {c.allergies.length > 0 && <span className="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 ring-1 ring-red-200">{c.allergies.join(", ")} allergy</span>}
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+      <Section icon={<Users size={14} />} title={s.board.children}>
+        <ul className="space-y-1.5">
+          {family.children.map((c) => (
+            <li key={c.id}>
+              <span className="font-semibold text-stone-800">{c.firstName}</span>, {c.age}, {c.roomName} with {c.teacherName}
+              {c.allergies.length > 0 && <span className="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 ring-1 ring-red-200">{c.allergies.join(", ")} allergy</span>}
+            </li>
+          ))}
+        </ul>
+      </Section>
 
       <Section icon={<MessageSquareReply size={14} />} title={s.board.requests}>
         {items.length === 0 ? (

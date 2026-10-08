@@ -9,7 +9,7 @@ Last updated October 7, 2026. Read this first in a new session, then `docs/PLAN.
 | Live site | https://ai-front-desk-xi.vercel.app, deployed from `main` |
 | Repo | https://github.com/TomYang1993/ai-front-desk |
 | `main` | Phases 0 to 2 and the Groq provider, merged through pull requests #1 and #2 |
-| `phase-3-parent-app` | Pushed, no pull request yet. First version of the parent app, now being redesigned. Redesign step 1, sign-in, is done |
+| `phase-3-parent-app` | Pushed, no pull request yet. First version of the parent app, now being redesigned. Redesign steps 1 and 2, sign-in and removing visitor mode, are done |
 
 ## How we work
 
@@ -45,7 +45,6 @@ Known gaps:
 - The children list on the notice board says "with" in English for all languages, and the board's data, such as menus, is English for Spanish and Mandarin families.
 - One unidentified 404 appeared in the dev console on first load.
 - `POST /api/admin/reset` has no protection, so anyone can reset the live data. Limit it to directors or to non-production.
-- The client still sends `centerId` and `familyId` in request bodies. Signed-in requests ignore them; step 3 can drop them.
 
 ## Sign-in, redesign step 1
 
@@ -58,12 +57,19 @@ Known gaps:
 - Sign-out sits in the chat header and clears the conversations stored in the browser.
 - Checked in the browser: one-click and password sign-in, a wrong password, sign-out, parent and director redirects, a request body naming another family is ignored, a director gets 401 from the parent APIs, a forged cookie is rejected, and the page at phone width.
 
+## Visitor mode removed, redesign step 2
+
+- The parent app always has a family: `ParentView.family` is no longer optional, and the visitor greeting, visitor chips and visitor id tracking are gone.
+- The client no longer sends `centerId` or `familyId`; every parent API reads them from the session.
+- `/api/requests` serves enrolled families only and no longer takes visitor `ids`.
+- Kept on purpose: the engine still answers visitors, and `/api/actions` still books tours, because the engine offers tour times to enrolled parents too, for example for a friend or relative. The tour time picker in the reply card stays.
+
 ## Next steps: the Phase 3 redesign
 
 Decided with the user; details in `docs/PLAN.md`, "Phase 3 redesign."
 
 1. **Done: simulated sign-in.** A `/signin` page with an email and password form, plus a labeled "Demo accounts" panel for Ana, Rosa, Priya, Wei, Elena and Hannah. Store the role, center and family or staff id in an httpOnly session cookie. Protect app routes with `proxy.ts`. Derive the family from the session, never from the URL. Add sign-out. Directors go to `/console`, which is Phase 4.
-2. **Remove visitor mode from the interface.** Keep engine support for visitors.
+2. **Done: remove visitor mode from the interface.** Keep engine support for visitors.
 3. **Front desk home.** The animated desk scene with Maple is the hero, with information cards. Tapping Maple opens the chat card with a Motion shared-layout animation, Maple acts out states in the chat header, and closing it returns her to the desk. Laptops keep the desk and cards visible with the chat docked.
 4. **Maple version 2.** Redraw the SVG with more polish and separately animated parts. Animate with Motion springs and add wave and hop moments. Keep the `<Maple state size />` interface, and respect reduced-motion settings. Pick a Motion version at least two weeks old, and read its current docs.
 5. **Finish Phase 3.** Test the action buttons at phone size, fix the known gaps, run all checks, and open the pull request.

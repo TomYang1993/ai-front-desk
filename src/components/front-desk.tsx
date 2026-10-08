@@ -23,11 +23,10 @@ interface Saved {
   items: ChatItem[];
   done: Record<string, Record<number, ActionResult>>;
   feedback: Record<string, "up" | "down">;
-  visitorIds: string[];
 }
 
 const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-const storageKey = (view: ParentView) => `afd:chat:${view.center.id}:${view.family?.id ?? "visitor"}`;
+const storageKey = (view: ParentView) => `afd:chat:${view.center.id}:${view.family.id}`;
 
 /** On sign-out, so the next person on this device doesn't see the conversation. */
 function forgetChats() {
@@ -39,7 +38,7 @@ function forgetChats() {
 }
 
 function load(view: ParentView): Saved {
-  const empty: Saved = { items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {}, visitorIds: [] };
+  const empty: Saved = { items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {} };
   try {
     const raw = localStorage.getItem(storageKey(view));
     return raw ? { ...empty, ...JSON.parse(raw) } : empty;
@@ -49,7 +48,7 @@ function load(view: ParentView): Saved {
 }
 
 export function FrontDesk({ view }: { view: ParentView }) {
-  const lang: Lang = view.family?.language ?? "en";
+  const lang: Lang = view.family.language;
   const s = STRINGS[lang];
   const [saved, setSaved] = useState<Saved>(() => load(view));
   const [input, setInput] = useState("");
@@ -82,24 +81,15 @@ export function FrontDesk({ view }: { view: ParentView }) {
     if (ms) resetTimer.current = setTimeout(() => setMaple("ready"), ms);
   }, []);
 
-  // The latest visitor ids, read by refresh so a stale timer never sends an old list.
-  const visitorIds = useRef(saved.visitorIds);
-  useEffect(() => {
-    visitorIds.current = saved.visitorIds;
-  }, [saved.visitorIds]);
-
   // Staff replies and requests, for the notice board and the chat.
   const refresh = useCallback(async () => {
-    const params = new URLSearchParams({ centerId: view.center.id });
-    if (view.family) params.set("familyId", view.family.id);
-    else params.set("ids", visitorIds.current.join(","));
     try {
-      const res = await fetch(`/api/requests?${params}`);
+      const res = await fetch("/api/requests");
       if (res.ok) setRequests(await res.json());
     } catch {
       /* The board just stays as it was. */
     }
-  }, [view]);
+  }, []);
 
   useEffect(() => {
     const first = setTimeout(refresh, 0);
@@ -141,15 +131,11 @@ export function FrontDesk({ view }: { view: ParentView }) {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ centerId: view.center.id, familyId: view.family?.id ?? null, message: opts.chip ? undefined : text, chip: opts.chip, history: turnHistory }),
+        body: JSON.stringify({ message: opts.chip ? undefined : text, chip: opts.chip, history: turnHistory }),
       });
       if (!res.ok) throw new Error(String(res.status));
       const reply = (await res.json()) as AskReply;
-      setSaved((prev) => ({
-        ...prev,
-        items: [...prev.items, { kind: "reply", id: uid(), reply }],
-        visitorIds: !view.family && reply.handoff ? [...prev.visitorIds, reply.handoff.id] : prev.visitorIds,
-      }));
+      setSaved((prev) => ({ ...prev, items: [...prev.items, { kind: "reply", id: uid(), reply }] }));
       if (reply.mode === "urgent" || reply.mode === "emergency") moodFor("calm");
       else if (reply.handoff) {
         setHandoffName(reply.handoff.staffName);
@@ -178,18 +164,17 @@ export function FrontDesk({ view }: { view: ParentView }) {
       const res = await fetch("/api/actions", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ centerId: view.center.id, familyId: view.family?.id ?? null, action: body }),
+        body: JSON.stringify({ action: body }),
       });
       const data = await res.json();
       if (res.ok) {
         if (data.type === "log_absence") {
-          const teacher = view.family?.children.find((c) => c.firstName === data.childName)?.teacherName.split(" ")[0] ?? "";
+          const teacher = view.family.children.find((c) => c.firstName === data.childName)?.teacherName.split(" ")[0] ?? "";
           result = { ok: true, text: s.absenceLogged(data.childName, listDays(data.dates, lang), teacher) };
         } else if (data.type === "order_backup_lunch") {
           result = { ok: true, text: s.lunchOrdered(String(data.item).toLowerCase(), data.childName, `$${data.price}`) };
         } else {
           result = { ok: true, text: s.tourBooked(formatSlot(data.date, data.time, lang)) };
-          if (!view.family) setSaved((prev) => ({ ...prev, visitorIds: [...prev.visitorIds, data.id] }));
         }
         moodFor("done", 1600);
       } else if (data.error) {
@@ -204,11 +189,11 @@ export function FrontDesk({ view }: { view: ParentView }) {
 
   async function giveFeedback(itemId: string, logId: string, value: "up" | "down") {
     setSaved((prev) => ({ ...prev, feedback: { ...prev.feedback, [itemId]: value } }));
-    fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ centerId: view.center.id, logId, value }) }).catch(() => {});
+    fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId, value }) }).catch(() => {});
   }
 
   function startOver() {
-    setSaved((prev) => ({ items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {}, visitorIds: prev.visitorIds }));
+    setSaved({ items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {} });
     moodFor("ready");
   }
 
@@ -222,7 +207,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
     return s.status.ready;
   }, [pending, slow, mood, handoffName, s]);
 
-  const greeting = view.family ? s.greetingFamily(view.family.parentFirstName, view.center.shortName) : s.greetingVisitor(view.center.shortName);
+  const greeting = s.greetingFamily(view.family.parentFirstName, view.center.shortName);
 
   return (
     <div className="flex h-dvh flex-col bg-[#FBF7F0] text-stone-800 lg:grid lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)_minmax(0,320px)] lg:gap-6 lg:p-6">

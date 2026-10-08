@@ -6,8 +6,7 @@ import { CENTER_IDS, getAbsences, getCenter, getFamily, getHandoffs, getLunchOrd
 /**
  * A family's open and recent requests, for the notice board: handoffs and
  * staff replies, logged absences, lunch orders and tour bookings. The
- * family comes from the session. Visitors, available only to test scripts
- * for now, pass the ids of their own handoffs and tours.
+ * family comes from the session.
  */
 export async function GET(request: Request) {
   await connection();
@@ -17,12 +16,12 @@ export async function GET(request: Request) {
   const asker = await resolveParent({ centerId: requested ?? undefined, familyId: params.get("familyId") });
   if (!asker) return Response.json({ error: "Sign in as a parent" }, { status: 401 });
   const { centerId, familyId } = asker;
-  const ids = new Set((params.get("ids") ?? "").split(",").filter(Boolean));
-  const mine = (record: { id: string; familyId: string | null }) => (familyId ? record.familyId === familyId : ids.has(record.id));
+  if (!familyId) return Response.json({ error: "Requests are for enrolled families" }, { status: 400 });
+  const mine = (record: { familyId: string | null }) => record.familyId === familyId;
 
   const [center, family, handoffs, absences, lunches, tours] = await Promise.all([
     getCenter(centerId),
-    familyId ? getFamily(centerId, familyId) : Promise.resolve(undefined),
+    getFamily(centerId, familyId),
     getHandoffs(centerId),
     getAbsences(centerId),
     getLunchOrders(centerId),
@@ -38,8 +37,8 @@ export async function GET(request: Request) {
       .filter(mine)
       .map((h) => ({ id: h.id, createdAt: h.createdAt, text: h.text, status: h.status, to: h.to, staffName: staffName(h.to, h.childId), reply: h.reply ?? null }))
       .reverse(),
-    absences: absences.filter((a) => a.familyId === familyId).reverse(),
-    lunches: lunches.filter((l) => l.familyId === familyId).reverse(),
-    tours: tours.filter((t) => (familyId ? t.familyId === familyId : ids.has(t.id))).reverse(),
+    absences: absences.filter(mine).reverse(),
+    lunches: lunches.filter(mine).reverse(),
+    tours: tours.filter(mine).reverse(),
   });
 }
