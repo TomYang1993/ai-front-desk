@@ -106,6 +106,10 @@ export interface SavedAnswer {
   savedAt: string;
   /** Short phrases that help match future questions. */
   keywords: string[];
+  /** The handoff this answer was written from, when it came from the inbox. */
+  fromHandoffId?: string;
+  /** The unhelpful answer this replaces, when it came from the overview. */
+  fromLogId?: string;
 }
 
 export interface IllnessPolicy {
@@ -163,6 +167,8 @@ export interface Center {
   savedAnswers: SavedAnswer[];
   /** Who last updated each data table, shown on answers that cite it. */
   tableUpdates: Record<TableId, { updatedAt: string; updatedBy: string }>;
+  /** Bumped whenever a director edits knowledge, so cached answers start fresh. */
+  revision?: number;
 }
 
 export interface Child {
@@ -263,6 +269,8 @@ export interface QuestionLog {
   tokens: number;
   feedback?: "up" | "down";
   afterHours: boolean;
+  /** What Maple replied, in the parent's language. Older seeded logs don't have it. */
+  answer?: string;
 }
 
 export interface Handoff {
@@ -279,5 +287,14 @@ export interface Handoff {
   priority: "urgent" | "normal";
   to: "director" | "teacher";
   status: "open" | "answered";
-  reply?: { text: string; by: string; at: string };
+  /** What Maple last said in the conversation, when the parent asked for a person. */
+  context?: string;
+  reply?: {
+    /** What staff wrote, in English. */
+    text: string;
+    by: string;
+    at: string;
+    /** What the parent sees, when their language isn't English. */
+    translated?: { language: Lang; text: string };
+  };
 }

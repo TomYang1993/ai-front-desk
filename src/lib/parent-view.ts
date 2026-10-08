@@ -2,15 +2,15 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { Allergen, CenterId, Lang } from "@/content";
 import { getCached, getCenter, getFamily, setCached } from "./data";
-import { openStatus, upcomingClosures } from "./facts/calendar";
+import { dayStatus, openStatus, upcomingClosures } from "./facts/calendar";
 import { ageInMonths } from "./facts/illness";
-import { menuFor } from "./facts/menu";
+import { conflicts, menuFor, safeBackupLunch } from "./facts/menu";
 import { usd } from "./facts/money";
-import { formatClock, formatDay } from "./format";
+import { formatClock, formatDay, formatWeekday } from "./format";
 import { STRINGS } from "./i18n";
 import { translateList } from "./engine/translate";
+import { menuWeek } from "./engine/compose";
 import { addDays, zonedParts } from "./time";
-import type { ChipId } from "./engine/types";
 
 /** Staff-written text shown to a family, with the original kept when Maple translated it. */
 export interface Translatable {
@@ -48,13 +48,17 @@ export interface ParentView {
     dateLabel: string;
     open: boolean;
     statusLine: string;
-    menu: { lines: string[]; translated: boolean } | null;
+    /** Today's food, with what it means for each child: allergies checked by code, no AI. */
+    menu: { lines: string[]; translated: boolean; notes: { tone: "safe" | "warn" | "info"; text: string }[] } | null;
+    /** The week's lunches (or backup lunches), Monday to Friday, with any child each isn't safe for. */
+    week: { label: string; days: { date: string; day: string; dish: string | null; today: boolean; notSafeFor: string[] }[] };
     nextClosure: Translatable | null;
     announcements: { id: string; title: Translatable; body: Translatable; postedBy: string }[];
   };
   /** Dish names in the family's language, keyed by the English name, for lunch actions. */
   dishes: Record<string, string>;
-  chips: ChipId[];
+  /** Task shortcuts in the chat. Each sends its message as the parent. */
+  shortcuts: { label: string; message: string }[];
 }
 
 const TRANSLATE_TIMEOUT_MS = 6000;
@@ -95,7 +99,12 @@ export async function getParentView(centerId: CenterId, familyId: string, now = 
   const closure = upcomingClosures(center, today, 1)[0];
   const notices = center.announcements.filter((a) => a.showFrom <= today && today <= a.showUntil);
 
-  const dishNames = [day?.breakfast, day?.lunch, day?.amSnack, day?.pmSnack, day?.backupLunch?.main, day?.backupLunch?.alternative]
+  const weekDays = menuWeek(today).map((date) => ({ date, open: dayStatus(center, date).open, menu: menuFor(center, date) }));
+  const weekDish = (m: ReturnType<typeof menuFor>) => (center.meals === "provided" ? m?.lunch : m?.backupLunch?.main);
+  const dishNames = [
+    ...[day?.breakfast, day?.lunch, day?.amSnack, day?.pmSnack, day?.backupLunch?.main, day?.backupLunch?.alternative],
+    ...weekDays.map((w) => (w.open ? weekDish(w.menu) : undefined)),
+  ]
     .map((d) => d?.name)
     .filter((n): n is string => Boolean(n));
   const tr = await translations([...dishNames, closure?.name ?? "", ...notices.flatMap((a) => [a.title, a.body])], lang);
@@ -104,10 +113,34 @@ export async function getParentView(centerId: CenterId, familyId: string, now = 
 
   let menu: ParentView["board"]["menu"] = null;
   const menuTranslated = dishNames.some((n) => tr.has(n));
+  const allergens = (list: Allergen[]) => list.map((a) => s.allergens[a]).join(` ${s.or} `);
+  // English dish names start lowercase mid-sentence.
+  const inSentence = (name: string) => (lang === "en" ? name.charAt(0).toLowerCase() + name.slice(1) : name);
+  const notes: NonNullable<ParentView["board"]["menu"]>["notes"] = [];
+  if (day) {
+    for (const child of family.children) {
+      if (ageInMonths(child.birthDate, today) < 12) {
+        notes.push({ tone: "info", text: s.foodInfant(child.firstName) });
+        continue;
+      }
+      if (!child.allergies.length) continue;
+      if (center.meals === "provided") {
+        const items = [day.breakfast, day.lunch, day.pmSnack].filter((x): x is NonNullable<typeof x> => Boolean(x));
+        const hits = items.filter((item) => conflicts(item, child).length);
+        if (!hits.length) notes.push({ tone: "safe", text: s.foodSafe(child.firstName, allergens(child.allergies)) });
+        for (const item of hits) notes.push({ tone: "warn", text: s.foodContains(child.firstName, inSentence(dish(item.name)), allergens(conflicts(item, child))) });
+      } else {
+        const pick = safeBackupLunch(day, child);
+        if (pick?.item) notes.push({ tone: "safe", text: s.foodBackup(child.firstName, inSentence(dish(pick.item.name))) });
+        else if (pick) notes.push({ tone: "warn", text: s.foodBackupNone(child.firstName) });
+      }
+    }
+  }
   if (day && center.meals === "provided") {
     menu = {
       lines: [`${s.breakfast}: ${dish(day.breakfast!.name)}`, `${s.lunchLabel}: ${dish(day.lunch!.name)}`, `${s.snack}: ${dish(day.pmSnack!.name)}`],
       translated: menuTranslated,
+      notes,
     };
   } else if (day?.backupLunch) {
     const alt = dish(day.backupLunch.alternative.name);
@@ -118,8 +151,23 @@ export async function getParentView(centerId: CenterId, familyId: string, now = 
         `${s.backupLunch(usd(center.fees.backupLunch!))}: ${dish(day.backupLunch.main.name)}, ${s.or} ${lang === "en" ? alt.charAt(0).toLowerCase() + alt.slice(1) : alt}`,
       ],
       translated: menuTranslated,
+      notes,
     };
   }
+
+  const week: ParentView["board"]["week"] = {
+    label: center.meals === "provided" ? s.weekLunch : s.weekBackup,
+    days: weekDays.map((w) => {
+      const item = w.open ? weekDish(w.menu) : undefined;
+      const notSafeFor = item
+        ? family.children
+            .filter((c) => c.allergies.length && ageInMonths(c.birthDate, today) >= 12)
+            .filter((c) => (center.meals === "provided" ? conflicts(item, c).length > 0 : !safeBackupLunch(w.menu!, c)?.item))
+            .map((c) => c.firstName)
+        : [];
+      return { date: w.date, day: formatWeekday(w.date, lang), dish: item ? dish(item.name) : null, today: w.date === today, notSafeFor };
+    }),
+  };
 
   let nextClosure: Translatable | null = null;
   if (closure) {
@@ -165,10 +213,15 @@ export async function getParentView(centerId: CenterId, familyId: string, now = 
       open: status.today.open,
       statusLine,
       menu,
+      week,
       nextClosure,
       announcements: notices.map((a) => ({ id: a.id, title: t(a.title), body: t(a.body), postedBy: a.postedBy })),
     },
     dishes: Object.fromEntries(dishNames.filter((n) => tr.has(n)).map((n) => [n, tr.get(n)!])),
-    chips: ["today_lunch", "next_closure", "hours"],
+    shortcuts: [
+      { label: STRINGS[lang].shortcuts.sick(family.children.length === 1 ? family.children[0].firstName : null), message: STRINGS[lang].shortcuts.sick(family.children.length === 1 ? family.children[0].firstName : null) },
+      { label: STRINGS[lang].shortcuts.absence, message: STRINGS[lang].shortcuts.absenceMessage },
+      ...(center.meals === "pack_lunch" ? [{ label: STRINGS[lang].shortcuts.lunch, message: STRINGS[lang].shortcuts.lunchMessage }] : []),
+    ],
   };
 }

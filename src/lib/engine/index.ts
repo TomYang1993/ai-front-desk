@@ -12,6 +12,7 @@ import {
   composeBilling,
   composeClosure,
   composeEvents,
+  composeWeekMenu,
   composeForgotLunch,
   composeGreeting,
   composeHours,
@@ -28,7 +29,7 @@ import {
   type ComposeContext,
   type Composed,
 } from "./compose";
-import { familyLedgerText, handbookSource, savedSource, tableBlocks, tableSource } from "./context";
+import { familyLedgerText, handbookSource, keepNames, savedSource, tableBlocks, tableSource } from "./context";
 import { fixedReply, handoffSpec, handoffText, newHandoff, etaPhrase, type HandoffKind } from "./handoff";
 import { answerFromHandbook, checkClaims } from "./handbook";
 import { verifyAnswer } from "./verify";
@@ -56,6 +57,9 @@ const CHIP_LABEL: Record<ChipId, string> = {
   tuition: "Tuition",
   tours: "Book a tour",
 };
+
+/** A question about the whole week: "this week", "esta semana", "这周", "इस हफ़्ते". */
+const WEEK = /\bweek\b|\bweekly\b|semana|这周|本周|一周|这个星期|हफ़्ते|हफ्ते|सप्ताह/i;
 
 /** Cheap language guess for paths that must not wait for the AI. */
 export function detectLanguage(text: string): Lang {
@@ -95,6 +99,8 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     bookedTours: bookings.map((b) => b.slotId),
   };
   const history = req.history ?? [];
+  // The test box never reads or writes the cache, so it always shows a fresh answer.
+  const noCache = req.noCache || req.dryRun;
   const lanes: Lane[] = [];
   const models = new Set<string>();
   let tokens = 0;
@@ -145,21 +151,16 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
       sources: draft.sources.map((s) => s.id),
       tokens,
       afterHours: realLocal.weekday > 5 || minute < oh * 60 + om || minute >= ch * 60 + cm,
+      answer: draft.text.slice(0, 2000),
     };
-    await appendLog(log);
+    if (!req.dryRun) await appendLog(log);
     if (cacheKey && (draft.mode === "answer" || draft.mode === "declined" || draft.mode === "clarify")) {
       await setCached(cacheKey, reply);
     }
     return reply;
   };
 
-  // Names that must come back from translation exactly as written.
-  const names = [
-    center.name,
-    center.shortName,
-    ...center.staff.flatMap((s) => [s.name, s.name.split(" ")[0]]),
-    ...(family ? [family.parentName, family.parentFirstName, ...family.children.map((c) => c.firstName)] : []),
-  ];
+  const names = keepNames(center, family);
   const localize = async (text: string, language: Lang) => {
     if (language === "en") return text;
     const started = Date.now();
@@ -183,7 +184,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   }): Promise<Draft> => {
     const spec = handoffSpec(args.kind);
     const h = newHandoff({ kind: args.kind, center, family, child: args.child, text: args.messageText, language: args.language, now: realNow, topic: args.topic });
-    await addHandoff(h);
+    if (!req.dryRun) await addHandoff(h);
     lanes.push("person");
     const body = args.fixedText ?? (await localize(args.englishText ?? "", args.language));
     const text = args.partialLocalized ? `${args.partialLocalized.trim()} ${body}` : body;
@@ -208,7 +209,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     lanes.push("quick_facts");
     const composed = chipCompose(ctx, req.chip);
     const language = family?.preferredLanguage ?? "en";
-    const cacheKey = req.noCache ? undefined : `${BUILD}:${center.id}:${family?.id ?? "visitor"}:${today}:chip:${req.chip}`;
+    const cacheKey = noCache ? undefined : `${BUILD}:r${center.revision ?? 0}:${center.id}:${family?.id ?? "visitor"}:${today}:chip:${req.chip}`;
     const cached = cacheKey ? await getCached<AskReply>(cacheKey) : null;
     if (cached) return { ...cached, cached: true, ms: Date.now() - started };
     const text = await localize(composed.text, language);
@@ -223,7 +224,8 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   const hit = screen(message);
   if (hit) {
     const language = detectLanguage(message);
-    const sources = hit === "custody" ? sectionSources(sections, ["custody"]) : hit === "abuse" ? sectionSources(sections, ["safety"]) : [];
+    // Sensitive handoffs also cite the handbook's privacy promise ("We keep information about every child and family private").
+    const sources = hit === "custody" ? sectionSources(sections, ["custody", "concerns"]) : hit === "abuse" ? sectionSources(sections, ["safety", "concerns"]) : [];
     const child = family?.children.find((c) => message.toLowerCase().includes(c.firstName.toLowerCase())) ?? (family?.children.length === 1 ? family.children[0] : undefined);
     return finish(
       await handoffDraft({ kind: hit, language, child, messageText: message, fixedText: fixedReply(hit, center, now, language), sources, topic: hit === "custody" ? "custody" : "incident" }),
@@ -232,7 +234,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   }
 
   /* 3. Same question today: reuse the answer. */
-  const cacheKey = history.length || req.noCache ? undefined : `${BUILD}:${center.id}:${family?.id ?? "visitor"}:${today}:${hashText(message.toLowerCase().replace(/\s+/g, " "))}`;
+  const cacheKey = history.length || noCache ? undefined : `${BUILD}:r${center.revision ?? 0}:${center.id}:${family?.id ?? "visitor"}:${today}:${hashText(message.toLowerCase().replace(/\s+/g, " "))}`;
   if (cacheKey) {
     const cached = await getCached<AskReply>(cacheKey);
     if (cached) {
@@ -240,7 +242,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
       await appendLog({
         id: `${cached.logId}-c${Date.now().toString(36)}`, centerId: center.id, familyId: family?.id ?? null, askedBy: family ? undefined : "Visitor",
         askedAt: realNow.toISOString(), language: cached.language, text: message, topic: cached.topic, lanes: ["safety"], outcome: "answered",
-        sources: cached.sources.map((s) => s.id), tokens: 0, afterHours: false,
+        sources: cached.sources.map((s) => s.id), tokens: 0, afterHours: false, answer: cached.text.slice(0, 2000),
       });
       return reply;
     }
@@ -286,7 +288,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   }
   if (u.sensitive === "custody" || u.sensitive === "abuse_or_neglect") {
     const kind = u.sensitive === "custody" ? "custody" : "abuse";
-    return finish(await handoffDraft({ kind, language, child, messageText: message, fixedText: fixedReply(kind, center, now, language), sources: sectionSources(sections, [kind === "custody" ? "custody" : "safety"]) }), message);
+    return finish(await handoffDraft({ kind, language, child, messageText: message, fixedText: fixedReply(kind, center, now, language), sources: sectionSources(sections, [kind === "custody" ? "custody" : "safety", "concerns"]) }), message);
   }
   if (u.aboutOtherFamily) return finishComposed(composeOtherFamily(ctx, child), "lookup");
   if (u.asksForPrivateInfo) return finishComposed(composePrivateInfo(ctx), "lookup");
@@ -299,9 +301,9 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   };
   const personKind = personFor[u.sensitive];
   if (personKind && personKind !== "outage") {
-    const { text } = handoffText(personKind as Exclude<HandoffKind, "emergency" | "custody" | "abuse" | "outage">, center, now, child);
+    const { text } = handoffText(personKind as Exclude<HandoffKind, "emergency" | "custody" | "abuse" | "outage" | "person">, center, now, child);
     if (personKind === "pickup") lanes.push("lookup");
-    const sourceIds = { pickup: ["pickup"], incident: ["safety"], staff_complaint: ["concerns"], billing_dispute: ["tuition"], behavior: ["behavior"] }[personKind as string] ?? [];
+    const sourceIds = { pickup: ["pickup", "concerns"], incident: ["safety", "concerns"], staff_complaint: ["concerns"], billing_dispute: ["tuition", "concerns"], behavior: ["behavior", "concerns"] }[personKind as string] ?? [];
     return finish(await handoffDraft({ kind: personKind, language, child, messageText: message, englishText: text, sources: sectionSources(sections, sourceIds) }), message);
   }
 
@@ -327,7 +329,8 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
       composed = WEATHER_WORDS.test(message) ? null : composeClosure(ctx, u.date);
       break;
     case "hours": composed = composeHours(ctx); break;
-    case "menu": composed = composeMenu(ctx, u.date); break;
+    // "This week" without a specific day gets the whole week, in any of the four languages.
+    case "menu": composed = !u.date && WEEK.test(message) ? composeWeekMenu(ctx) : composeMenu(ctx, u.date); break;
     case "forgot_lunch": composed = enrolled ? composeForgotLunch(ctx, child) : null; break;
     case "illness": {
       const symptom = u.symptom
@@ -344,7 +347,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     case "waitlist": composed = composeWaitlist(ctx, u.program); break;
     case "tour": composed = composeTour(ctx, u.date); break;
     case "billing": composed = composeBilling(ctx, u.amount); break;
-    case "events": composed = composeEvents(ctx, u.date); break;
+    case "events": composed = composeEvents(ctx, u.date, message); break;
     case "child_day":
       if (enrolled) {
         const { text } = handoffText("child_day", center, now, child);

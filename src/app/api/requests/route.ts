@@ -35,7 +35,10 @@ export async function GET(request: Request) {
   return Response.json({
     handoffs: handoffs
       .filter(mine)
-      .map((h) => ({ id: h.id, createdAt: h.createdAt, text: h.text, status: h.status, to: h.to, staffName: staffName(h.to, h.childId), reply: h.reply ?? null }))
+      .map((h) => ({ id: h.id, createdAt: h.createdAt, text: h.text, status: h.status, to: h.to, staffName: staffName(h.to, h.childId),
+        // Parents see staff replies in their own language, with what staff wrote alongside.
+        reply: h.reply ? { text: h.reply.translated?.text ?? h.reply.text, original: h.reply.translated ? h.reply.text : null, by: h.reply.by, at: h.reply.at } : null,
+      }))
       .reverse(),
     absences: absences.filter(mine).reverse(),
     lunches: lunches.filter(mine).reverse(),

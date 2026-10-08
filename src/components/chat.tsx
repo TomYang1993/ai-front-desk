@@ -1,17 +1,46 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
-import { ChevronDown, RotateCcw, SendHorizontal } from "lucide-react";
+import { useState, type ReactNode, type RefObject } from "react";
+import { ChevronDown, Languages, LoaderCircle, RotateCcw, SendHorizontal, UserRound } from "lucide-react";
 import type { Lang } from "@/content/types";
 import type { Action, AskReply, ChipId } from "@/lib/engine/types";
 import type { Strings } from "@/lib/i18n";
 import { ReplyCard, type ActionResult } from "./reply-card";
 
+/** A staff reply to one of the family's handoffs, in their language when it isn't English. */
+export interface StaffReply {
+  by: string;
+  text: string;
+  original: string | null;
+}
+
+/** Staff appear as people, never as Maple, so it's always clear who is AI and who is human. */
+function StaffBubble({ reply, s }: { reply: StaffReply; s: Strings }) {
+  const [showOriginal, setShowOriginal] = useState(false);
+  return (
+    <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] leading-relaxed shadow-sm">
+      <p className="mb-1 text-xs font-bold text-amber-900">{reply.by}</p>
+      <p className="whitespace-pre-line">{showOriginal && reply.original ? reply.original : reply.text}</p>
+      {reply.original && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-900/70">
+          <Languages size={13} aria-hidden />
+          {s.board.translated} ·{" "}
+          <button onClick={() => setShowOriginal((o) => !o)} className="font-semibold underline-offset-2 hover:underline">
+            {showOriginal ? s.board.showTranslation : s.board.showOriginal}
+          </button>
+        </p>
+      )}
+    </div>
+  );
+}
+
 export type ChatItem =
   | { kind: "greeting"; id: string }
   | { kind: "parent"; id: string; text: string }
   | { kind: "reply"; id: string; reply: AskReply }
-  | { kind: "error"; id: string };
+  | { kind: "error"; id: string }
+  /** Maple's offer to reach a person, after two thumbs down in a conversation. */
+  | { kind: "offer"; id: string };
 
 /** Maple's name, the AI label and what she is doing. `avatar` reserves room for Maple on phones. */
 export function ChatHeader({
@@ -67,6 +96,7 @@ export function ChatThread({
   onOption,
   onFeedback,
   dish,
+  person,
 }: {
   items: ChatItem[];
   greeting: string;
@@ -74,7 +104,7 @@ export function ChatThread({
   lang: Lang;
   done: Record<string, Record<number, ActionResult>>;
   feedback: Record<string, "up" | "down">;
-  staffReplies: Map<string, { by: string; text: string }>;
+  staffReplies: Map<string, StaffReply>;
   pending: boolean;
   statusText: string;
   scroller: RefObject<HTMLDivElement | null>;
@@ -82,6 +112,7 @@ export function ChatThread({
   onOption: (text: string) => void;
   onFeedback: (itemId: string, logId: string, value: "up" | "down") => void;
   dish: (name: string) => string;
+  person: { firstName: string; onOpen: () => void };
 }) {
   return (
     <div ref={scroller} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
@@ -97,6 +128,16 @@ export function ChatThread({
           return (
             <div key={item.id} className="max-w-[85%] self-end whitespace-pre-line rounded-2xl rounded-tr-md bg-teal-700 px-4 py-2.5 text-[15px] leading-relaxed text-white shadow-sm">
               {item.text}
+            </div>
+          );
+        }
+        if (item.kind === "offer") {
+          return (
+            <div key={item.id} className="max-w-[92%] rounded-2xl rounded-tl-md border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] leading-relaxed shadow-sm">
+              <p>{s.person.offer(person.firstName)}</p>
+              <button onClick={person.onOpen} className="mt-2 flex items-center gap-1.5 rounded-full bg-amber-700 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-amber-800">
+                <UserRound size={15} aria-hidden /> {s.person.button}
+              </button>
             </div>
           );
         }
@@ -121,12 +162,7 @@ export function ChatThread({
               onFeedback={(v) => onFeedback(item.id, item.reply.logId, v)}
               dish={dish}
             />
-            {staff && (
-              <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] leading-relaxed shadow-sm">
-                <p className="mb-1 text-xs font-bold text-amber-900">{staff.by}</p>
-                {staff.text}
-              </div>
-            )}
+            {staff && <StaffBubble reply={staff} s={s} />}
           </div>
         );
       })}
@@ -146,37 +182,86 @@ export function ChatThread({
 
 export function Composer({
   s,
-  chips,
+  shortcuts,
   pending,
   input,
   textarea,
   onInput,
   onFocusChange,
   onSend,
+  person,
 }: {
   s: Strings;
-  chips: ChipId[];
+  /** Task shortcuts; each sends its message as the parent. */
+  shortcuts: { label: string; message: string }[];
   pending: boolean;
   input: string;
   textarea: RefObject<HTMLTextAreaElement | null>;
   onInput: (value: string) => void;
   onFocusChange: (focused: boolean) => void;
   onSend: (opts: { text?: string; chip?: ChipId }) => void;
+  /**
+   * The way to reach the director, bypassing Maple. It appears once a parent
+   * has given two thumbs down in a conversation, so it doesn't pull people
+   * away from answers Maple can give.
+   */
+  person: { visible: boolean; directorName: string; text: string | null; onText: (text: string | null) => void; onSend: () => void; sending: boolean; onToggle: () => void };
 }) {
+  const personText = person.text;
+  const sending = person.sending;
+  const first = person.directorName.split(" ")[0];
+
   return (
     <div className="rounded-b-[28px] border-t border-stone-200 bg-white/90 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2">
-      <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
-        {chips.map((c) => (
+      <div className="mb-2 flex items-center gap-2">
+        {person.visible && (
+        <button
+          onClick={person.onToggle}
+          aria-expanded={personText !== null}
+          className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ring-1 ${personText !== null ? "bg-amber-100 text-amber-900 ring-amber-300" : "bg-amber-50 text-amber-900 ring-amber-200 hover:bg-amber-100"}`}
+        >
+          <UserRound size={15} aria-hidden />
+          {s.person.button}
+        </button>
+        )}
+        <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 pt-1">
+        {shortcuts.map((c) => (
           <button
-            key={c}
-            onClick={() => onSend({ chip: c })}
+            key={c.label}
+            onClick={() => onSend({ text: c.message })}
             disabled={pending}
             className="shrink-0 rounded-full border border-stone-300 bg-white px-3 py-1 text-sm font-semibold text-stone-700 hover:border-teal-600 hover:text-teal-700 disabled:opacity-50"
           >
-            {s.chips[c]}
+            {c.label}
           </button>
         ))}
+        </div>
       </div>
+      {personText !== null ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+          <p className="text-xs text-amber-900">{s.person.direct(person.directorName)}</p>
+          <label className="mt-1 block text-sm font-semibold text-stone-800">
+            {s.person.prompt(first)}
+            <textarea
+              value={personText}
+              onChange={(e) => person.onText(e.target.value)}
+              rows={3}
+              maxLength={1000}
+              autoFocus
+              className="mt-1 w-full resize-none rounded-xl border border-stone-300 bg-white px-3 py-2 text-[15px] font-normal outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
+            />
+          </label>
+          <div className="mt-2 flex gap-2">
+            <button onClick={person.onSend} disabled={sending || !personText.trim()} className="flex items-center gap-1.5 rounded-full bg-amber-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-40">
+              {sending ? <LoaderCircle size={15} className="animate-spin" /> : <SendHorizontal size={15} />}
+              {s.person.send(first)}
+            </button>
+            <button onClick={() => person.onText(null)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-stone-600 hover:bg-white">
+              {s.person.cancel}
+            </button>
+          </div>
+        </div>
+      ) : (
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -206,6 +291,7 @@ export function Composer({
           <SendHorizontal size={18} />
         </button>
       </form>
+      )}
     </div>
   );
 }

@@ -48,6 +48,8 @@ export interface AskRequest {
   simulateOutage?: boolean;
   /** Skip the answer cache, for the scorecard. Ignored in production. */
   noCache?: boolean;
+  /** Answer without logging, creating handoffs or caching: the director's test box. */
+  dryRun?: boolean;
 }
 
 export interface AskReply {

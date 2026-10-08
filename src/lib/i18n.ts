@@ -15,8 +15,6 @@ type Strings = {
   updated: (date: string, by?: string) => string;
   helpful: string;
   thanks: string;
-  how: Record<"facts" | "factsTranslated" | "lookup" | "saved" | "handbook" | "person" | "safety", string>;
-  seconds: (s: string) => string;
   sentTo: (name: string) => string;
   call: (phone: string) => string;
   call911: string;
@@ -65,9 +63,35 @@ type Strings = {
     translated: string;
     showOriginal: string;
     showTranslation: string;
+    foodInfant: (child: string) => string;
+    foodSafe: (child: string, allergens: string) => string;
+    foodContains: (child: string, dish: string, allergens: string) => string;
+    foodBackup: (child: string, dish: string) => string;
+    foodBackupNone: (child: string) => string;
+    thisWeek: string;
+    weekLunch: string;
+    weekBackup: string;
+    closedDay: string;
+    notSafeFor: (children: string) => string;
+  };
+  /** Task shortcuts in the chat. Each sends its message as the parent. */
+  shortcuts: {
+    sick: (child: string | null) => string;
+    absence: string;
+    absenceMessage: string;
+    lunch: string;
+    lunchMessage: string;
   };
   startOver: string;
   signOut: string;
+  person: {
+    button: string;
+    direct: (name: string) => string;
+    prompt: (firstName: string) => string;
+    send: (firstName: string) => string;
+    cancel: string;
+    offer: (firstName: string) => string;
+  };
   home: {
     greeting: (name: string, part: DayPart) => string;
     bubble: string;
@@ -76,7 +100,6 @@ type Strings = {
     close: string;
     chatWith: string;
     frontDesk: string;
-    handbook: string;
   };
   error: string;
 };
@@ -100,16 +123,6 @@ const en: Strings = {
   updated: (d, by) => `Updated ${d}${by ? ` by ${by}` : ""}`,
   helpful: "Was this helpful?",
   thanks: "Thanks for the feedback",
-  how: {
-    facts: "From the center's data, no AI",
-    factsTranslated: "From the center's data, translated by AI",
-    lookup: "AI read your message, then the answer was looked up in the center's data",
-    saved: "A saved answer from staff",
-    handbook: "Read in the family handbook and double-checked against it",
-    person: "Passed to a person",
-    safety: "Handled by the safety check, no AI",
-  },
-  seconds: (s) => `${s} s`,
   sentTo: (n) => `Sent to ${n}`,
   call: (p) => `Call ${p}`,
   call911: "Call 911",
@@ -161,8 +174,33 @@ const en: Strings = {
     translated: "",
     showOriginal: "",
     showTranslation: "",
+    foodInfant: (c) => `${c} follows the infant feeding plan.`,
+    foodSafe: (c, a) => `Today's food is ${a}-free, so it's all safe for ${c}.`,
+    foodContains: (c, d, a) => `Heads up: ${d} has ${a}, which ${c} is allergic to.`,
+    foodBackup: (c, d) => `If you forget lunch, the backup (${d}) is safe for ${c}.`,
+    foodBackupNone: (c) => `Neither backup lunch is safe for ${c} today. If you forget lunch, call the front desk.`,
+    thisWeek: "This week",
+    weekLunch: "Lunch each day",
+    weekBackup: "Backup lunch each day",
+    closedDay: "Closed",
+    notSafeFor: (c) => `Not safe for ${c}`,
+  },
+  shortcuts: {
+    sick: (c) => (c ? `${c} is sick` : "My child is sick"),
+    absence: "Report an absence",
+    absenceMessage: "I need to report an absence.",
+    lunch: "Forgot lunch",
+    lunchMessage: "I forgot to pack lunch today.",
   },
   startOver: "Start over",
+  person: {
+    button: "Talk to a person",
+    direct: (n) => `This goes straight to ${n}, not to Maple.`,
+    prompt: (f) => `What should ${f} know?`,
+    send: (f) => `Send to ${f}`,
+    cancel: "Cancel",
+    offer: (f) => `Sorry I haven't been more help. Would you like to reach ${f} directly?`,
+  },
   signOut: "Sign out",
   home: {
     greeting: (n, p) => `Good ${p}, ${n}`,
@@ -172,7 +210,6 @@ const en: Strings = {
     close: "Close chat",
     chatWith: "Chat with Maple",
     frontDesk: "Front desk",
-    handbook: "Handbook",
   },
   error: "Something went wrong. Please try again, or call the front desk.",
 };
@@ -197,15 +234,6 @@ const es: Strings = {
   updated: (d, by) => `Actualizado ${d}${by ? ` por ${by}` : ""}`,
   helpful: "¿Le ayudó?",
   thanks: "Gracias por su opinión",
-  how: {
-    facts: "De los datos del centro, sin IA",
-    factsTranslated: "De los datos del centro, traducido con IA",
-    lookup: "La IA leyó su mensaje y la respuesta salió de los datos del centro",
-    saved: "Una respuesta guardada por el personal",
-    handbook: "Leído en el manual para familias y verificado",
-    person: "Enviado a una persona",
-    safety: "Atendido por el filtro de seguridad, sin IA",
-  },
   sentTo: (n) => `Enviado a ${n}`,
   call: (p) => `Llamar al ${p}`,
   call911: "Llamar al 911",
@@ -255,8 +283,33 @@ const es: Strings = {
     translated: "Traducido por Maple",
     showOriginal: "Ver original",
     showTranslation: "Ver traducción",
+    foodInfant: (c) => `${c} sigue el plan de alimentación infantil.`,
+    foodSafe: (c, a) => `Nada de hoy tiene ${a}, así que todo es seguro para ${c}.`,
+    foodContains: (c, d, a) => `Atención: ${d} tiene ${a}, y ${c} tiene alergia a eso.`,
+    foodBackup: (c, d) => `Si olvida el almuerzo, el de reserva (${d}) es seguro para ${c}.`,
+    foodBackupNone: (c) => `Ningún almuerzo de reserva es seguro para ${c} hoy. Si olvida el almuerzo, llame a la recepción.`,
+    thisWeek: "Esta semana",
+    weekLunch: "Almuerzo de cada día",
+    weekBackup: "Almuerzo de reserva de cada día",
+    closedDay: "Cerrado",
+    notSafeFor: (c) => `No es seguro para ${c}`,
+  },
+  shortcuts: {
+    sick: (c) => (c ? `${c} no se siente bien` : "Uno de mis hijos no se siente bien"),
+    absence: "Reportar una ausencia",
+    absenceMessage: "Necesito reportar una ausencia.",
+    lunch: "Olvidé el almuerzo",
+    lunchMessage: "Olvidé empacar el almuerzo hoy.",
   },
   startOver: "Empezar de nuevo",
+  person: {
+    button: "Hablar con una persona",
+    direct: (n) => `Esto le llega directamente a ${n}, no a Maple.`,
+    prompt: (f) => `¿Qué debe saber ${f}?`,
+    send: (f) => `Enviar a ${f}`,
+    cancel: "Cancelar",
+    offer: (f) => `Siento no haberle ayudado más. ¿Quiere comunicarse directamente con ${f}?`,
+  },
   signOut: "Cerrar sesión",
   home: {
     greeting: (n, p) => `${p === "morning" ? "Buenos días" : p === "afternoon" ? "Buenas tardes" : "Buenas noches"}, ${n}`,
@@ -266,7 +319,6 @@ const es: Strings = {
     close: "Cerrar chat",
     chatWith: "Chatear con Maple",
     frontDesk: "Recepción",
-    handbook: "Manual",
   },
   error: "Algo salió mal. Intente de nuevo o llame a la recepción.",
 };
@@ -291,15 +343,6 @@ const zh: Strings = {
   updated: (d, by) => `${d} 更新${by ? `，更新人 ${by}` : ""}`,
   helpful: "这个回答有帮助吗？",
   thanks: "谢谢您的反馈",
-  how: {
-    facts: "来自中心的数据，未使用 AI",
-    factsTranslated: "来自中心的数据，由 AI 翻译",
-    lookup: "AI 理解您的消息后，从中心的数据中查到答案",
-    saved: "工作人员保存的回答",
-    handbook: "查阅家长手册并核对过",
-    person: "已转给工作人员",
-    safety: "由安全检查处理，未使用 AI",
-  },
   sentTo: (n) => `已发送给 ${n}`,
   call: (p) => `致电 ${p}`,
   call911: "拨打 911",
@@ -349,8 +392,33 @@ const zh: Strings = {
     translated: "由 Maple 翻译",
     showOriginal: "查看原文",
     showTranslation: "查看译文",
+    foodInfant: (c) => `${c}按婴儿喂养计划进食。`,
+    foodSafe: (c, a) => `今天的餐点不含${a}，${c}都可以吃。`,
+    foodContains: (c, d, a) => `注意：${d}含有${a}，${c}对此过敏。`,
+    foodBackup: (c, d) => `如果忘带午饭，备用午餐（${d}）适合${c}。`,
+    foodBackupNone: (c) => `今天没有适合${c}的备用午餐。如果忘带午饭，请致电前台。`,
+    thisWeek: "本周",
+    weekLunch: "每天的午餐",
+    weekBackup: "每天的备用午餐",
+    closedDay: "休园",
+    notSafeFor: (c) => `${c}不宜食用`,
+  },
+  shortcuts: {
+    sick: (c) => (c ? `${c}生病了` : "孩子生病了"),
+    absence: "请假",
+    absenceMessage: "我要给孩子请假。",
+    lunch: "忘带午饭",
+    lunchMessage: "今天忘了带午饭。",
   },
   startOver: "重新开始",
+  person: {
+    button: "联系工作人员",
+    direct: (n) => `这条消息会直接发给${n}，不经过 Maple。`,
+    prompt: (f) => `需要告诉${f}什么？`,
+    send: (f) => `发送给${f}`,
+    cancel: "取消",
+    offer: (f) => `抱歉没能帮上忙。要直接联系${f}吗？`,
+  },
   signOut: "退出登录",
   home: {
     greeting: (n, p) => `${n}，${p === "morning" ? "早上好" : p === "afternoon" ? "下午好" : "晚上好"}`,
@@ -360,7 +428,6 @@ const zh: Strings = {
     close: "关闭聊天",
     chatWith: "和 Maple 聊天",
     frontDesk: "前台",
-    handbook: "家长手册",
   },
   error: "出错了。请重试或致电前台。",
 };
@@ -384,16 +451,6 @@ const hi: Strings = {
   updated: (d, by) => `${d} को अपडेट किया गया${by ? `, ${by} द्वारा` : ""}`,
   helpful: "क्या यह मददगार था?",
   thanks: "आपकी राय के लिए धन्यवाद",
-  how: {
-    facts: "सेंटर के डेटा से, बिना AI के",
-    factsTranslated: "सेंटर के डेटा से, AI द्वारा अनुवादित",
-    lookup: "AI ने आपका संदेश पढ़ा, फिर जवाब सेंटर के डेटा से लिया गया",
-    saved: "स्टाफ़ का सहेजा हुआ जवाब",
-    handbook: "परिवार हैंडबुक में पढ़ा गया और उससे दोबारा जाँचा गया",
-    person: "एक व्यक्ति को भेजा गया",
-    safety: "सुरक्षा जाँच ने संभाला, बिना AI के",
-  },
-  seconds: (s) => `${s} सेकंड`,
   sentTo: (n) => `${n} को भेजा गया`,
   call: (p) => `${p} पर कॉल करें`,
   call911: "911 पर कॉल करें",
@@ -442,8 +499,33 @@ const hi: Strings = {
     translated: "Maple द्वारा अनुवादित",
     showOriginal: "मूल देखें",
     showTranslation: "अनुवाद देखें",
+    foodInfant: (c) => `${c} के लिए शिशु आहार योजना लागू है।`,
+    foodSafe: (c, a) => `आज के खाने में ${a} नहीं है, इसलिए ${c} के लिए सब सुरक्षित है।`,
+    foodContains: (c, d, a) => `ध्यान दें: ${d} में ${a} है, जिससे ${c} को एलर्जी है।`,
+    foodBackup: (c, d) => `अगर लंच भूल जाएँ, तो बैकअप (${d}) ${c} के लिए सुरक्षित है।`,
+    foodBackupNone: (c) => `आज कोई भी बैकअप लंच ${c} के लिए सुरक्षित नहीं है। लंच भूल जाएँ तो फ़्रंट डेस्क को कॉल करें।`,
+    thisWeek: "इस हफ़्ते",
+    weekLunch: "हर दिन का दोपहर का खाना",
+    weekBackup: "हर दिन का बैकअप लंच",
+    closedDay: "बंद",
+    notSafeFor: (c) => `${c} के लिए सुरक्षित नहीं`,
+  },
+  shortcuts: {
+    sick: (c) => (c ? `${c} की तबीयत ठीक नहीं है` : "मेरे बच्चे की तबीयत ठीक नहीं है"),
+    absence: "अनुपस्थिति बताएँ",
+    absenceMessage: "मुझे अनुपस्थिति दर्ज करनी है।",
+    lunch: "लंच भूल गए",
+    lunchMessage: "आज लंच पैक नहीं हो पाया।",
   },
   startOver: "फिर से शुरू करें",
+  person: {
+    button: "किसी व्यक्ति से बात करें",
+    direct: (n) => `यह संदेश सीधे ${n} को जाएगा, Maple को नहीं।`,
+    prompt: (f) => `${f} को क्या बताना है?`,
+    send: (f) => `${f} को भेजें`,
+    cancel: "रद्द करें",
+    offer: (f) => `माफ़ कीजिए, मैं ज़्यादा मदद नहीं कर पाई। क्या आप सीधे ${f} से बात करना चाहेंगे?`,
+  },
   signOut: "साइन आउट",
   home: {
     greeting: (n, p) => `${p === "morning" ? "सुप्रभात" : p === "afternoon" ? "नमस्ते" : "शुभ संध्या"}, ${n}`,
@@ -453,7 +535,6 @@ const hi: Strings = {
     close: "चैट बंद करें",
     chatWith: "Maple से चैट करें",
     frontDesk: "फ़्रंट डेस्क",
-    handbook: "हैंडबुक",
   },
   error: "कुछ गलत हो गया। कृपया फिर से कोशिश करें या फ़्रंट डेस्क को कॉल करें।",
 };

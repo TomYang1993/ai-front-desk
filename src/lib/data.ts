@@ -1,7 +1,7 @@
 import "server-only";
 import { centers, families, seedHandbook } from "@/content";
 import { generateHistory, HISTORY_VERSION } from "@/content/history";
-import type { Center, CenterId, Family, HandbookSection, Handoff, QuestionLog } from "@/content";
+import type { Center, CenterId, Family, HandbookSection, Handoff, QuestionLog, SavedAnswer } from "@/content";
 import { getStore } from "./store";
 
 /**
@@ -32,6 +32,7 @@ const keys = {
   lunches: (id: CenterId) => `lunches:${id}`,
   feedback: (id: CenterId) => `feedback:${id}`,
   cache: (key: string) => `cache:${key}`,
+  handled: (id: CenterId) => `feedback-handled:${id}`,
 };
 
 export const CENTER_IDS: CenterId[] = centers.map((c) => c.id);
@@ -51,7 +52,7 @@ export async function resetDemo(now = new Date()) {
     await store.set(keys.handoffs(center.id), handoffs);
   }
   for (const center of centers) {
-    for (const key of [keys.tours, keys.absences, keys.lunches, keys.feedback]) await store.del(key(center.id));
+    for (const key of [keys.tours, keys.absences, keys.lunches, keys.feedback, keys.handled]) await store.del(key(center.id));
   }
   await store.set(keys.seededAt, now.toISOString());
   await store.set(keys.version, SEED_VERSION);
@@ -122,6 +123,35 @@ export async function getSeededAt(): Promise<string | null> {
 export async function addHandoff(handoff: Handoff) {
   const all = await getHandoffs(handoff.centerId);
   await saveHandoffs(handoff.centerId, [...all, handoff]);
+}
+
+/** Changes one handoff in place. Returns the updated handoff, or null if it doesn't exist. */
+export async function updateHandoff(centerId: CenterId, id: string, change: (h: Handoff) => Handoff): Promise<Handoff | null> {
+  const all = await getHandoffs(centerId);
+  const index = all.findIndex((h) => h.id === id);
+  if (index < 0) return null;
+  const updated = change(all[index]);
+  all[index] = updated;
+  await saveHandoffs(centerId, all);
+  return updated;
+}
+
+/* Knowledge edits from the console. Each bumps the center's revision, so cached answers start fresh. */
+
+export async function saveSavedAnswers(centerId: CenterId, savedAnswers: SavedAnswer[]) {
+  const center = await getCenter(centerId);
+  await saveCenter({ ...center, savedAnswers, revision: (center.revision ?? 0) + 1 });
+}
+
+export async function updateHandbookSection(centerId: CenterId, id: string, change: { title: string; body: string; updatedBy: string; updatedAt: string }) {
+  const sections = await getHandbook(centerId);
+  const index = sections.findIndex((s) => s.id === id);
+  if (index < 0) return null;
+  sections[index] = { ...sections[index], ...change };
+  await saveHandbook(centerId, sections);
+  const center = await getCenter(centerId);
+  await saveCenter({ ...center, revision: (center.revision ?? 0) + 1 });
+  return sections[index];
 }
 
 export interface TourBooking {
@@ -221,6 +251,23 @@ export async function setFeedback(centerId: CenterId, logId: string, value: "up"
   const all = (await getStore().get<Record<string, "up" | "down">>(keys.feedback(centerId))) ?? {};
   all[logId] = value;
   await getStore().set(keys.feedback(centerId), all);
+}
+
+/** Unhelpful answers a director has dealt with, keyed by log id. */
+export interface HandledFeedback {
+  by: string;
+  at: string;
+  how: "source" | "answer" | "reviewed";
+}
+
+export async function getHandledFeedback(centerId: CenterId) {
+  return (await getStore().get<Record<string, HandledFeedback>>(keys.handled(centerId))) ?? {};
+}
+
+export async function markFeedbackHandled(centerId: CenterId, logId: string, handled: HandledFeedback) {
+  const all = await getHandledFeedback(centerId);
+  all[logId] = handled;
+  await getStore().set(keys.handled(centerId), all);
 }
 
 export async function getFeedback(centerId: CenterId) {

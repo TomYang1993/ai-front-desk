@@ -1,145 +1,165 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import type { CenterId } from "@/content/types";
 
 /**
- * The front desk: a window onto the center's city, the handbook shelf, the
- * notice board and the director's door, with Maple's spot behind the desk.
- * Maple is passed in as `maple`, so she can leave the desk for the chat.
- * Her spot ends exactly at the desk's top edge, so the desk never overlaps
- * her and she can fly in and out above everything else.
+ * The front desk, in Maple's flat, grainy style: a still window onto the
+ * center's city, a bookshelf, the notice board, the director's door and a
+ * low counter with the center's name. Maple stands on the floor
+ * beside the counter, full body. She is passed in as `maple`, so she can
+ * leave the desk for the chat; her spot overlaps nothing drawn in front of
+ * her, so she can fly in and out above everything else.
  *
  * Everything shares one 360 x 230 coordinate system.
  */
+
+/** Maple's spot: 140 wide from x 90, standing on the floor at y 204. */
+const SPOT = { left: 90, width: 140, floor: 204 };
+const pct = (n: number, of: number) => `${(n / of) * 100}%`;
+
 export function DeskScene({
   centerId,
   centerName,
-  directorFirstName,
-  labels,
+  frontDeskLabel,
   doorLit,
   maple,
   bubble,
 }: {
   centerId: CenterId;
   centerName: string;
-  directorFirstName: string;
-  labels: { frontDesk: string; handbook: string };
+  frontDeskLabel: string;
   doorLit: boolean;
   maple: ReactNode;
   bubble?: ReactNode;
 }) {
+  const grain = `desk-grain-${useId().replace(/:/g, "")}`;
   return (
-    <div className="desk-scene relative aspect-[36/23] w-full select-none">
+    <div className="desk-scene relative aspect-[36/23] w-full select-none overflow-hidden rounded-[28px]">
       <svg viewBox="0 0 360 230" className="absolute inset-0 h-full w-full" aria-hidden>
-        <rect width="360" height="230" rx="24" fill="#F6EBD9" />
-        <rect y="186" width="360" height="44" fill="#EDE3D3" />
-        <Window centerId={centerId} />
+        <defs>
+          <filter id={grain} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" stitchTiles="stitch" result="noise" />
+            <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.25  0 0 0 0 0.16  0 0 0 0 0.08  1.5 0 0 0 -0.88" result="specks" />
+            <feComposite in="specks" in2="SourceGraphic" operator="in" result="grainOnShapes" />
+            <feComposite in="grainOnShapes" in2="SourceGraphic" operator="over" />
+          </filter>
+        </defs>
+        <g filter={`url(#${grain})`}>
+          {/* Wall, chair rail and wooden floor */}
+          <rect width="360" height="230" fill="#F3EBDD" />
+          <rect y="150" width="360" height="56" fill="#ECE0CC" />
+          <rect y="148" width="360" height="3" fill="#E2D2B8" />
+          <rect y="204" width="360" height="26" fill="#D6B48D" />
+          <path d="M0 214 H360 M60 204 V214 M150 214 V230 M240 204 V214 M320 214 V230" stroke="#C49E73" strokeWidth="1.2" />
 
-        {/* Handbook shelf under the window */}
-        <rect x="20" y="128" width="96" height="5" rx="2" fill="#B9844F" />
-        {[
-          ["#D85A30", 26, 22],
-          ["#2E9C7A", 35, 25],
-          ["#5B8FC7", 44, 20],
-          ["#E8B04B", 53, 24],
-          ["#7F77DD", 62, 22],
-        ].map(([color, x, h]) => (
-          <rect key={x} x={x as number} y={128 - (h as number)} width="8" height={h as number} rx="1.5" fill={color as string} />
-        ))}
-        <rect x="74" y="111" width="34" height="17" rx="2" fill="#FFF" opacity="0.9" />
-        <text x="91" y="122.5" textAnchor="middle" fontSize="7" fontWeight="700" fill="#7A5A3A">
-          {labels.handbook}
-        </text>
+          <Window centerId={centerId} />
 
-        {/* Notice board */}
-        <rect x="244" y="28" width="52" height="44" rx="4" fill="#D9B48F" stroke="#B9844F" strokeWidth="2.5" />
-        <rect x="250" y="34" width="17" height="14" fill="#FFF" transform="rotate(-4 258 41)" />
-        <rect x="272" y="35" width="17" height="13" fill="#FAC775" transform="rotate(3 280 41)" />
-        <rect x="255" y="53" width="18" height="13" fill="#9FE1CB" transform="rotate(2 264 59)" />
-        <rect x="277" y="53" width="13" height="12" fill="#F5C4B3" transform="rotate(-3 283 59)" />
+          {/* Bookshelf under the window */}
+          <rect x="20" y="126" width="88" height="5" rx="2" fill="#A86E3E" />
+          {[
+            ["#C2603A", 26, 22],
+            ["#3F6F66", 35, 25],
+            ["#5B7FA3", 44, 20],
+            ["#E39A45", 53, 24],
+            ["#A9CDBF", 62, 18],
+            ["#C2603A", 71, 23],
+          ].map(([color, x, h]) => (
+            <rect key={x} x={x as number} y={126 - (h as number)} width="8" height={h as number} rx="1.5" fill={color as string} />
+          ))}
+          <rect x="84" y="104" width="8" height="22" rx="1.5" fill="#5B7FA3" transform="rotate(16 88 126)" />
+          <path d="M94 126 L104 126 L102 116 L96 116 Z" fill="#E9E1D2" />
+          <path d="M99 117 C96 111 97 107 99 104 C101 107 102 111 99 117 Z" fill="#4E7F6A" />
 
-        {/* The director's door lights up while a person is being brought in. */}
-        <rect x="304" y="66" width="42" height="120" rx="4" fill={doorLit ? "#F4C66B" : "#B5ADA3"} className="transition-colors duration-500" />
-        <rect x="309" y="76" width="32" height="15" rx="3" fill="#FFF" opacity="0.9" />
-        <text x="325" y="86.5" textAnchor="middle" fontSize="7" fontWeight="700" fill="#2C2420">
-          {directorFirstName}
-        </text>
-        <circle cx="339" cy="132" r="2.8" fill="#5C554D" />
-        {doorLit && <rect x="300" y="62" width="50" height="128" rx="7" fill="none" stroke="#F4C66B" strokeWidth="2.5" opacity="0.7" />}
+          {/* A floor plant */}
+          <path d="M30 186 L48 186 L45 204 L33 204 Z" fill="#C2603A" />
+          <path d="M39 186 C30 172 24 168 20 158 C30 160 36 168 39 180 C40 166 46 156 56 152 C54 164 46 172 39 186 Z" fill="#4E7F6A" />
+          <path d="M39 184 C38 172 40 162 44 154" stroke="#3E6B5C" strokeWidth="1.5" fill="none" />
+
+          {/* Notice board */}
+          <rect x="238" y="34" width="54" height="44" rx="4" fill="#CDA174" stroke="#A9784C" strokeWidth="2.5" />
+          <rect x="244" y="40" width="17" height="14" fill="#FBF6EC" transform="rotate(-4 252 47)" />
+          <rect x="266" y="41" width="17" height="13" fill="#F0C77A" transform="rotate(3 274 47)" />
+          <rect x="249" y="59" width="18" height="13" fill="#A9CDBF" transform="rotate(2 258 65)" />
+          <rect x="271" y="59" width="14" height="12" fill="#E9B3A0" transform="rotate(-3 278 65)" />
+
+          {/* The director's door lights up while a person is being brought in. */}
+          <rect x="300" y="52" width="46" height="96" rx="3" fill={doorLit ? "#F2C66D" : "#C9B8A3"} className="transition-colors duration-500" />
+          <rect x="309" y="62" width="28" height="20" rx="2.5" fill="#FBF6EC" opacity="0.55" />
+          <circle cx="339" cy="112" r="2.6" fill="#6B5A48" />
+
+          {/* The counter, with a bell and a mug */}
+          <rect x="232" y="140" width="128" height="10" rx="3" fill="#2C514A" />
+          <rect x="236" y="150" width="124" height="54" fill="#3F6F66" />
+          <rect x="236" y="150" width="124" height="5" fill="#2C514A" opacity="0.55" />
+          <path d="M250 140 C250 131 264 131 264 140 Z" fill="#E3B04B" />
+          <rect x="255.5" y="128" width="3" height="4" rx="1" fill="#C98F2E" />
+          <rect x="332" y="128" width="12" height="12" rx="2.5" fill="#FBF6EC" />
+          <path d="M344 131 q5 0 5 4 q0 4 -5 4" fill="none" stroke="#FBF6EC" strokeWidth="2.2" />
+          <text x="298" y="178" textAnchor="middle" fontSize="12.5" fontWeight="800" fill="#FBF6EC">
+            {centerName}
+          </text>
+          <text x="298" y="191" textAnchor="middle" fontSize="7.5" fill="#CFE3DC">
+            {frontDeskLabel}
+          </text>
+        </g>
       </svg>
 
-      {/* Maple's spot: 120 wide, from x 120, ending at the desk top (y 166). */}
-      <div className="absolute left-1/3 aspect-square w-1/3" style={{ bottom: `${(64 / 230) * 100}%` }}>
+      <div className="absolute aspect-square" style={{ left: pct(SPOT.left, 360), width: pct(SPOT.width, 360), bottom: pct(230 - SPOT.floor - 4, 230) }}>
         {maple}
       </div>
 
-      {bubble}
-
-      <svg viewBox="0 0 360 230" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
-        {/* A plant and a mug on the desk */}
-        <g transform="translate(222 0)">
-          <rect x="34" y="150" width="20" height="16" rx="3" fill="#D85A30" />
-          <path d="M44 150 C38 138 30 136 28 128 C36 130 42 136 44 146 C46 134 52 128 60 126 C58 136 50 140 44 150Z" fill="#3F8F6B" />
-        </g>
-        <rect x="56" y="152" width="14" height="14" rx="3" fill="#FFF" />
-        <path d="M70 156 q6 0 6 5 q0 5 -6 5" fill="none" stroke="#FFF" strokeWidth="2.5" />
-
-        <rect x="14" y="166" width="332" height="60" rx="10" fill="#2E9C7A" />
-        <rect x="14" y="166" width="332" height="10" rx="5" fill="#26876A" />
-        <text x="180" y="203" textAnchor="middle" fontSize="15" fontWeight="800" fill="#FFF">
-          {centerName}
-        </text>
-        <text x="180" y="217" textAnchor="middle" fontSize="8.5" fill="#D7F2E8">
-          {labels.frontDesk}
-        </text>
-      </svg>
+      {bubble && (
+        <div className="absolute top-[3%] max-w-[46%] -translate-x-1/2" style={{ left: pct(SPOT.left + SPOT.width / 2, 360) }}>
+          {bubble}
+        </div>
+      )}
     </div>
   );
 }
 
-/** Albuquerque gets the Sandia Mountains and balloons; Seattle gets rain and evergreens. */
+/** A still view of the city: the Sandia Mountains and balloons for Albuquerque, rain and evergreens for Seattle. */
 function Window({ centerId }: { centerId: CenterId }) {
   const clip = `desk-window-${centerId}`;
   return (
     <g>
       <defs>
         <clipPath id={clip}>
-          <rect x="24" y="28" width="88" height="66" rx="5" />
+          <rect x="24" y="28" width="80" height="64" rx="5" />
         </clipPath>
       </defs>
       <g clipPath={`url(#${clip})`}>
         {centerId === "pinon-grove" ? (
           <>
-            <rect x="24" y="28" width="88" height="66" fill="#BFE3F2" />
-            <path d="M24 94 L24 74 L40 62 L52 68 L66 54 L82 64 L96 58 L112 70 L112 94Z" fill="#C98F8F" />
-            <path d="M24 94 L24 84 L46 78 L70 82 L94 76 L112 80 L112 94Z" fill="#B97C6E" />
-            <g className="desk-balloon">
-              <path d="M52 36 c-7 0 -10 6 -10 10 c0 6 6 10 10 14 c4 -4 10 -8 10 -14 c0 -4 -3 -10 -10 -10z" fill="#E8573A" />
-              <path d="M52 36 c-3 0 -4 6 -4 10 c0 6 2 10 4 14 c2 -4 4 -8 4 -14 c0 -4 -1 -10 -4 -10z" fill="#F4C66B" />
-              <rect x="50" y="61" width="4" height="3" rx="1" fill="#7A5A3A" />
+            <rect x="24" y="28" width="80" height="64" fill="#BCDDEA" />
+            <path d="M24 92 L24 72 L38 61 L50 67 L62 53 L77 63 L90 57 L104 68 L104 92Z" fill="#C98F84" />
+            <path d="M24 92 L24 82 L44 76 L66 80 L88 74 L104 78 L104 92Z" fill="#B47766" />
+            <g>
+              <path d="M50 36 c-7 0 -10 6 -10 10 c0 6 6 10 10 14 c4 -4 10 -8 10 -14 c0 -4 -3 -10 -10 -10z" fill="#D9643F" />
+              <path d="M50 36 c-3 0 -4 6 -4 10 c0 6 2 10 4 14 c2 -4 4 -8 4 -14 c0 -4 -1 -10 -4 -10z" fill="#EDB860" />
+              <rect x="48" y="61" width="4" height="3" rx="1" fill="#7A5A3A" />
             </g>
-            <g className="desk-balloon desk-balloon--late">
-              <path d="M90 44 c-4 0 -6 4 -6 6 c0 4 4 6 6 8 c2 -2 6 -4 6 -8 c0 -2 -2 -6 -6 -6z" fill="#5B8FC7" />
-              <rect x="89" y="58" width="2.5" height="2" rx="0.5" fill="#7A5A3A" />
+            <g>
+              <path d="M84 44 c-4 0 -6 4 -6 6 c0 4 4 6 6 8 c2 -2 6 -4 6 -8 c0 -2 -2 -6 -6 -6z" fill="#5B7FA3" />
+              <rect x="83" y="58" width="2.5" height="2" rx="0.5" fill="#7A5A3A" />
             </g>
           </>
         ) : (
           <>
-            <rect x="24" y="28" width="88" height="66" fill="#C9D3DC" />
-            <path d="M30 94 L40 66 L50 94Z M46 94 L58 58 L70 94Z M66 94 L76 70 L86 94Z M84 94 L96 62 L108 94Z" fill="#3F6B57" />
-            <g className="desk-rain" stroke="#8FA3B5" strokeWidth="1.4" strokeLinecap="round">
-              {[30, 42, 54, 66, 78, 90, 102].map((x, i) => (
+            <rect x="24" y="28" width="80" height="64" fill="#C6D0D6" />
+            <path d="M30 92 L40 64 L50 92Z M46 92 L57 56 L68 92Z M64 92 L74 68 L84 92Z M80 92 L92 60 L104 92Z" fill="#3E6B5C" />
+            <g stroke="#8C9FAE" strokeWidth="1.4" strokeLinecap="round">
+              {[30, 42, 54, 66, 78, 90, 100].map((x, i) => (
                 <line key={x} x1={x} y1={18 + (i % 3) * 12} x2={x - 3} y2={26 + (i % 3) * 12} />
               ))}
-              {[36, 48, 60, 72, 84, 96, 108].map((x, i) => (
+              {[36, 48, 60, 72, 84, 96].map((x, i) => (
                 <line key={x} x1={x} y1={48 + (i % 3) * 10} x2={x - 3} y2={56 + (i % 3) * 10} />
               ))}
             </g>
           </>
         )}
       </g>
-      <rect x="24" y="28" width="88" height="66" rx="5" fill="none" stroke="#FFF" strokeWidth="5" />
-      <line x1="68" y1="28" x2="68" y2="94" stroke="#FFF" strokeWidth="3" />
-      <line x1="24" y1="61" x2="112" y2="61" stroke="#FFF" strokeWidth="3" />
+      <rect x="24" y="28" width="80" height="64" rx="5" fill="none" stroke="#FBF6EC" strokeWidth="5" />
+      <line x1="64" y1="28" x2="64" y2="92" stroke="#FBF6EC" strokeWidth="3" />
+      <line x1="24" y1="60" x2="104" y2="60" stroke="#FBF6EC" strokeWidth="3" />
     </g>
   );
 }

@@ -22,9 +22,8 @@ Who we design for, from the brightwheel primer:
 ## 2. Scope
 
 **In scope**
-- Parent experience for four enrolled families, behind a simulated sign-in. Visitor mode is deferred; see the Phase 3 redesign.
+- Parent experience for five enrolled families, behind a simulated sign-in. Visitor mode is deferred; see the Phase 3 redesign.
 - Operator console per center: overview, handoff inbox with the "answer once" loop, knowledge editor, test box.
-- Set up a new center by pasting a handbook.
 - Two fictional centers in different regions with realistic local rules.
 - Replies in the parent's language: English, Spanish, Mandarin, Hindi.
 - A scorecard of tricky test questions run against the answer engine.
@@ -34,12 +33,12 @@ Who we design for, from the brightwheel primer:
 - Voice, SMS and phone channels.
 - "Network suggestions": draft an answer from how similar centers answered.
 - Real login, roles, push notifications, brightwheel support tooling.
+- Onboarding a new center by pasting its handbook. Dropped on October 7 in favor of debugging and organizing the app; see the build phases.
 
 **Cut list if time runs short, in order**
 1. Mandarin replies, keeping Spanish.
 2. Knowledge test box.
 3. Eight weeks of seeded history down to two.
-4. New-center setup flow becomes "import into the current center".
 
 ## 3. The centers
 
@@ -110,13 +109,13 @@ Custody and restraining orders, pickup authorization changes, suspected abuse or
 - **Phone layout.** Chat first. A small animated clerk sits in the header, with a status line that says what it is doing.
 - **Laptop and tablet layout.** Three panes: a simple lobby scene with the clerk at the desk, the chat, and a notice board. The notice board shows today's hours, today's menu, the next closure and the parent's open requests. It is the digital version of the parent bulletin board the Albuquerque handbook describes.
 - **One clerk, not several.** Parents build trust with one character. Real staff appear as people with names and initials, never as cartoons, so it is always clear who is AI and who is human.
-- **Character: Maple the bear.** A round, soft brown bear in a teal apron with the center's name tag and the handbook tucked in the apron pocket. Same Maple at both centers. Kept deliberately unthreatening: rounded shapes, small eyes, rosy cheeks, no teeth or claws.
+- **Character: Maple the bear.** A full-body, slightly turned rust-brown bear in flat colors with film grain, wearing a teal apron with a "Maple" name tag and the handbook in the pocket. Same Maple at both centers. Kept deliberately unthreatening: rounded shapes, small eyes, rosy cheeks, no teeth or claws.
 - **Maple's voice.** Warm, steady and plain. Short sentences, no baby talk, no exclamation marks in serious answers.
 - **Maple's states.** Ready: slow breathing and blinking. Listening: ears perk and head tilts while the parent types. Checking the handbook: reading glasses on, pages turning. Getting a person: holds a phone and gestures toward the director's door. Done: a small nod after an action is confirmed. Calm mode: still, soft eyes, paw on chest.
 - **Animation explains the work.** Each state maps to what the system is doing: ready, listening while the parent types, checking the handbook, getting a person during a handoff, and calm mode.
 - **Calm mode for hard moments.** On urgent or sensitive topics the clerk stops bouncing, the copy turns plain, and the human handoff takes center stage.
 - **Always labeled as AI.** The clerk never claims to be a person.
-- **Built as SVG with CSS animation.** Light, fully controllable, and respects reduced-motion settings. No 3D.
+- **Built as SVG, animated with Motion.** Light, fully controllable, and respects reduced-motion settings. No 3D.
 
 ### Phase 3 redesign, decided October 7
 
@@ -127,6 +126,7 @@ Feedback on the first parent app: treat it as a real product, not a demo router.
 - **No visitor mode for now.** Prospective-family flows are hidden from the interface. The engine still supports visitors, so they can return later as a public page per center.
 - **The front desk is the home screen.** On phones, the animated front desk with Maple is the hero, with information cards below: today, food, next closure, notices, your requests and your children. Tapping Maple opens the chat as a card that springs up while Maple moves from the desk into its header, using Motion's shared-layout animation. Maple acts out each state during the conversation, and closing the card returns her to the desk. On laptops, the desk and cards stay in view with the chat docked beside them.
 - **Maple, version 2.** Redrawn in code with more polish: softer shading, highlights and rounder proportions, with the same design and separately animated parts. Animated with the Motion library using springs, and a wave hello and happy hop added to the existing states. The component keeps its `state` and `size` interface, so a Rive-made Maple could replace it later.
+- **Maple and the desk, restyled October 8.** From a reference the user shared: Maple stands full body in a flat, grainy illustration style, and the front desk matches, with Maple standing beside a low counter instead of behind it.
 
 ## 7. Operator console
 
@@ -135,7 +135,27 @@ Feedback on the first parent app: treat it as a real product, not a demo router.
 - **Inbox.** Handoffs sorted urgent first. Each shows the family, child, the parent's words, why the AI handed off, and a suggested reply. Sending a reply delivers it to the parent, translated if needed, and offers "Save as answer", which drafts a general Q&A for the director to approve.
 - **Knowledge.** Handbook sections, structured tables for calendar, menu, tuition, hours and tour slots, and saved answers. Each item shows who updated it, when, and how many answers used it this week.
 - **Test box.** Ask as any family and see the answer and sources without logging it.
-- **Set up a new center.** Paste a handbook. The AI splits it into sections and extracts facts into tables, each with the quote it came from. The director approves or edits, and the center goes live in visitor mode.
+- **Set up a new center.** Not planned for now. The idea was to paste a handbook, have the AI split it into sections and tables with the quote each fact came from, and let the director approve it.
+
+### Phase 4 decisions, October 7
+
+- **Directors see only their own center.** No center switcher: sign out and pick the other director from Demo accounts, like a real product.
+- **Laptop first.** The inbox and replies still work on a phone.
+- **Knowledge editing.** Directors edit handbook sections and saved answers. The calendar, menu, tuition, hours and tour tables are read-only for now, each showing who updated it and when.
+- **Suggested replies on request.** A "Draft a reply" button asks Maple for a draft from the handbook. Where the handbook is silent, the draft leaves a bracketed blank for the director instead of inventing an answer.
+- **Replies reach parents in their language.** The parent sees the translation, with the original one tap away. The director sees what the parent got.
+
+Added after the first walkthrough, October 8:
+
+- **Each center's own logo** in the console, on sign-in and on the parent home. Maple stays the parents' assistant; staff tools carry the center's brand.
+- **"Knowledge" is called "Source of truth",** matching the brief's wording. It explains its three kinds: answers you wrote once (remembered and reused for any family), the family handbook (policies Maple reads, answers from and double-checks), and center data (scheduled facts looked up without AI). Maple checks them in that order: your answers, then center data, then the handbook, then asks you.
+- **The test box keeps its own tab,** "Test Maple", for checking answers after an edit.
+- **"Talk to a person" appears after two thumbs down.** An always-visible button would pull parents away from answers Maple can give. After a second thumbs down in a conversation, Maple apologizes and offers to reach the director, and the button stays in the chip row for that conversation. It goes straight to the director with Maple's last answer as context, with no AI involved.
+- **Sensitive handoffs reassure and promise privacy.** For behavior, injuries, concerns about staff, billing, pickup, custody and possible abuse, Maple adds a plain line of comfort ("You don't have to handle this alone", "please don't worry") and says who can see the message. The privacy promise comes from each handbook's "Concerns and feedback" section, which Maple cites as a source. A concern about staff goes to the director "and no one else". For possible abuse, Maple says it will be "handled privately" rather than promising no one else will see it, because centers may have to report to authorities.
+- **No engine details under answers.** Replies used to end with a line like "AI read your message, then the answer was looked up in the center's data · 0.9 s". Parents don't need it, so replies end with their sources and "Was this helpful?". The director's Test Maple tab still shows how Maple got there.
+- **Center data split by how often it changes.** Calendar, tuition and rooms, and hours are set by the director and rarely change. The menu and tour times change week to week and are shown separately: this week's menu, Monday to Friday, with allergen tags, and the next two weeks of tour times with who booked each. Both are read-only for now. Menu editing may come later as its own small tool, since publishing the menu isn't always the director's job. Parents can ask for the whole week's menu, and the Food card has a "This week" view with each child's allergy check.
+- **No question buttons on the home screen.** The old "Today's food", "Next closure" and "Hours" buttons repeated the cards below them. Cards hold the facts you can glance at, and the Food card now shows what today's food means for each child (allergy check, infant plan, safe backup lunch), computed by code. Inside the chat, the suggestions are tasks only Maple can do: "Mia is sick", "Report an absence", and "Forgot lunch" at pack-lunch centers.
+- **The overview leads with fixes.** A "To fix" line counts open gaps and unhelpful answers. Each unhelpful answer shows what Maple said and the source it used, with buttons to fix that source, edit the saved answer, write a better answer, or mark it handled.
 
 ## 8. Answer engine: a router with lanes
 
@@ -195,7 +215,7 @@ Groq goes first. On the scorecard it answered every question it received correct
 - Seeded question history is generated relative to the current date, so the demo never looks stale.
 - Deployed on the user's Vercel account.
 
-Routes: landing page, parent app, operator console per center, demo split view, and API routes for asking, handoffs, knowledge, actions, setup and reset.
+Routes: landing page, parent app, operator console per center, demo split view, and API routes for asking, handoffs, knowledge, actions and reset.
 
 ## 10. Scorecard
 
@@ -210,7 +230,7 @@ The scenarios in SCENARIOS.md become the test set. About thirty test questions a
 | 0:45 | Fever: Mia's return time is computed and the absence is logged |
 | 1:00 | Ethan's grandparent pickup goes straight to staff, in Mandarin |
 | 1:10 | Halloween: Rosa asks in Spanish, the director answers once, Ana gets it instantly |
-| 1:35 | A new center goes live from a pasted handbook, then the overview shows time saved and gaps |
+| 1:35 | The director's overview shows time saved, after-hours answers and the gaps Maple couldn't answer |
 | 1:50 | Bonus teaser |
 
 ## 12. Build phases and checkpoints
@@ -222,7 +242,7 @@ The scenarios in SCENARIOS.md become the test set. About thirty test questions a
 | 2 | Answer engine and scorecard | Scorecard results |
 | 3 | Parent experience: simulated sign-in, front desk home, chat card, Maple version 2 | Try it on your phone |
 | 4 | Operator console and "answer once" loop | Walk the full loop |
-| 5 | New-center setup from a handbook | Try a paste |
+| 5 | Debug and organize: fix bugs found so far, tidy the code and docs, and re-run every check on the merged app | Clean scorecard and a walk through every screen |
 | 6 | Demo view, deploy, polish, video shot list | Hosted URL ready to record |
 
 ## 13. Risks

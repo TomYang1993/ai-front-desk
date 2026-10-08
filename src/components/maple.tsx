@@ -4,35 +4,38 @@ import { useId } from "react";
 import { motion, useReducedMotion, type TargetAndTransition, type Transition } from "motion/react";
 
 /**
- * Maple, the front desk bear. Her pose shows what the system is doing:
- * ready, listening while the parent types, checking the handbook, getting
- * a person, done after an action (a happy hop and a nod), calm for
- * sensitive moments, and a wave hello.
+ * Maple, the front desk bear: a full-body, slightly turned bear in flat,
+ * grainy colors, wearing a teal apron with her name tag and the handbook in
+ * the pocket. Her pose shows what the system is doing: ready, listening
+ * while the parent types, checking the handbook, getting a person, done
+ * after an action (a happy hop and a nod), calm for sensitive moments, and
+ * a wave hello.
  *
- * Each part moves on its own: body, head, ears, eyes, brows and both arms
- * pivot at fixed points in the 200 x 200 drawing. Motion springs drive the
- * poses; loops (breathing, blinking) stop for people who prefer reduced
- * motion, who see the still pose for each state instead.
+ * Each part moves on its own: body, head, ears, eyes and both arms pivot at
+ * fixed points in the 200 x 200 drawing. Raised arms shorten (scaleY) as if
+ * bending toward the viewer, so a paw can reach her cheek. Motion springs
+ * drive the poses; loops (breathing, blinking) stop for people who prefer
+ * reduced motion, who see the still pose for each state instead.
  */
 export type MapleState = "ready" | "listening" | "thinking" | "handoff" | "done" | "calm" | "wave";
 
-const FUR = "#9A6B47";
-const FUR_LIGHT = "#B98B62";
-const FUR_DARK = "#7E5536";
-const FUR_DEEP = "#64412A";
-const MUZZLE = "#EFD3AE";
-const MUZZLE_SHADE = "#D8B38B";
-const INNER_EAR = "#E7C3A0";
-const INK = "#2C2420";
-const APRON = "#4FBF98";
-const APRON_LIGHT = "#7FD8B8";
-const APRON_DARK = "#2E9C7A";
-const CHEEK = "#F2A7B8";
+const FUR = "#B4612C";
+const FUR_LIGHT = "#C97A40";
+const FUR_SHADOW = "#8C4720";
+const MUZZLE = "#E9B37C";
+const INNER_EAR = "#7E3F1C";
+const INK = "#2E1C14";
+const CHEEK = "#D9775F";
+const APRON = "#3F6F66";
+const APRON_DARK = "#2C514A";
+const TAG = "#F5EBDB";
+const BOOK = "#E39A45";
+const BOOK_LIGHT = "#F4C27C";
 
 /** A pivot point in the drawing. Motion builds transform-origin from originX and originY. */
 const at = (x: number, y: number) => ({ transformBox: "view-box" as const, originX: `${x}px`, originY: `${y}px` });
 
-const SPRING: Transition = { type: "spring", stiffness: 260, damping: 18 };
+const SPRING: Transition = { type: "spring", stiffness: 240, damping: 18 };
 const SOFT: Transition = { type: "spring", stiffness: 120, damping: 20 };
 
 type Pose = { animate: TargetAndTransition; transition?: Transition };
@@ -42,88 +45,89 @@ function pose(reduce: boolean, moving: Pose, still: TargetAndTransition): Pose {
   return reduce ? { animate: still, transition: { duration: 0 } } : moving;
 }
 
+/** Arm angles (clockwise is positive) and length (scaleY) for each state. */
+const FRONT_ARM: Record<MapleState, { rotate: number; scaleY: number }> = {
+  ready: { rotate: 6, scaleY: 1 },
+  listening: { rotate: 6, scaleY: 1 },
+  thinking: { rotate: -28, scaleY: 0.9 },
+  handoff: { rotate: 6, scaleY: 1 },
+  done: { rotate: 26, scaleY: 1 },
+  calm: { rotate: -56, scaleY: 0.92 },
+  wave: { rotate: 6, scaleY: 1 },
+};
+const BACK_ARM: Record<MapleState, { rotate: number; scaleY: number }> = {
+  ready: { rotate: -6, scaleY: 1 },
+  listening: { rotate: -6, scaleY: 1 },
+  thinking: { rotate: -6, scaleY: 1 },
+  handoff: { rotate: -172, scaleY: 0.58 },
+  done: { rotate: -26, scaleY: 1 },
+  calm: { rotate: -4, scaleY: 1 },
+  wave: { rotate: -6, scaleY: 1 },
+};
+
 export function Maple({ state = "ready", size = 120, label }: { state?: MapleState; size?: number; label?: string }) {
   const reduce = useReducedMotion() ?? false;
   const id = useId().replace(/:/g, "");
-  const fur = `maple-fur-${id}`;
-  const muzzle = `maple-muzzle-${id}`;
-  const apron = `maple-apron-${id}`;
+  const grain = `maple-grain-${id}`;
   const calm = state === "calm";
-  const happy = state === "done" || state === "wave";
 
   const body = pose(
     reduce,
     state === "done"
-      ? { animate: { y: [0, 3, -18, 0, 0], scaleY: [1, 0.93, 1.04, 0.95, 1] }, transition: { duration: 0.8, times: [0, 0.15, 0.45, 0.75, 1], ease: "easeOut" } }
-      : { animate: { y: [0, calm ? -0.8 : -1.8, 0], scaleY: [1, calm ? 1.005 : 1.012, 1] }, transition: { duration: calm ? 5.5 : 3.4, repeat: Infinity, ease: "easeInOut" } },
+      ? { animate: { y: [0, 3, -18, 0, 0], scaleY: [1, 0.94, 1.04, 0.96, 1] }, transition: { duration: 0.8, times: [0, 0.15, 0.45, 0.75, 1], ease: "easeOut" } }
+      : { animate: { y: [0, calm ? -0.6 : -1.6, 0], scaleY: [1, calm ? 1.004 : 1.01, 1] }, transition: { duration: calm ? 5.5 : 3.4, repeat: Infinity, ease: "easeInOut" } },
     { y: 0, scaleY: 1 },
   );
-
   const shadow = pose(
     reduce,
-    state === "done" ? { animate: { scaleX: [1, 1.06, 0.78, 1.06, 1], opacity: [0.1, 0.12, 0.05, 0.12, 0.1] }, transition: { duration: 0.8, times: [0, 0.15, 0.45, 0.75, 1] } } : { animate: { scaleX: 1, opacity: 0.1 } },
+    state === "done" ? { animate: { scaleX: [1, 1.05, 0.8, 1.05, 1], opacity: [0.1, 0.12, 0.05, 0.12, 0.1] }, transition: { duration: 0.8, times: [0, 0.15, 0.45, 0.75, 1] } } : { animate: { scaleX: 1, opacity: 0.1 } },
     { scaleX: 1, opacity: 0.1 },
   );
 
   const headTarget: Record<MapleState, TargetAndTransition> = {
     ready: { rotate: 0, y: 0 },
-    listening: { rotate: -8, y: 0 },
-    thinking: { rotate: 5, y: 3 },
-    handoff: { rotate: 7, y: 0 },
+    listening: { rotate: 7, y: 0 },
+    thinking: { rotate: 4, y: 3 },
+    handoff: { rotate: 6, y: 0 },
     calm: { rotate: -3, y: 1 },
-    wave: { rotate: -6, y: 0 },
+    wave: { rotate: -5, y: 0 },
     done: { rotate: 0, y: 0 },
   };
   const head = pose(
     reduce,
     state === "done"
-      ? { animate: { rotate: [0, 0, 10, -3, 0], y: 0 }, transition: { duration: 1.1, times: [0, 0.5, 0.7, 0.85, 1], ease: "easeInOut" } }
+      ? { animate: { rotate: [0, 0, 9, -3, 0], y: 0 }, transition: { duration: 1.1, times: [0, 0.5, 0.7, 0.85, 1], ease: "easeInOut" } }
       : { animate: headTarget[state], transition: SPRING },
     headTarget[state],
   );
 
-  // Ears perk up and in while listening, droop a little in calm mode, and the right one twitches now and then.
-  const leftEar = pose(
-    reduce,
-    { animate: state === "listening" ? { rotate: 8, scale: 1.12 } : calm ? { rotate: -12, scale: 0.96 } : { rotate: 0, scale: 1 }, transition: SPRING },
-    state === "listening" ? { rotate: 8, scale: 1.12 } : calm ? { rotate: -12, scale: 0.96 } : { rotate: 0, scale: 1 },
-  );
+  const earPose = (side: 1 | -1) =>
+    state === "listening" ? { rotate: 8 * side, scale: 1.12 } : calm ? { rotate: -10 * side, scale: 0.95 } : { rotate: 0, scale: 1 };
+  const leftEar = pose(reduce, { animate: earPose(1), transition: SPRING }, earPose(1));
   const rightEar = pose(
     reduce,
-    state === "listening"
-      ? { animate: { rotate: -8, scale: 1.12 }, transition: SPRING }
-      : calm
-        ? { animate: { rotate: 12, scale: 0.96 }, transition: SPRING }
-        : { animate: { rotate: [0, 0, 14, 0, 0], scale: 1 }, transition: { duration: 6, times: [0, 0.8, 0.84, 0.88, 1], repeat: Infinity } },
-    state === "listening" ? { rotate: -8, scale: 1.12 } : calm ? { rotate: 12, scale: 0.96 } : { rotate: 0, scale: 1 },
+    state === "listening" || calm
+      ? { animate: earPose(-1), transition: SPRING }
+      : { animate: { rotate: [0, 0, -12, 0, 0], scale: 1 }, transition: { duration: 6, times: [0, 0.8, 0.84, 0.88, 1], repeat: Infinity } },
+    earPose(-1),
   );
 
-  // Blinking, and a glance toward the director's door while getting a person.
   const eyes = pose(
     reduce,
     {
-      animate: { scaleY: [1, 1, 0.08, 1], x: state === "handoff" ? 3 : 0, scale: state === "listening" ? 1.08 : 1 },
+      animate: { scaleY: [1, 1, 0.1, 1], x: state === "handoff" ? 2.5 : 0, scale: state === "listening" ? 1.12 : 1 },
       transition: { scaleY: { duration: state === "thinking" ? 6 : 4.2, times: [0, 0.93, 0.96, 1], repeat: Infinity }, x: SPRING, scale: SPRING },
     },
-    { scaleY: 1, x: state === "handoff" ? 3 : 0, scale: 1 },
+    { scaleY: 1, x: state === "handoff" ? 2.5 : 0, scale: 1 },
   );
 
-  const brows = pose(
-    reduce,
-    { animate: state === "listening" ? { y: -3 } : calm ? { y: 1 } : { y: 0 }, transition: SPRING },
-    state === "listening" ? { y: -3 } : calm ? { y: 1 } : { y: 0 },
-  );
-
-  // Arms pivot at the shoulders. Positive angles turn clockwise.
-  const leftArmAngle = state === "thinking" ? -30 : state === "done" ? 24 : 10;
-  const rightArmAngle: Record<MapleState, number> = { ready: -10, listening: -10, thinking: 30, handoff: -152, calm: 56, wave: -10, done: -24 };
-  const leftArm = pose(reduce, { animate: { rotate: leftArmAngle }, transition: SPRING }, { rotate: leftArmAngle });
-  const rightArm = pose(
+  const frontArm = pose(reduce, { animate: FRONT_ARM[state], transition: SPRING }, FRONT_ARM[state]);
+  const backArm = pose(
     reduce,
     state === "wave"
-      ? { animate: { rotate: [-10, -150, -122, -150, -122, -150, -10] }, transition: { duration: 2, times: [0, 0.2, 0.35, 0.5, 0.65, 0.8, 1], ease: "easeInOut" } }
-      : { animate: { rotate: rightArmAngle[state] }, transition: SPRING },
-    { rotate: state === "wave" ? -140 : rightArmAngle[state] },
+      ? { animate: { rotate: [-6, -150, -122, -150, -122, -150, -6], scaleY: [1, 0.9, 0.9, 0.9, 0.9, 0.9, 1] }, transition: { duration: 2, times: [0, 0.2, 0.35, 0.5, 0.65, 0.8, 1], ease: "easeInOut" } }
+      : { animate: BACK_ARM[state], transition: SPRING },
+    state === "wave" ? { rotate: -140, scaleY: 0.9 } : BACK_ARM[state],
   );
 
   const show = (on: boolean) => ({ animate: { opacity: on ? 1 : 0, scale: on ? 1 : 0.85 }, transition: reduce ? { duration: 0 } : SOFT });
@@ -139,143 +143,115 @@ export function Maple({ state = "ready", size = 120, label }: { state?: MapleSta
       aria-label={label ?? `Maple, ${state === "thinking" ? "checking the handbook" : state === "handoff" ? "getting a person" : state === "wave" ? "waving hello" : "the front desk bear"}`}
     >
       <defs>
-        <radialGradient id={fur} cx="0.38" cy="0.3" r="0.8">
-          <stop offset="0" stopColor={FUR_LIGHT} />
-          <stop offset="0.55" stopColor={FUR} />
-          <stop offset="1" stopColor={FUR_DARK} />
-        </radialGradient>
-        <radialGradient id={muzzle} cx="0.45" cy="0.35" r="0.75">
-          <stop offset="0" stopColor="#F7E2C4" />
-          <stop offset="0.6" stopColor={MUZZLE} />
-          <stop offset="1" stopColor={MUZZLE_SHADE} />
-        </radialGradient>
-        <linearGradient id={apron} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={APRON_LIGHT} />
-          <stop offset="0.5" stopColor={APRON} />
-          <stop offset="1" stopColor={APRON_DARK} />
-        </linearGradient>
+        {/* Film grain, laid only over Maple's own shapes. */}
+        <filter id={grain} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.95" numOctaves="2" seed="7" stitchTiles="stitch" result="noise" />
+          <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.2  0 0 0 0 0.11  0 0 0 0 0.05  1.7 0 0 0 -0.95" result="specks" />
+          <feComposite in="specks" in2="SourceGraphic" operator="in" result="grainOnShapes" />
+          <feComposite in="grainOnShapes" in2="SourceGraphic" operator="over" />
+        </filter>
       </defs>
 
-      <motion.ellipse cx="100" cy="192" rx="50" ry="6" fill="#000" style={at(100, 192)} initial={false} {...shadow} />
+      <motion.ellipse cx="100" cy="190" rx="56" ry="5.5" fill="#3A2A1A" style={at(100, 190)} initial={false} {...shadow} />
 
-      <motion.g style={at(100, 192)} initial={false} {...body}>
-        {/* Feet */}
-        <ellipse cx="78" cy="184" rx="17" ry="9" fill={FUR_DARK} />
-        <ellipse cx="122" cy="184" rx="17" ry="9" fill={FUR_DARK} />
-        <ellipse cx="78" cy="185" rx="8" ry="4.5" fill={MUZZLE_SHADE} opacity="0.7" />
-        <ellipse cx="122" cy="185" rx="8" ry="4.5" fill={MUZZLE_SHADE} opacity="0.7" />
+      <motion.g style={at(100, 188)} initial={false} {...body} filter={`url(#${grain})`}>
+        {/* The far arm, in shadow behind the body. Waves and holds the phone. */}
+        <motion.g style={at(134, 94)} initial={false} {...backArm}>
+          <path d="M123 96 C123 85 145 85 145 96 L146 148 C146 162 125 162 124 148 Z" fill={FUR_SHADOW} />
+        </motion.g>
 
-        {/* Body and belly */}
-        <path d="M100 110 C134 110 150 136 150 160 C150 181 128 191 100 191 C72 191 50 181 50 160 C50 136 66 110 100 110 Z" fill={`url(#${fur})`} />
-        <ellipse cx="100" cy="166" rx="30" ry="20" fill={MUZZLE} opacity="0.35" />
+        {/* Legs and feet */}
+        <path d="M70 158 C70 150 96 150 96 158 L96 178 L70 178 Z" fill={FUR} />
+        <path d="M106 158 C106 150 132 150 132 158 L132 178 L106 178 Z" fill={FUR} />
+        <path d="M62 184 C62 172 98 172 98 184 C98 189 62 189 62 184 Z" fill={FUR} />
+        <path d="M104 184 C104 172 140 172 140 184 C140 189 104 189 104 184 Z" fill={FUR} />
+        <path d="M72 186 Q80 183 88 186 M114 186 Q122 183 130 186" stroke={FUR_SHADOW} strokeWidth="1.4" fill="none" strokeLinecap="round" />
 
-        {/* Apron, pocket with the handbook, and name tag */}
-        <path d="M73 130 Q100 121 127 130 L129 175 Q100 186 71 175 Z" fill={`url(#${apron})`} />
-        <path d="M76 131 Q100 124 124 131" stroke="#FFF" strokeOpacity="0.35" strokeWidth="2" fill="none" strokeLinecap="round" />
-        <line x1="78" y1="130" x2="72" y2="114" stroke={APRON_DARK} strokeWidth="4" strokeLinecap="round" />
-        <line x1="122" y1="130" x2="128" y2="114" stroke={APRON_DARK} strokeWidth="4" strokeLinecap="round" />
-        <rect x="90" y="145" width="20" height="13" rx="2" fill="#D85A30" />
-        <rect x="92" y="147" width="16" height="1.8" rx="0.9" fill="#FBE3D6" />
-        <rect x="85" y="153" width="30" height="17" rx="6" fill={APRON_DARK} />
-        <path d="M88 156 Q100 159 112 156" stroke="#FFF" strokeOpacity="0.25" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-        <circle cx="117" cy="139" r="6" fill="#FFF" stroke={APRON_DARK} strokeWidth="1.5" />
-        <text x="117" y="141.6" textAnchor="middle" fontSize="7" fontWeight="800" fill={APRON_DARK}>
-          M
+        {/* Body */}
+        <path d="M100 76 C125 76 139 92 142 116 C145 140 142 158 131 167 C117 176 83 176 69 167 C58 158 55 140 58 116 C61 92 75 76 100 76 Z" fill={FUR} />
+        <path d="M134 98 C142 116 143 142 134 162 C140 140 140 118 134 98 Z" fill={FUR_SHADOW} opacity="0.55" />
+
+        {/* Apron, with the name tag and the handbook in the pocket */}
+        <path d="M80 96 L86 79" stroke={APRON} strokeWidth="4.5" strokeLinecap="round" />
+        <path d="M120 96 L114 79" stroke={APRON} strokeWidth="4.5" strokeLinecap="round" />
+        <path d="M76 95 L124 95 L132 166 C113 174 87 174 68 166 Z" fill={APRON} />
+        <rect x="84" y="101" width="32" height="10.5" rx="2.5" fill={TAG} />
+        <text x="100" y="108.8" textAnchor="middle" fontSize="6.6" fontWeight="800" fill={INK} fontFamily="var(--font-nunito), system-ui, sans-serif">
+          Maple
         </text>
+        <g transform="rotate(-8 108 126)">
+          <rect x="97" y="120" width="22" height="9" rx="1.5" fill={BOOK} />
+          <rect x="97" y="120" width="22" height="2.6" rx="1.2" fill={BOOK_LIGHT} />
+        </g>
+        <path d="M85 126 L117 126 L118 152 C118 157 115 159 111 159 L91 159 C87 159 84 157 84 152 Z" fill={APRON} stroke={APRON_DARK} strokeWidth="1.3" strokeLinejoin="round" />
 
-        {/* The handbook, held open while she checks it */}
-        <motion.g style={at(100, 152)} initial={false} {...show(state === "thinking")}>
-          <path d="M74 138 L100 144 L126 138 L126 166 L100 172 L74 166 Z" fill="#FFF" stroke="#D6CFC4" strokeWidth="1.5" strokeLinejoin="round" />
-          <line x1="100" y1="144" x2="100" y2="172" stroke="#D6CFC4" strokeWidth="1.5" />
-          <line x1="80" y1="148" x2="95" y2="151" stroke="#C9C1B4" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="80" y1="154" x2="95" y2="157" stroke="#C9C1B4" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="80" y1="160" x2="91" y2="162" stroke="#C9C1B4" strokeWidth="1.5" strokeLinecap="round" />
-          <motion.path d="M100 144 L123 139 L123 164 L100 169 Z" fill="#F7F2EA" stroke="#E2DAD0" strokeWidth="1" style={at(100, 156)} initial={false} {...(state === "thinking" ? page : { animate: { scaleX: 1 } })} />
+        {/* The open handbook, held up while she checks it */}
+        <motion.g style={at(112, 124)} initial={false} {...show(state === "thinking")}>
+          <path d="M90 112 L112 117 L134 112 L134 138 L112 143 L90 138 Z" fill="#FBF6EC" stroke="#CDBFAE" strokeWidth="1.2" strokeLinejoin="round" />
+          <line x1="112" y1="117" x2="112" y2="143" stroke="#CDBFAE" strokeWidth="1.2" />
+          <path d="M95 121 L108 124 M95 127 L108 130 M95 133 L104 135" stroke="#BFB09C" strokeWidth="1.3" strokeLinecap="round" />
+          <motion.path d="M112 117 L131 113 L131 137 L112 141 Z" fill="#F3ECDF" stroke="#DCCFBE" strokeWidth="0.8" style={at(112, 129)} initial={false} {...(state === "thinking" ? page : { animate: { scaleX: 1 } })} />
+          <ellipse cx="134" cy="128" rx="7" ry="8" fill={FUR_SHADOW} />
         </motion.g>
 
         {/* Head */}
-        <motion.g style={at(100, 122)} initial={false} {...head}>
-          <motion.g style={at(70, 64)} initial={false} {...leftEar}>
-            <circle cx="62" cy="50" r="18" fill={`url(#${fur})`} />
-            <circle cx="63" cy="51" r="10" fill={INNER_EAR} />
+        <motion.g style={at(100, 86)} initial={false} {...head}>
+          <motion.g style={at(74, 42)} initial={false} {...leftEar}>
+            <circle cx="71" cy="34" r="13" fill={FUR} />
+            <circle cx="72" cy="35" r="6.5" fill={INNER_EAR} />
           </motion.g>
-          <motion.g style={at(130, 64)} initial={false} {...rightEar}>
-            <circle cx="138" cy="50" r="18" fill={`url(#${fur})`} />
-            <circle cx="137" cy="51" r="10" fill={INNER_EAR} />
+          <motion.g style={at(122, 38)} initial={false} {...rightEar}>
+            <circle cx="125" cy="30" r="11.5" fill={FUR} />
+            <circle cx="125" cy="31" r="5.5" fill={INNER_EAR} />
           </motion.g>
-
-          <ellipse cx="100" cy="84" rx="48" ry="44" fill={`url(#${fur})`} />
-          <ellipse cx="84" cy="60" rx="17" ry="9" fill="#FFF" opacity="0.1" transform="rotate(-12 84 60)" />
-
-          <motion.g fill="none" stroke={FUR_DEEP} strokeWidth="2.6" strokeLinecap="round" initial={false} {...brows}>
-            {calm ? (
-              <>
-                <path d="M76 66 Q83 63 90 66" transform="rotate(8 83 65)" />
-                <path d="M110 66 Q117 63 124 66" transform="rotate(-8 117 65)" />
-              </>
-            ) : (
-              <>
-                <path d="M76 66 Q83 62 90 65" />
-                <path d="M110 65 Q117 62 124 66" />
-              </>
-            )}
-          </motion.g>
-
+          <ellipse cx="99" cy="56" rx="36" ry="33" fill={FUR} />
+          <ellipse cx="86" cy="40" rx="13" ry="6" fill={FUR_LIGHT} opacity="0.3" transform="rotate(-18 86 40)" />
+          <ellipse cx="111" cy="65" rx="15.5" ry="11.5" fill={MUZZLE} />
+          <circle cx="81" cy="65" r="6.2" fill={CHEEK} opacity="0.85" />
+          <ellipse cx="118" cy="59.5" rx="6.2" ry="4.6" fill={INK} />
           {calm ? (
-            <g stroke={INK} strokeWidth="2.8" fill="none" strokeLinecap="round">
-              <path d="M77 79 Q83 83 89 79" />
-              <path d="M111 79 Q117 83 123 79" />
+            <path d="M106 70 Q112 72 118 70" stroke={INK} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          ) : state === "done" || state === "wave" ? (
+            <path d="M105 68.5 Q112 76 119 68.5 Z" fill="#7A2E22" stroke={INK} strokeWidth="1.5" strokeLinejoin="round" />
+          ) : (
+            <path d="M106 69 Q112 73.5 118 69" stroke={INK} strokeWidth="1.7" fill="none" strokeLinecap="round" />
+          )}
+          {calm ? (
+            <g stroke={INK} strokeWidth="2" fill="none" strokeLinecap="round">
+              <path d="M88 53 Q92 56 96 53" />
+              <path d="M110 50 Q114 53 118 50" />
             </g>
           ) : state === "done" ? (
-            <g stroke={INK} strokeWidth="3" fill="none" strokeLinecap="round">
-              <path d="M77 80 Q83 73 89 80" />
-              <path d="M111 80 Q117 73 123 80" />
+            <g stroke={INK} strokeWidth="2.2" fill="none" strokeLinecap="round">
+              <path d="M88 54 Q92 49 96 54" />
+              <path d="M110 51 Q114 46 118 51" />
             </g>
           ) : (
-            <motion.g style={at(100, 78)} initial={false} {...eyes}>
-              <ellipse cx="83" cy="78" rx="5" ry="5.8" fill={INK} />
-              <ellipse cx="117" cy="78" rx="5" ry="5.8" fill={INK} />
-              <circle cx="84.8" cy="75.8" r="1.7" fill="#FFF" />
-              <circle cx="118.8" cy="75.8" r="1.7" fill="#FFF" />
+            <motion.g style={at(103, 51)} initial={false} {...eyes} fill={INK}>
+              <circle cx="92" cy="52" r="2.8" />
+              <circle cx="114" cy="49" r="2.8" />
             </motion.g>
           )}
-
-          <ellipse cx="69" cy="96" rx="7.5" ry="4.8" fill={CHEEK} opacity={calm ? 0.45 : 0.7} />
-          <ellipse cx="131" cy="96" rx="7.5" ry="4.8" fill={CHEEK} opacity={calm ? 0.45 : 0.7} />
-
-          <ellipse cx="100" cy="100" rx="23" ry="17" fill={`url(#${muzzle})`} />
-          <path d="M92 92 Q100 87 108 92 Q106 99 100 100 Q94 99 92 92 Z" fill={INK} />
-          <ellipse cx="97" cy="91.5" rx="2.6" ry="1.4" fill="#FFF" opacity="0.55" />
-          <line x1="100" y1="100" x2="100" y2="104" stroke={INK} strokeWidth="2" strokeLinecap="round" />
-          {happy ? (
-            <path d="M92 104 Q100 115 108 104 Z" fill="#8A3B34" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
-          ) : calm ? (
-            <path d="M95 106 Q100 108 105 106" stroke={INK} strokeWidth="2" fill="none" strokeLinecap="round" />
-          ) : (
-            <path d="M93 104 Q100 110 107 104" stroke={INK} strokeWidth="2.2" fill="none" strokeLinecap="round" />
-          )}
-
           {/* Reading glasses */}
-          <motion.g style={at(100, 78)} initial={false} {...show(state === "thinking")}>
-            <g stroke={INK} strokeWidth="2" fill="#FFF" fillOpacity="0.2">
-              <circle cx="83" cy="78" r="10" />
-              <circle cx="117" cy="78" r="10" />
+          <motion.g style={at(103, 51)} initial={false} {...show(state === "thinking")}>
+            <g stroke={INK} strokeWidth="1.5" fill="#FFF" fillOpacity="0.15">
+              <circle cx="92" cy="52" r="7" />
+              <circle cx="114" cy="49" r="7" />
             </g>
-            <path d="M93 77 Q100 73 107 77" stroke={INK} strokeWidth="2" fill="none" />
+            <path d="M99 51 Q103 48.5 107 50" stroke={INK} strokeWidth="1.5" fill="none" />
           </motion.g>
         </motion.g>
 
-        {/* Arms, in front of the head so a raised paw can hold the phone to her ear */}
-        <motion.g style={at(70, 128)} initial={false} {...leftArm}>
-          <rect x="60" y="122" width="20" height="36" rx="10" fill={`url(#${fur})`} />
-          <ellipse cx="70" cy="156" rx="11" ry="10" fill={FUR_LIGHT} />
-          <ellipse cx="70" cy="158" rx="5" ry="3.8" fill={MUZZLE_SHADE} opacity="0.8" />
+        {/* The near arm, in front: holds the book, rests on her chest in calm mode */}
+        <motion.g style={at(66, 94)} initial={false} {...frontArm}>
+          <path d="M55 96 C55 85 77 85 77 96 L76 148 C76 162 55 162 55 148 Z" fill={FUR} />
+          <path d="M57 99 C57 92 62 89 66 89" stroke={FUR_LIGHT} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6" />
         </motion.g>
-        <motion.g style={at(130, 128)} initial={false} {...rightArm}>
-          <motion.rect x="123.5" y="150" width="13" height="27" rx="3.5" fill={INK} style={at(130, 160)} initial={false} {...show(state === "handoff")} />
-          <rect x="120" y="122" width="20" height="36" rx="10" fill={`url(#${fur})`} />
-          <ellipse cx="130" cy="156" rx="11" ry="10" fill={FUR_LIGHT} />
-          <ellipse cx="130" cy="158" rx="5" ry="3.8" fill={MUZZLE_SHADE} opacity="0.8" />
+
+        {/* A phone at her cheek while she gets a person */}
+        <motion.g style={at(140, 58)} initial={false} {...show(state === "handoff")}>
+          <rect x="135" y="44" width="10" height="20" rx="2.5" fill={INK} transform="rotate(14 140 54)" />
+          <ellipse cx="141" cy="60" rx="7" ry="6.5" fill={FUR_SHADOW} />
         </motion.g>
       </motion.g>
     </svg>

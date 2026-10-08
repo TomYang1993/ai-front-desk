@@ -10,9 +10,10 @@ import { STRINGS, type DayPart } from "@/lib/i18n";
 import { signOut } from "@/lib/auth-actions";
 import { formatSlot, listDays } from "@/lib/format";
 import { Maple, type MapleState } from "./maple";
+import { CenterLogo } from "./center-logo";
 import { DeskScene } from "./desk-scene";
 import { InfoCards, type Requests } from "./info-cards";
-import { ChatHeader, ChatThread, Composer, type ChatItem } from "./chat";
+import { ChatHeader, ChatThread, Composer, type ChatItem, type StaffReply } from "./chat";
 import type { ActionResult } from "./reply-card";
 
 interface Saved {
@@ -83,6 +84,9 @@ export function FrontDesk({ view }: { view: ParentView }) {
   const [maple, setMaple] = useState<MapleState>("ready");
   const [handoffName, setHandoffName] = useState("");
   const [requests, setRequests] = useState<Requests | null>(null);
+  // "Talk to a person": the open panel's text (null when closed) and whether it's sending.
+  const [personText, setPersonText] = useState<string | null>(null);
+  const [personSending, setPersonSending] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const dialog = useRef<HTMLElement>(null);
@@ -164,8 +168,8 @@ export function FrontDesk({ view }: { view: ParentView }) {
 
   /** Staff replies to this chat's handoffs, shown right after the handoff. */
   const staffReplies = useMemo(() => {
-    const map = new Map<string, { by: string; text: string }>();
-    for (const h of requests?.handoffs ?? []) if (h.reply) map.set(h.id, { by: h.reply.by, text: h.reply.text });
+    const map = new Map<string, StaffReply>();
+    for (const h of requests?.handoffs ?? []) if (h.reply) map.set(h.id, { by: h.reply.by, text: h.reply.text, original: h.reply.original });
     return map;
   }, [requests]);
 
@@ -251,13 +255,52 @@ export function FrontDesk({ view }: { view: ParentView }) {
     setTimeout(refresh, 300);
   }
 
+  /** "Talk to a person": straight to the director, with what Maple last said as context. */
+  async function sendToPerson() {
+    const text = personText?.trim();
+    if (!text) return;
+    setPersonSending(true);
+    if (await deliverToPerson(text)) setPersonText(null);
+    setPersonSending(false);
+  }
+
+  async function deliverToPerson(text: string): Promise<boolean> {
+    const last = [...saved.items].reverse().find((i) => i.kind === "reply");
+    setSaved((prev) => ({ ...prev, items: [...prev.items, { kind: "parent", id: uid(), text }] }));
+    try {
+      const res = await fetch("/api/person", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text, context: last?.kind === "reply" ? last.reply.text : undefined }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const reply = (await res.json()) as AskReply;
+      setSaved((prev) => ({ ...prev, items: [...prev.items, { kind: "reply", id: uid(), reply }] }));
+      if (input.trim() === text) setInput("");
+      if (reply.handoff) setHandoffName(reply.handoff.staffName);
+      moodFor("handoff", 6000);
+      setTimeout(refresh, 500);
+      return true;
+    } catch {
+      setSaved((prev) => ({ ...prev, items: [...prev.items, { kind: "error", id: uid() }] }));
+      return false;
+    }
+  }
+
   async function giveFeedback(itemId: string, logId: string, value: "up" | "down") {
-    setSaved((prev) => ({ ...prev, feedback: { ...prev.feedback, [itemId]: value } }));
+    setSaved((prev) => {
+      const feedback = { ...prev.feedback, [itemId]: value };
+      // After a second thumbs down, Maple offers to reach a person. Once per conversation.
+      const downs = Object.values(feedback).filter((v) => v === "down").length;
+      const offer = value === "down" && downs === 2 && !prev.items.some((i) => i.kind === "offer");
+      return { ...prev, feedback, items: offer ? [...prev.items, { kind: "offer", id: uid() }] : prev.items };
+    });
     fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId, value }) }).catch(() => {});
   }
 
   function startOver() {
     setSaved((prev) => ({ ...prev, items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {} }));
+    setPersonText(null);
     moodFor("ready");
   }
 
@@ -294,12 +337,6 @@ export function FrontDesk({ view }: { view: ParentView }) {
     setTimeout(() => setFlying(false), 900);
   }
 
-  function askFromHome(chip: ChipId) {
-    // No wave here: the question is already on its way.
-    if (!wide) openChat({ wave: false });
-    send({ chip });
-  }
-
   /** Maple herself. The shared layoutId moves her between the desk and the chat card. */
   const mapleFigure = (
     <motion.div
@@ -321,7 +358,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => (wide ? textarea.current?.focus() : openChat())}
-      className={`absolute left-1/2 top-[3%] max-w-[44%] -translate-x-1/2 rounded-2xl px-2.5 py-1.5 text-center text-[11px] font-semibold leading-snug shadow-sm ring-1 sm:text-sm ${
+      className={`block rounded-2xl px-2.5 py-1.5 text-center text-[11px] font-semibold leading-snug shadow-sm ring-1 sm:text-sm ${
         unread.length && !wide ? "bg-amber-50 text-amber-900 ring-amber-200" : "bg-white text-stone-700 ring-stone-200"
       }`}
       aria-live="polite"
@@ -335,8 +372,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
     <DeskScene
       centerId={view.center.id}
       centerName={view.center.shortName}
-      directorFirstName={directorFirstName}
-      labels={{ frontDesk: s.home.frontDesk, handbook: s.home.handbook }}
+      frontDeskLabel={s.home.frontDesk}
       doorLit={mood === "handoff" || mood === "calm"}
       bubble={open && !wide ? null : bubble}
       maple={
@@ -356,7 +392,10 @@ export function FrontDesk({ view }: { view: ParentView }) {
   const topBar = (
     <header className="flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="truncate text-xs font-bold uppercase tracking-wide text-teal-700">{view.center.name}</p>
+        <p className="flex items-center gap-1.5 truncate text-xs font-bold uppercase tracking-wide text-teal-700">
+          <CenterLogo centerId={view.center.id} size={20} />
+          {view.center.name}
+        </p>
         <h1 className="truncate text-xl font-extrabold text-stone-900 sm:text-2xl">{s.home.greeting(view.family.parentFirstName, part)}</h1>
       </div>
       <form action={signOut} onSubmit={forgetChats}>
@@ -384,11 +423,30 @@ export function FrontDesk({ view }: { view: ParentView }) {
       onOption={(o) => send({ text: o })}
       onFeedback={giveFeedback}
       dish={dish}
+      person={{ firstName: directorFirstName, onOpen: () => setPersonText(input.trim()) }}
     />
   );
 
   const composer = (
-    <Composer s={s} chips={view.chips} pending={pending} input={input} textarea={textarea} onInput={setInput} onFocusChange={setFocused} onSend={send} />
+    <Composer
+      s={s}
+      shortcuts={view.shortcuts}
+      pending={pending}
+      input={input}
+      textarea={textarea}
+      onInput={setInput}
+      onFocusChange={setFocused}
+      onSend={send}
+      person={{
+        visible: saved.items.some((i) => i.kind === "offer") || personText !== null,
+        directorName: view.center.directorName,
+        text: personText,
+        onText: setPersonText,
+        onToggle: () => setPersonText((t) => (t === null ? input.trim() : null)),
+        onSend: sendToPerson,
+        sending: personSending,
+      }}
+    />
   );
 
   if (wide) {
@@ -418,18 +476,6 @@ export function FrontDesk({ view }: { view: ParentView }) {
         <div className="mx-auto flex max-w-xl flex-col gap-4">
           {topBar}
           {desk}
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-            {view.chips.map((c) => (
-              <button
-                key={c}
-                onClick={() => askFromHome(c)}
-                disabled={pending}
-                className="shrink-0 rounded-full border border-stone-300 bg-white px-3.5 py-1.5 text-sm font-semibold text-stone-700 hover:border-teal-600 hover:text-teal-700 disabled:opacity-50"
-              >
-                {s.chips[c]}
-              </button>
-            ))}
-          </div>
           <InfoCards view={view} requests={requests} s={s} lang={lang} />
         </div>
       </div>

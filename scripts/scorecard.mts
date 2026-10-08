@@ -27,6 +27,8 @@ interface Scenario {
   chip?: string;
   outage?: boolean;
   pending?: string;
+  /** A saved answer to add before asking, as a director would from the inbox, removed afterwards. */
+  savedAnswer?: { question: string; answer: string; keywords: string[] };
   expect: {
     mode: Mode | Mode[];
     includes?: (string | RegExp)[];
@@ -74,7 +76,12 @@ const SCENARIOS: Scenario[] = [
   { id: "14", name: "Halloween costume, Spanish", center: "pinon-grove", family: "chavez", message: "¿Mateo puede venir disfrazado el viernes por Halloween?",
     expect: { mode: "handoff", language: "es", includes: ["Elena"], handoffTo: "director" } },
   { id: "15", name: "Halloween, after Elena's saved answer", center: "pinon-grove", family: "martinez", message: "Can Mia wear a costume on Friday?",
-    pending: "Needs the operator reply flow from Phase 4", expect: { mode: "answer" } },
+    savedAnswer: {
+      question: "Can children wear Halloween costumes on Friday?",
+      answer: "Yes, costumes are welcome on Friday, October 30. Please skip masks and pretend weapons, and pack a change of regular clothes in case your child wants to switch after lunch.",
+      keywords: ["costume", "halloween", "disfraz"],
+    },
+    expect: { mode: "answer", includes: ["October 30"], lanesExclude: ["handbook"], sources: ["saved:"] } },
   { id: "16", name: "Grandparent pickup, Mandarin", center: "quail-ridge", family: "chen", message: "我妈妈从中国来看我们，今天她去接Ethan可以吗？",
     expect: { mode: "handoff", language: "zh", includes: ["Hannah"], sources: ["handbook:pickup"] } },
   { id: "17", name: "Custody worry", center: "pinon-grove", family: "martinez", message: "My ex is not allowed to pick up Mia. Can you make sure?",
@@ -109,6 +116,8 @@ const SCENARIOS: Scenario[] = [
     expect: { mode: "answer", language: "hi", includes: ["101", /[\u0900-\u097F]/] } },
   { id: "32", name: "Grandparent pickup, Hindi", center: "quail-ridge", family: "sharma", message: "आज कबीर को उसकी दादी लेने आएँगी, क्या यह ठीक है?",
     expect: { mode: "handoff", language: "hi", includes: ["Hannah", /[\u0900-\u097F]/], sources: ["handbook:pickup"] } },
+  { id: "33", name: "This week's menu", center: "pinon-grove", family: "martinez", message: "What's the meal plan for this week?",
+    expect: { mode: "answer", includes: ["Monday", "Friday", /safe for Mia/], lanesExclude: ["handbook"], sources: ["table:menu"] } },
 ];
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
@@ -130,7 +139,8 @@ function grade(s: Scenario, r: Reply): string[] {
   for (const l of e.lanesExclude ?? []) if (r.lanes.includes(l)) fails.push(`lane ${l} used`);
   if (e.language && r.language !== e.language) fails.push(`language ${r.language}`);
   if (e.maxTokens != null && r.tokens > e.maxTokens) fails.push(`${r.tokens} tokens, max ${e.maxTokens}`);
-  for (const id of e.sources ?? []) if (!r.sources.some((x) => x.id === id)) fails.push(`source ${id} not cited`);
+  // A source ending in ":" matches any source of that kind, such as "saved:".
+  for (const id of e.sources ?? []) if (!r.sources.some((x) => x.id === id || (id.endsWith(":") && x.id.startsWith(id)))) fails.push(`source ${id} not cited`);
   for (const t of e.actions ?? []) if (!r.actions.some((a) => a.type === t)) fails.push(`action ${t} missing`);
   if (e.handoffTo && r.handoff?.to !== e.handoffTo) fails.push(`handoff to ${r.handoff?.to ?? "nobody"}`);
   for (const o of e.options ?? []) if (!r.options?.includes(o)) fails.push(`option ${o} missing`);
@@ -149,6 +159,12 @@ for (const s of SCENARIOS) {
     console.log(`… ${s.id.padStart(2)} ${s.name}: pending (${s.pending})`);
     continue;
   }
+  // The "answer once" loop: Elena saves an answer, then a different parent asks.
+  let savedId: string | null = null;
+  if (s.savedAnswer) {
+    const saved = await fetch(`${BASE}/api/console/answers`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ centerId: s.center, ...s.savedAnswer }) });
+    savedId = saved.ok ? ((await saved.json()) as { saved: { id: string } }).saved.id : null;
+  }
   const res = await fetch(`${BASE}/api/ask`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -160,6 +176,7 @@ for (const s of SCENARIOS) {
         : undefined,
     }),
   });
+  if (savedId) await fetch(`${BASE}/api/console/answers/${savedId}?centerId=${s.center}`, { method: "DELETE" });
   if (!res.ok) {
     failed++;
     rows.push(`| ${s.id} | ${s.name} | Fail | | | | HTTP ${res.status} |`);

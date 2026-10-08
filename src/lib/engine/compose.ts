@@ -1,5 +1,5 @@
 import type { Center, Child, Family, HandbookSection, Program, Topic } from "@/content";
-import { addDays, zonedParts, minutesOf } from "../time";
+import { addDays, zonedParts, minutesOf, weekdayOf } from "../time";
 import {
   dayStatus,
   eventsOn,
@@ -10,8 +10,9 @@ import {
   openStatus,
   relativeDay,
   upcomingClosures,
+  weekdayName,
 } from "../facts/calendar";
-import { allergyNote, menuFor, safeBackupLunch, ALLERGEN_LABEL, BACKUP_LUNCH_CUTOFF } from "../facts/menu";
+import { allergyNote, conflicts, menuFor, safeBackupLunch, ALLERGEN_LABEL, BACKUP_LUNCH_CUTOFF } from "../facts/menu";
 import { ageInMonths, decideIllness, type SymptomReport } from "../facts/illness";
 import { upcomingTourSlots } from "../facts/tours";
 import { balanceOf, findCharge, roomForProgram, usd } from "../facts/money";
@@ -165,6 +166,58 @@ export function composeMenu(ctx: ComposeContext, date: string | null): Composed 
     `Families pack lunch at ${center.shortName}. The backup lunch ${when} is ${backup.main.name.toLowerCase()}, or ${backup.alternative.name.toLowerCase()} as the allergy-friendly option, for ${usd(center.fees.backupLunch!)}. Snacks are ${menu.amSnack!.name.toLowerCase()} in the morning and ${menu.pmSnack!.name.toLowerCase()} in the afternoon.${notes.length ? ` ${notes.join(" ")}` : ""}`,
     src,
   );
+}
+
+/** Monday to Friday of this week, or next week on a weekend. */
+export function menuWeek(today: string): string[] {
+  const weekday = weekdayOf(today);
+  const monday = weekday >= 6 ? addDays(today, 8 - weekday) : addDays(today, 1 - weekday);
+  return [0, 1, 2, 3, 4].map((i) => addDays(monday, i));
+}
+
+/**
+ * The menu for the whole week, for "what's for lunch this week?". Lists each
+ * open day's lunch (or backup lunch at pack-lunch centers), notes closed days,
+ * and flags any day whose food doesn't fit a child's allergies.
+ */
+export function composeWeekMenu(ctx: ComposeContext): Composed {
+  const { center, family, today } = ctx;
+  const src = [tableSource(center, "menu")];
+  const days = menuWeek(today);
+  const thisWeek = days[0] <= today;
+  const provided = center.meals === "provided";
+  const lines: string[] = [];
+  const flags = new Map<string, string[]>();
+  for (const date of days) {
+    const day = weekdayName(date);
+    const status = dayStatus(center, date);
+    if (!status.open) {
+      lines.push(`${day}: closed`);
+      continue;
+    }
+    const menu = menuFor(center, date)!;
+    const item = provided ? menu.lunch! : menu.backupLunch!.main;
+    lines.push(`${day}: ${item.name.toLowerCase()}`);
+    for (const child of family?.children ?? []) {
+      if (!child.allergies.length || ageInMonths(child.birthDate, today) < 12) continue;
+      const hit = provided ? conflicts(item, child) : safeBackupLunch(menu, child)?.item ? [] : conflicts(item, child);
+      if (hit.length) flags.set(child.firstName, [...(flags.get(child.firstName) ?? []), `${day} (${hit.map((a) => ALLERGEN_LABEL[a]).join(" and ")})`]);
+    }
+  }
+  const intro = provided
+    ? `Here's lunch ${thisWeek ? "this week" : "next week"} at ${center.shortName}.`
+    : `Families pack lunch at ${center.shortName}. Here's the backup lunch ${thisWeek ? "this week" : "next week"}, ${usd(center.fees.backupLunch!)} each, with an allergy-friendly option every day.`;
+  const notes: string[] = [];
+  for (const child of family?.children ?? []) {
+    if (!child.allergies.length || ageInMonths(child.birthDate, today) < 12) continue;
+    const hits = flags.get(child.firstName);
+    notes.push(
+      hits
+        ? `Heads up for ${child.firstName}: ${hits.join(", ")}.`
+        : `${provided ? "Every lunch" : "There's a safe backup every day"} ${provided ? `is free of ${child.allergies.map((a) => ALLERGEN_LABEL[a]).join(" and ")}, so it's safe for ${child.firstName}.` : `for ${child.firstName}.`}`,
+    );
+  }
+  return answer("meals", `${intro} ${lines.join("; ")}.${notes.length ? ` ${notes.join(" ")}` : ""} ${provided ? "Breakfast and snacks are" : "Snacks are"} on the menu in the app.`, src);
 }
 
 export function composeForgotLunch(ctx: ComposeContext, child: Child | undefined): Composed | null {
@@ -414,7 +467,16 @@ export function composeBilling(ctx: ComposeContext, amount: number | null): Comp
   return answer("billing", `${plan} ${balanceLine}`, src);
 }
 
-export function composeEvents(ctx: ComposeContext, date: string | null): Composed | null {
+/** Words that make an events question general, such as "what's coming up?" */
+const GENERAL_EVENTS = /coming up|upcoming|any (events|special)|what'?s (happening|on)|this (week|month)|calendar|events/i;
+
+/**
+ * Events from the calendar. Without a date, answers a general question with
+ * what's coming up, or a question naming an event on the calendar. A
+ * question about anything else, like "When is pajama day?", returns null so
+ * the handbook gets a chance instead of an unrelated list.
+ */
+export function composeEvents(ctx: ComposeContext, date: string | null, message = ""): Composed | null {
   const { center, today } = ctx;
   const src = [tableSource(center, "calendar")];
   if (date) {
@@ -423,6 +485,14 @@ export function composeEvents(ctx: ComposeContext, date: string | null): Compose
     if (!events.length) return null;
     return answer("events", events.map((e) => `${e.name}, ${formatDate(e.date)}${e.endDate ? ` through ${formatDate(e.endDate)}` : ""}. ${e.note}`).join(" "), src);
   }
+  const lower = message.toLowerCase();
+  const named = center.events.filter(
+    (e) => (e.endDate ?? e.date) >= today && e.name.toLowerCase().split(/[^a-zà-ÿ]+/).some((w) => w.length >= 5 && lower.includes(w)),
+  );
+  if (named.length) {
+    return answer("events", named.map((e) => `${e.name}, ${formatDate(e.date)}${e.endDate ? ` through ${formatDate(e.endDate)}` : ""}. ${e.note}`).join(" "), src);
+  }
+  if (!GENERAL_EVENTS.test(message)) return null;
   const upcoming = center.events.filter((e) => (e.endDate ?? e.date) >= today && e.date <= addDays(today, 60));
   if (!upcoming.length) return null;
   return answer("events", `Coming up at ${center.shortName}: ${upcoming.map((e) => `${e.name}, ${formatDate(e.date)}${e.endDate ? ` through ${formatDate(e.endDate)}` : ""}`).join("; ")}.`, src);
