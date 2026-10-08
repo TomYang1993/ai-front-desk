@@ -64,7 +64,7 @@ async function translations(texts: string[], lang: Lang): Promise<Map<string, st
   const unique = [...new Set(texts.filter(Boolean))];
   const map = new Map<string, string>();
   if (lang === "en" || !unique.length) return map;
-  const key = `translate:v2:${lang}:${createHash("sha1").update(JSON.stringify(unique)).digest("hex")}`;
+  const key = `translate:v3:${lang}:${createHash("sha1").update(JSON.stringify(unique)).digest("hex")}`;
   const cached = await getCached<Record<string, string>>(key);
   if (cached) return new Map(Object.entries(cached));
   // Never hold the page for long; English is a fine answer while the AI is slow.

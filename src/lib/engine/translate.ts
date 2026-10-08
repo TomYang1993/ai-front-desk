@@ -40,14 +40,16 @@ export async function translate(text: string, lang: Lang) {
 /**
  * Translates short pieces of center content, such as dish names, closure
  * names and announcements, in one call. Any piece that comes back missing
- * or with its numbers changed stays in English.
+ * or with its numbers changed stays in English. Uses the large model: the
+ * result is cached for a week, and the small one turned "the wet season is
+ * here" into summer in Hindi.
  */
 export async function translateList(texts: string[], lang: Lang): Promise<{ texts: string[]; translated: boolean[] }> {
   const original = { texts, translated: texts.map(() => false) };
   if (lang === "en" || !texts.length) return original;
   try {
     const r = await generateJson({
-      tier: "small",
+      tier: "large",
       system: `Translate each item, written by staff at a child care center, into ${NAMES[lang]} for a parent. Items are dish names, holiday or closure names, and notices. Keep every number, price, time, date and person's name exactly as written. Keep proper names of places and events recognizable.${REGISTER[lang]} Return JSON with one field, "items": the translations in the same order, one per input item.`,
       prompt: JSON.stringify(texts),
       schema: z.object({ items: z.array(z.string()) }),
