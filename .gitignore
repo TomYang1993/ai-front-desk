@@ -43,3 +43,6 @@ next-env.d.ts
 
 # generated content
 /src/content/handbooks/index.generated.ts
+
+# scorecard output
+/scorecard-results/

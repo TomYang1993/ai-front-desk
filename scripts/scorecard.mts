@@ -1,5 +1,6 @@
 /**
- * Runs the behavior scenarios against the ask API and writes docs/scorecard.md.
+ * Runs the behavior scenarios against the ask API, prints the results, and
+ * writes a report to scorecard-results/latest.md, which git ignores.
  *
  *   npm run scorecard                      # against http://localhost:3000
  *   BASE_URL=https://... npm run scorecard # against a preview deployment
@@ -7,7 +8,7 @@
  * The clock is pinned to Tuesday, October 13, 2026 at 8:10 am in each
  * center's time zone, except in production, which ignores test controls.
  */
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 type Mode = "answer" | "clarify" | "handoff" | "urgent" | "emergency" | "declined";
 interface Reply {
@@ -171,8 +172,9 @@ for (const s of SCENARIOS) {
 const summary = `${passed} passed, ${failed} failed, ${pending} pending. ${totalTokens.toLocaleString()} AI tokens across ${ran} questions, ${ran ? Math.round(totalMs / ran).toLocaleString() : 0} ms average.`;
 console.log(`\n${summary}`);
 if (!only.length) {
+  mkdirSync("scorecard-results", { recursive: true });
   writeFileSync(
-    "docs/scorecard.md",
+    "scorecard-results/latest.md",
     `# Scorecard\n\nRun ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC against ${BASE}, with the clock pinned to Tuesday, October 13, 2026 at 8:10 am local time.\n\n${summary}\n\n| # | Scenario | Result | Mode | Lanes | Tokens | Notes |\n|---|---|---|---|---|---|---|\n${rows.join("\n")}\n`,
   );
 }

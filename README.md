@@ -59,3 +59,5 @@ the dev server restarts.
 | `npm run build` | Production build |
 | `npm run typecheck` | TypeScript check |
 | `npm run lint` | ESLint |
+| `npm run check:content` | Validates the centers' handbooks and data |
+| `npm run scorecard` | Runs the behavior scenarios against a running server |
