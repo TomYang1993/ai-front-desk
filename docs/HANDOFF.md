@@ -104,7 +104,8 @@ Known gaps:
 - The safety screen has Hindi patterns for emergencies, custody and abuse, in Devanagari plus common romanized emergency phrases.
 - Noto Sans Devanagari is a fallback after Nunito, loaded without preload, so it only downloads when Hindi is on screen.
 - Meera Sharma (`meera.sharma@example.com`) has Kabir, 3, in Ferns, with an egg allergy. Grandmother Sunita Sharma is visiting from Jaipur and is on the pickup list. Quail Ridge's languages now include Hindi, and the seeded history mixes in Hindi questions without changing Piñon Grove's history.
-- Scorecard scenarios 31 (low fever, in Hindi) and 32 (grandparent pickup, in Hindi) are added.
+- **Names survive translation.** The small Groq model wrote "Hannah" and "Quail Ridge" in Devanagari. `translate()` now takes the center's, staff's and family's names, tells the model to keep them in Latin letters, and rejects a translation that changes them, as it does for numbers. It tries the small model, then a small model from another provider (Gemini, which keeps names and Maple's feminine verb forms), then the large chain, before keeping English. Hindi replies usually come from Gemini, so they use its daily free quota.
+- Scorecard scenarios 31 (low fever, in Hindi) and 32 (grandparent pickup, in Hindi) are added, and both require Devanagari so an English fallback can't pass. The full run on this branch: 30 passed and scenario 15 pending, before the name fix; after it, all six translated scenarios pass.
 
 ## Next steps
 
