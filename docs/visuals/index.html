@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visuals | AI Front Desk</title>
+<style>
+/* Recreates the chat window's visual styles so these files render on their own. */
+:root {
+  color-scheme: light dark;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-primary: #1f1e1d; --text-secondary: #5f5e5a; --text-muted: #888780;
+  --surface-0: #f4f3ee; --surface-1: #f8f7f3; --surface-2: #ffffff;
+  --border: rgba(31, 30, 29, 0.12); --border-strong: rgba(31, 30, 29, 0.22); --border-accent: #378add;
+  --bg-accent: #e6f1fb; --text-accent: #185fa5;
+  --bg-success: #eaf3de; --text-success: #3b6d11;
+  --bg-pro: #eeedfe; --text-pro: #534ab7;
+  --bg-warning: #faeeda; --text-warning: #854f0b;
+  --bg-danger: #fcebeb; --text-danger: #a32d2d;
+  --radius: 8px;
+  --p: var(--text-primary); --s: var(--text-secondary); --t: var(--text-muted); --b: var(--border-strong); --bg2: var(--surface-1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #f1efe8; --text-secondary: #b4b2a9; --text-muted: #888780;
+    --surface-0: #1a1a19; --surface-1: #262624; --surface-2: #2c2c2a;
+    --border: rgba(241, 239, 232, 0.12); --border-strong: rgba(241, 239, 232, 0.24);
+    --bg-accent: #0c447c; --text-accent: #b5d4f4;
+    --bg-success: #27500a; --text-success: #c0dd97;
+    --bg-pro: #3c3489; --text-pro: #cecbf6;
+    --bg-warning: #633806; --text-warning: #fac775;
+    --bg-danger: #791f1f; --text-danger: #f7c1c1;
+  }
+}
+body { margin: 0; background: var(--surface-0); color: var(--text-primary); font: 16px/1.7 var(--font-sans); }
+main { max-width: 720px; margin: 0 auto; padding: 32px 20px 48px; }
+h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+.caption { color: var(--text-secondary); font-size: 14px; margin: 0 0 20px; }
+.frame { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 20px; }
+.back { font-size: 14px; color: var(--text-accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+button { font: inherit; font-size: 14px; color: var(--text-primary); background: transparent; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; }
+button:hover { background: var(--surface-1); }
+
+/* SVG text and shapes */
+svg text { font-family: var(--font-sans); }
+.t { font-size: 14px; fill: var(--text-primary); }
+.ts { font-size: 12px; fill: var(--text-secondary); }
+.th { font-size: 14px; font-weight: 500; fill: var(--text-primary); }
+.box { fill: var(--surface-1); stroke: var(--border-strong); }
+.arr { stroke: var(--text-secondary); stroke-width: 1.5; fill: none; }
+.node { cursor: pointer; }
+.node:hover { opacity: 0.85; }
+
+/* Color ramps: light fill, darker stroke and text. */
+.c-teal > rect, rect.c-teal { fill: #e1f5ee; stroke: #0f6e56; }
+.c-teal > .th, .c-teal > .t { fill: #085041; } .c-teal > .ts { fill: #0f6e56; }
+.c-coral > rect, rect.c-coral { fill: #faece7; stroke: #993c1d; }
+.c-coral > .th, .c-coral > .t { fill: #712b13; } .c-coral > .ts { fill: #993c1d; }
+.c-amber > rect, rect.c-amber { fill: #faeeda; stroke: #854f0b; }
+.c-amber > .th, .c-amber > .t { fill: #633806; } .c-amber > .ts { fill: #854f0b; }
+.c-gray > rect, rect.c-gray { fill: #f1efe8; stroke: #5f5e5a; }
+.c-gray > .th, .c-gray > .t { fill: #444441; } .c-gray > .ts { fill: #5f5e5a; }
+@media (prefers-color-scheme: dark) {
+  .c-teal > rect, rect.c-teal { fill: #085041; stroke: #9fe1cb; }
+  .c-teal > .th, .c-teal > .t { fill: #e1f5ee; } .c-teal > .ts { fill: #9fe1cb; }
+  .c-coral > rect, rect.c-coral { fill: #712b13; stroke: #f5c4b3; }
+  .c-coral > .th, .c-coral > .t { fill: #faece7; } .c-coral > .ts { fill: #f5c4b3; }
+  .c-amber > rect, rect.c-amber { fill: #633806; stroke: #fac775; }
+  .c-amber > .th, .c-amber > .t { fill: #faeeda; } .c-amber > .ts { fill: #fac775; }
+  .c-gray > rect, rect.c-gray { fill: #444441; stroke: #d3d1c7; }
+  .c-gray > .th, .c-gray > .t { fill: #f1efe8; } .c-gray > .ts { fill: #d3d1c7; }
+}
+</style>
+<style>ul{list-style:none;padding:0;margin:0}li{padding:12px 0;border-top:0.5px solid var(--border)}li a{font-weight:500;color:var(--text-accent)}</style>
+</head>
+<body>
+<main>
+<h1>AI Front Desk visuals</h1>
+<p class="caption">Sketches and diagrams made while planning and building the prototype. Open any file directly in a browser.</p>
+<div class="frame"><ul>
+<li><a href="01-clerk-characters.html">Clerk character options</a><br><span class="caption">Early concepts for the front desk clerk. Maple the bear was chosen. The retriever is shown in the five behavior states. The buttons do nothing in this saved copy.</span></li>
+<li><a href="02-phone-and-laptop-layouts.html">Phone and laptop layouts</a><br><span class="caption">Early layout sketch. It still shows Biscuit, the retriever concept that Maple the bear replaced.</span></li>
+<li><a href="03-question-flow-explorer.html">Parent question flows</a><br><span class="caption">Click a question to see which steps handle it. Token counts are planning-stage estimates; measured numbers are in docs/scorecard.md.</span></li>
+<li><a href="04-code-structure.html">Code structure</a><br><span class="caption">Where each part of the code lives and which parts talk to outside services.</span></li>
+<li><a href="05-message-flow.html">What happens to one message</a><br><span class="caption">The path a typed parent message takes through the answer engine.</span></li>
+<li><a href="06-phase-2-pr-map.html">Phase 2 pull request map</a><br><span class="caption">Files added or changed in the Phase 2 pull request and how they connect.</span></li>
+</ul></div>
+</main>
+</body>
+</html>

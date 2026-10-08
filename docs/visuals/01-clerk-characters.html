@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clerk character options | AI Front Desk</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+/* Recreates the chat window's visual styles so these files render on their own. */
+:root {
+  color-scheme: light dark;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-primary: #1f1e1d; --text-secondary: #5f5e5a; --text-muted: #888780;
+  --surface-0: #f4f3ee; --surface-1: #f8f7f3; --surface-2: #ffffff;
+  --border: rgba(31, 30, 29, 0.12); --border-strong: rgba(31, 30, 29, 0.22); --border-accent: #378add;
+  --bg-accent: #e6f1fb; --text-accent: #185fa5;
+  --bg-success: #eaf3de; --text-success: #3b6d11;
+  --bg-pro: #eeedfe; --text-pro: #534ab7;
+  --bg-warning: #faeeda; --text-warning: #854f0b;
+  --bg-danger: #fcebeb; --text-danger: #a32d2d;
+  --radius: 8px;
+  --p: var(--text-primary); --s: var(--text-secondary); --t: var(--text-muted); --b: var(--border-strong); --bg2: var(--surface-1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #f1efe8; --text-secondary: #b4b2a9; --text-muted: #888780;
+    --surface-0: #1a1a19; --surface-1: #262624; --surface-2: #2c2c2a;
+    --border: rgba(241, 239, 232, 0.12); --border-strong: rgba(241, 239, 232, 0.24);
+    --bg-accent: #0c447c; --text-accent: #b5d4f4;
+    --bg-success: #27500a; --text-success: #c0dd97;
+    --bg-pro: #3c3489; --text-pro: #cecbf6;
+    --bg-warning: #633806; --text-warning: #fac775;
+    --bg-danger: #791f1f; --text-danger: #f7c1c1;
+  }
+}
+body { margin: 0; background: var(--surface-0); color: var(--text-primary); font: 16px/1.7 var(--font-sans); }
+main { max-width: 720px; margin: 0 auto; padding: 32px 20px 48px; }
+h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+.caption { color: var(--text-secondary); font-size: 14px; margin: 0 0 20px; }
+.frame { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 20px; }
+.back { font-size: 14px; color: var(--text-accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+button { font: inherit; font-size: 14px; color: var(--text-primary); background: transparent; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; }
+button:hover { background: var(--surface-1); }
+
+/* SVG text and shapes */
+svg text { font-family: var(--font-sans); }
+.t { font-size: 14px; fill: var(--text-primary); }
+.ts { font-size: 12px; fill: var(--text-secondary); }
+.th { font-size: 14px; font-weight: 500; fill: var(--text-primary); }
+.box { fill: var(--surface-1); stroke: var(--border-strong); }
+.arr { stroke: var(--text-secondary); stroke-width: 1.5; fill: none; }
+.node { cursor: pointer; }
+.node:hover { opacity: 0.85; }
+
+/* Color ramps: light fill, darker stroke and text. */
+.c-teal > rect, rect.c-teal { fill: #e1f5ee; stroke: #0f6e56; }
+.c-teal > .th, .c-teal > .t { fill: #085041; } .c-teal > .ts { fill: #0f6e56; }
+.c-coral > rect, rect.c-coral { fill: #faece7; stroke: #993c1d; }
+.c-coral > .th, .c-coral > .t { fill: #712b13; } .c-coral > .ts { fill: #993c1d; }
+.c-amber > rect, rect.c-amber { fill: #faeeda; stroke: #854f0b; }
+.c-amber > .th, .c-amber > .t { fill: #633806; } .c-amber > .ts { fill: #854f0b; }
+.c-gray > rect, rect.c-gray { fill: #f1efe8; stroke: #5f5e5a; }
+.c-gray > .th, .c-gray > .t { fill: #444441; } .c-gray > .ts { fill: #5f5e5a; }
+@media (prefers-color-scheme: dark) {
+  .c-teal > rect, rect.c-teal { fill: #085041; stroke: #9fe1cb; }
+  .c-teal > .th, .c-teal > .t { fill: #e1f5ee; } .c-teal > .ts { fill: #9fe1cb; }
+  .c-coral > rect, rect.c-coral { fill: #712b13; stroke: #f5c4b3; }
+  .c-coral > .th, .c-coral > .t { fill: #faece7; } .c-coral > .ts { fill: #f5c4b3; }
+  .c-amber > rect, rect.c-amber { fill: #633806; stroke: #fac775; }
+  .c-amber > .th, .c-amber > .t { fill: #faeeda; } .c-amber > .ts { fill: #fac775; }
+  .c-gray > rect, rect.c-gray { fill: #444441; stroke: #d3d1c7; }
+  .c-gray > .th, .c-gray > .t { fill: #f1efe8; } .c-gray > .ts { fill: #d3d1c7; }
+}
+</style>
+<script>window.sendPrompt = function () {};</script>
+</head>
+<body>
+<main>
+<p><a class="back" href="index.html">All visuals</a></p>
+<h1>Clerk character options</h1>
+<p class="caption">Early concepts for the front desk clerk. Maple the bear was chosen. The retriever is shown in the five behavior states. The buttons do nothing in this saved copy.</p>
+<div class="frame">
+<style>
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.cd{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1rem;display:flex;flex-direction:column;align-items:center;gap:8px}
+.rec{border:2px solid var(--border-accent)}
+.bob{animation:bob 2.6s ease-in-out infinite}
+.blink{animation:blink 4s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(0.1)}}
+.tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.tag{font-size:12px;padding:2px 8px;border-radius:var(--radius);background:var(--surface-1);color:var(--text-secondary)}
+.st{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:12px}
+.sc{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary);text-align:center}
+@media (prefers-reduced-motion:reduce){.bob,.blink{animation:none}}
+</style>
+<h2 class="sr-only">Three clerk character concepts for the AI front desk, a retriever, an owl and a bear, plus the retriever shown in five behavior states.</h2>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="dog" viewBox="0 0 160 160"><rect x="45" y="98" width="70" height="56" rx="24" fill="#5B8FC7"/><circle cx="96" cy="116" r="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1"/><ellipse cx="48" cy="74" rx="12" ry="24" fill="#B9802A" transform="rotate(15 48 74)"/><ellipse cx="112" cy="74" rx="12" ry="24" fill="#B9802A" transform="rotate(-15 112 74)"/><ellipse cx="80" cy="70" rx="35" ry="32" fill="#E8B04B"/><ellipse cx="80" cy="86" rx="17" ry="12" fill="#F6DDB0"/><ellipse cx="80" cy="79" rx="6" ry="4.5" fill="#2C2C2A"/><circle class="blink" cx="67" cy="65" r="4" fill="#2C2C2A"/><circle class="blink" cx="93" cy="65" r="4" fill="#2C2C2A"/><path d="M74 90 Q80 95 86 90" stroke="#2C2C2A" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="56" y="114" width="30" height="24" rx="3" fill="#D85A30"/><line x1="61" y1="121" x2="81" y2="121" stroke="#FAECE7" stroke-width="1.5"/><circle cx="58" cy="138" r="7" fill="#E8B04B"/><circle cx="86" cy="138" r="7" fill="#E8B04B"/></symbol></defs></svg>
+<div class="cg">
+<div class="cd rec">
+<span style="background:var(--bg-accent);color:var(--text-accent);font-size:12px;padding:2px 10px;border-radius:var(--radius)">Recommended</span>
+<svg viewBox="0 0 160 160" width="130" height="130" role="img" aria-label="Golden retriever clerk holding a red handbook"><g class="bob"><use href="#dog"/></g></svg>
+<div style="font-weight:500;font-size:15px">Biscuit, the retriever</div>
+<div class="tags"><span class="tag">Loyal</span><span class="tag">Fetches answers</span><span class="tag">Kid favorite</span></div>
+<button onclick="sendPrompt('Let\'s go with Biscuit the retriever as the clerk')">Choose Biscuit ↗</button>
+</div>
+<div class="cd">
+<svg viewBox="0 0 160 160" width="130" height="130" role="img" aria-label="Owl clerk with glasses holding a green book"><g class="bob"><path d="M122 22 a14 14 0 1 0 10 24 a11 11 0 1 1 -10 -24z" fill="#FAC775"/><polygon points="50,52 56,30 66,48" fill="#7A5A40"/><polygon points="110,52 104,30 94,48" fill="#7A5A40"/><ellipse cx="80" cy="96" rx="42" ry="52" fill="#8C6A4F"/><ellipse cx="80" cy="110" rx="28" ry="32" fill="#EAD7BE"/><circle cx="66" cy="78" r="13" fill="#FFFFFF"/><circle cx="94" cy="78" r="13" fill="#FFFFFF"/><circle class="blink" cx="66" cy="79" r="5" fill="#2C2C2A"/><circle class="blink" cx="94" cy="79" r="5" fill="#2C2C2A"/><circle cx="66" cy="78" r="15" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="94" cy="78" r="15" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="81" y1="78" x2="79" y2="78" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="76,90 84,90 80,98" fill="#EF9F27"/><rect x="62" y="114" width="36" height="26" rx="3" fill="#1D9E75"/><line x1="80" y1="116" x2="80" y2="138" stroke="#E1F5EE" stroke-width="1.5"/></g></svg>
+<div style="font-weight:500;font-size:15px">Hoot, the night owl</div>
+<div class="tags"><span class="tag">Wise</span><span class="tag">After-hours shift</span><span class="tag">Reads everything</span></div>
+<button onclick="sendPrompt('Let\'s go with Hoot the owl as the clerk')">Choose Hoot ↗</button>
+</div>
+<div class="cd">
+<svg viewBox="0 0 160 160" width="130" height="130" role="img" aria-label="Bear clerk wearing a teal apron"><g class="bob"><circle cx="52" cy="42" r="13" fill="#A0714F"/><circle cx="108" cy="42" r="13" fill="#A0714F"/><circle cx="52" cy="42" r="7" fill="#D9B48F"/><circle cx="108" cy="42" r="7" fill="#D9B48F"/><rect x="46" y="98" width="68" height="56" rx="24" fill="#A0714F"/><rect x="60" y="106" width="40" height="40" rx="8" fill="#9FE1CB"/><rect x="70" y="122" width="20" height="12" rx="3" fill="#5DCAA5"/><circle cx="80" cy="68" r="36" fill="#A0714F"/><ellipse cx="80" cy="82" rx="16" ry="12" fill="#D9B48F"/><ellipse cx="80" cy="76" rx="5" ry="4" fill="#2C2C2A"/><circle class="blink" cx="67" cy="62" r="4" fill="#2C2C2A"/><circle class="blink" cx="93" cy="62" r="4" fill="#2C2C2A"/><circle cx="58" cy="76" r="5" fill="#ED93B1"/><circle cx="102" cy="76" r="5" fill="#ED93B1"/><path d="M75 86 Q80 90 85 86" stroke="#2C2C2A" stroke-width="1.5" fill="none" stroke-linecap="round"/></g></svg>
+<div style="font-weight:500;font-size:15px">Maple, the bear</div>
+<div class="tags"><span class="tag">Gentle</span><span class="tag">Protective</span><span class="tag">Steady in hard moments</span></div>
+<button onclick="sendPrompt('Let\'s go with Maple the bear as the clerk')">Choose Maple ↗</button>
+</div>
+</div>
+<div class="cd" style="margin-top:12px;align-items:stretch">
+<div style="font-weight:500;font-size:14px">Each state shows what the AI is doing</div>
+<div class="st">
+<div class="sc"><svg viewBox="0 0 160 160" width="64" height="64" aria-hidden="true"><g class="bob"><use href="#dog"/></g></svg><span><i class="ti ti-mood-smile" aria-hidden="true"></i> Ready</span></div>
+<div class="sc"><svg viewBox="0 0 160 160" width="64" height="64" aria-hidden="true"><use href="#dog"/></svg><span><i class="ti ti-ear" aria-hidden="true"></i> Listening</span></div>
+<div class="sc"><svg viewBox="0 0 160 160" width="64" height="64" aria-hidden="true"><use href="#dog"/></svg><span><i class="ti ti-book" aria-hidden="true"></i> Checking handbook</span></div>
+<div class="sc"><svg viewBox="0 0 160 160" width="64" height="64" aria-hidden="true"><use href="#dog"/></svg><span><i class="ti ti-phone" aria-hidden="true"></i> Getting a person</span></div>
+<div class="sc"><svg viewBox="0 0 160 160" width="64" height="64" aria-hidden="true" style="opacity:0.75"><use href="#dog"/></svg><span><i class="ti ti-heart-handshake" aria-hidden="true"></i> Calm mode</span></div>
+</div>
+</div>
+
+</div>
+</main>
+</body>
+</html>
