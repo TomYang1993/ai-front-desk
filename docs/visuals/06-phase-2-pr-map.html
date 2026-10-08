@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 2 pull request map | AI Front Desk</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+/* Recreates the chat window's visual styles so these files render on their own. */
+:root {
+  color-scheme: light dark;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-primary: #1f1e1d; --text-secondary: #5f5e5a; --text-muted: #888780;
+  --surface-0: #f4f3ee; --surface-1: #f8f7f3; --surface-2: #ffffff;
+  --border: rgba(31, 30, 29, 0.12); --border-strong: rgba(31, 30, 29, 0.22); --border-accent: #378add;
+  --bg-accent: #e6f1fb; --text-accent: #185fa5;
+  --bg-success: #eaf3de; --text-success: #3b6d11;
+  --bg-pro: #eeedfe; --text-pro: #534ab7;
+  --bg-warning: #faeeda; --text-warning: #854f0b;
+  --bg-danger: #fcebeb; --text-danger: #a32d2d;
+  --radius: 8px;
+  --p: var(--text-primary); --s: var(--text-secondary); --t: var(--text-muted); --b: var(--border-strong); --bg2: var(--surface-1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #f1efe8; --text-secondary: #b4b2a9; --text-muted: #888780;
+    --surface-0: #1a1a19; --surface-1: #262624; --surface-2: #2c2c2a;
+    --border: rgba(241, 239, 232, 0.12); --border-strong: rgba(241, 239, 232, 0.24);
+    --bg-accent: #0c447c; --text-accent: #b5d4f4;
+    --bg-success: #27500a; --text-success: #c0dd97;
+    --bg-pro: #3c3489; --text-pro: #cecbf6;
+    --bg-warning: #633806; --text-warning: #fac775;
+    --bg-danger: #791f1f; --text-danger: #f7c1c1;
+  }
+}
+body { margin: 0; background: var(--surface-0); color: var(--text-primary); font: 16px/1.7 var(--font-sans); }
+main { max-width: 720px; margin: 0 auto; padding: 32px 20px 48px; }
+h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+.caption { color: var(--text-secondary); font-size: 14px; margin: 0 0 20px; }
+.frame { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 20px; }
+.back { font-size: 14px; color: var(--text-accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+button { font: inherit; font-size: 14px; color: var(--text-primary); background: transparent; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; }
+button:hover { background: var(--surface-1); }
+
+/* SVG text and shapes */
+svg text { font-family: var(--font-sans); }
+.t { font-size: 14px; fill: var(--text-primary); }
+.ts { font-size: 12px; fill: var(--text-secondary); }
+.th { font-size: 14px; font-weight: 500; fill: var(--text-primary); }
+.box { fill: var(--surface-1); stroke: var(--border-strong); }
+.arr { stroke: var(--text-secondary); stroke-width: 1.5; fill: none; }
+.node { cursor: pointer; }
+.node:hover { opacity: 0.85; }
+
+/* Color ramps: light fill, darker stroke and text. */
+.c-teal > rect, rect.c-teal { fill: #e1f5ee; stroke: #0f6e56; }
+.c-teal > .th, .c-teal > .t { fill: #085041; } .c-teal > .ts { fill: #0f6e56; }
+.c-coral > rect, rect.c-coral { fill: #faece7; stroke: #993c1d; }
+.c-coral > .th, .c-coral > .t { fill: #712b13; } .c-coral > .ts { fill: #993c1d; }
+.c-amber > rect, rect.c-amber { fill: #faeeda; stroke: #854f0b; }
+.c-amber > .th, .c-amber > .t { fill: #633806; } .c-amber > .ts { fill: #854f0b; }
+.c-gray > rect, rect.c-gray { fill: #f1efe8; stroke: #5f5e5a; }
+.c-gray > .th, .c-gray > .t { fill: #444441; } .c-gray > .ts { fill: #5f5e5a; }
+@media (prefers-color-scheme: dark) {
+  .c-teal > rect, rect.c-teal { fill: #085041; stroke: #9fe1cb; }
+  .c-teal > .th, .c-teal > .t { fill: #e1f5ee; } .c-teal > .ts { fill: #9fe1cb; }
+  .c-coral > rect, rect.c-coral { fill: #712b13; stroke: #f5c4b3; }
+  .c-coral > .th, .c-coral > .t { fill: #faece7; } .c-coral > .ts { fill: #f5c4b3; }
+  .c-amber > rect, rect.c-amber { fill: #633806; stroke: #fac775; }
+  .c-amber > .th, .c-amber > .t { fill: #faeeda; } .c-amber > .ts { fill: #fac775; }
+  .c-gray > rect, rect.c-gray { fill: #444441; stroke: #d3d1c7; }
+  .c-gray > .th, .c-gray > .t { fill: #f1efe8; } .c-gray > .ts { fill: #d3d1c7; }
+}
+</style>
+<script>window.sendPrompt = function () {};</script>
+</head>
+<body>
+<main>
+<p><a class="back" href="index.html">All visuals</a></p>
+<h1>Phase 2 pull request map</h1>
+<p class="caption">Files added or changed in the Phase 2 pull request and how they connect.</p>
+<div class="frame">
+<svg width="100%" viewBox="0 0 680 510" role="img">
+<title>Phase 2 pull request file map</title>
+<desc>The ask API route and the scorecard both call the new answer engine in src/lib/engine. index.ts runs the steps, using safety, understand, compose, handbook, verify, handoff, translate and context files. The engine relies on the new facts folder and the changed AI adapter and data layer.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<g class="node c-teal"><rect x="180" y="20" width="200" height="56" rx="8" stroke-width="0.5"/><text class="th" x="280" y="38" text-anchor="middle" dominant-baseline="central">POST /api/ask</text><text class="ts" x="280" y="58" text-anchor="middle" dominant-baseline="central">api/ask/route.ts</text></g>
+<g class="node c-teal"><rect x="400" y="20" width="200" height="56" rx="8" stroke-width="0.5"/><text class="th" x="500" y="38" text-anchor="middle" dominant-baseline="central">Scorecard</text><text class="ts" x="500" y="58" text-anchor="middle" dominant-baseline="central">scripts/scorecard.mts</text></g>
+<rect x="20" y="100" width="640" height="258" rx="20" style="fill:none" stroke="var(--b)" stroke-width="0.5" stroke-dasharray="5 4"/>
+<text class="th" x="40" y="118" dominant-baseline="central">src/lib/engine</text>
+<line x1="280" y1="76" x2="280" y2="128" class="arr" marker-end="url(#arrow)"/>
+<line x1="500" y1="76" x2="500" y2="128" class="arr" marker-end="url(#arrow)"/>
+<g class="node c-teal"><rect x="40" y="130" width="600" height="56" rx="8" stroke-width="0.5"/><text class="th" x="340" y="148" text-anchor="middle" dominant-baseline="central">index.ts: ask()</text><text class="ts" x="340" y="168" text-anchor="middle" dominant-baseline="central">Runs the steps in order and logs every question</text></g>
+<g class="node c-teal"><rect x="40" y="206" width="135" height="56" rx="8" stroke-width="0.5"/><text class="th" x="107" y="224" text-anchor="middle" dominant-baseline="central">safety.ts</text><text class="ts" x="107" y="244" text-anchor="middle" dominant-baseline="central">Keyword screen</text></g>
+<g class="node c-teal"><rect x="195" y="206" width="135" height="56" rx="8" stroke-width="0.5"/><text class="th" x="262" y="224" text-anchor="middle" dominant-baseline="central">understand.ts</text><text class="ts" x="262" y="244" text-anchor="middle" dominant-baseline="central">Small AI model</text></g>
+<g class="node c-teal"><rect x="350" y="206" width="135" height="56" rx="8" stroke-width="0.5"/><text class="th" x="417" y="224" text-anchor="middle" dominant-baseline="central">compose.ts</text><text class="ts" x="417" y="244" text-anchor="middle" dominant-baseline="central">Code replies</text></g>
+<g class="node c-teal"><rect x="505" y="206" width="135" height="56" rx="8" stroke-width="0.5"/><text class="th" x="572" y="224" text-anchor="middle" dominant-baseline="central">handbook.ts</text><text class="ts" x="572" y="244" text-anchor="middle" dominant-baseline="central">Larger AI model</text></g>
+<g class="node c-teal"><rect x="40" y="282" width="135" height="56" rx="8" stroke-width="0.5"/><text class="th" x="107" y="300" text-anchor="middle" dominant-baseline="central">verify.ts</text><text class="ts" x="107" y="320" text-anchor="middle" dominant-baseline="central">Numbers check</text></g>
+<g class="node c-teal"><rect x="195" y="282" width="135" height="56" rx="8" stroke-width="0.5"/><text class="th" x="262" y="300" text-anchor="middle" dominant-baseline="central">handoff.ts</text><text class="ts" x="262" y="320" text-anchor="middle" dominant-baseline="central">Person replies</text></g>
+<g class="node c-teal"><rect x="350" y="282" width="135" height="56" rx="8" stroke-width="0.5"/><text class="th" x="417" y="300" text-anchor="middle" dominant-baseline="central">translate.ts</text><text class="ts" x="417" y="320" text-anchor="middle" dominant-baseline="central">AI translation</text></g>
+<g class="node c-teal"><rect x="505" y="282" width="135" height="56" rx="8" stroke-width="0.5"/><text class="th" x="572" y="300" text-anchor="middle" dominant-baseline="central">context.ts</text><text class="ts" x="572" y="320" text-anchor="middle" dominant-baseline="central">Prompt text</text></g>
+<line x1="115" y1="358" x2="115" y2="396" class="arr" marker-end="url(#arrow)"/>
+<line x1="340" y1="358" x2="340" y2="396" class="arr" marker-end="url(#arrow)"/>
+<line x1="565" y1="358" x2="565" y2="396" class="arr" marker-end="url(#arrow)"/>
+<g class="node c-teal"><rect x="20" y="398" width="190" height="56" rx="8" stroke-width="0.5"/><text class="th" x="115" y="416" text-anchor="middle" dominant-baseline="central">src/lib/facts</text><text class="ts" x="115" y="436" text-anchor="middle" dominant-baseline="central">Dates, illness, menus</text></g>
+<g class="node c-amber"><rect x="245" y="398" width="190" height="56" rx="8" stroke-width="0.5"/><text class="th" x="340" y="416" text-anchor="middle" dominant-baseline="central">llm.ts</text><text class="ts" x="340" y="436" text-anchor="middle" dominant-baseline="central">Model chains, limits</text></g>
+<g class="node c-amber"><rect x="470" y="398" width="190" height="56" rx="8" stroke-width="0.5"/><text class="th" x="565" y="416" text-anchor="middle" dominant-baseline="central">data.ts, store.ts</text><text class="ts" x="565" y="436" text-anchor="middle" dominant-baseline="central">Cache, handoffs, tours</text></g>
+<rect class="c-teal" x="40" y="481" width="12" height="12" rx="2" stroke-width="0.5"/><text class="ts" x="60" y="487" dominant-baseline="central">New in this pull request</text>
+<rect class="c-amber" x="250" y="481" width="12" height="12" rx="2" stroke-width="0.5"/><text class="ts" x="270" y="487" dominant-baseline="central">Changed existing file</text>
+</svg>
+
+</div>
+</main>
+</body>
+</html>

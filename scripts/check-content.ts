@@ -120,7 +120,7 @@ for (const center of centers) {
   const noAi = logs.filter((l) => l.tokens === 0).length;
   const handbookCalls = logs.filter((l) => l.lanes.includes("handbook")).length;
   const tokens = logs.reduce((s, l) => s + l.tokens, 0);
-  const allHandbook = logs.length * 14500;
+  const allHandbook = logs.length * 8000;
   console.log(`${center.name} (${center.city}, ${center.timeZone})`);
   console.log(`  handbook sections: ${seedHandbook(center.id).length}, closures: ${center.closures.length}, events: ${center.events.length}`);
   console.log(`  questions in last 8 weeks: ${logs.length}, after hours: ${pct(logs.filter((l) => l.afterHours).length)}`);

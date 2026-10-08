@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phone and laptop layouts | AI Front Desk</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+/* Recreates the chat window's visual styles so these files render on their own. */
+:root {
+  color-scheme: light dark;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-primary: #1f1e1d; --text-secondary: #5f5e5a; --text-muted: #888780;
+  --surface-0: #f4f3ee; --surface-1: #f8f7f3; --surface-2: #ffffff;
+  --border: rgba(31, 30, 29, 0.12); --border-strong: rgba(31, 30, 29, 0.22); --border-accent: #378add;
+  --bg-accent: #e6f1fb; --text-accent: #185fa5;
+  --bg-success: #eaf3de; --text-success: #3b6d11;
+  --bg-pro: #eeedfe; --text-pro: #534ab7;
+  --bg-warning: #faeeda; --text-warning: #854f0b;
+  --bg-danger: #fcebeb; --text-danger: #a32d2d;
+  --radius: 8px;
+  --p: var(--text-primary); --s: var(--text-secondary); --t: var(--text-muted); --b: var(--border-strong); --bg2: var(--surface-1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #f1efe8; --text-secondary: #b4b2a9; --text-muted: #888780;
+    --surface-0: #1a1a19; --surface-1: #262624; --surface-2: #2c2c2a;
+    --border: rgba(241, 239, 232, 0.12); --border-strong: rgba(241, 239, 232, 0.24);
+    --bg-accent: #0c447c; --text-accent: #b5d4f4;
+    --bg-success: #27500a; --text-success: #c0dd97;
+    --bg-pro: #3c3489; --text-pro: #cecbf6;
+    --bg-warning: #633806; --text-warning: #fac775;
+    --bg-danger: #791f1f; --text-danger: #f7c1c1;
+  }
+}
+body { margin: 0; background: var(--surface-0); color: var(--text-primary); font: 16px/1.7 var(--font-sans); }
+main { max-width: 720px; margin: 0 auto; padding: 32px 20px 48px; }
+h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+.caption { color: var(--text-secondary); font-size: 14px; margin: 0 0 20px; }
+.frame { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 20px; }
+.back { font-size: 14px; color: var(--text-accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+button { font: inherit; font-size: 14px; color: var(--text-primary); background: transparent; border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; }
+button:hover { background: var(--surface-1); }
+
+/* SVG text and shapes */
+svg text { font-family: var(--font-sans); }
+.t { font-size: 14px; fill: var(--text-primary); }
+.ts { font-size: 12px; fill: var(--text-secondary); }
+.th { font-size: 14px; font-weight: 500; fill: var(--text-primary); }
+.box { fill: var(--surface-1); stroke: var(--border-strong); }
+.arr { stroke: var(--text-secondary); stroke-width: 1.5; fill: none; }
+.node { cursor: pointer; }
+.node:hover { opacity: 0.85; }
+
+/* Color ramps: light fill, darker stroke and text. */
+.c-teal > rect, rect.c-teal { fill: #e1f5ee; stroke: #0f6e56; }
+.c-teal > .th, .c-teal > .t { fill: #085041; } .c-teal > .ts { fill: #0f6e56; }
+.c-coral > rect, rect.c-coral { fill: #faece7; stroke: #993c1d; }
+.c-coral > .th, .c-coral > .t { fill: #712b13; } .c-coral > .ts { fill: #993c1d; }
+.c-amber > rect, rect.c-amber { fill: #faeeda; stroke: #854f0b; }
+.c-amber > .th, .c-amber > .t { fill: #633806; } .c-amber > .ts { fill: #854f0b; }
+.c-gray > rect, rect.c-gray { fill: #f1efe8; stroke: #5f5e5a; }
+.c-gray > .th, .c-gray > .t { fill: #444441; } .c-gray > .ts { fill: #5f5e5a; }
+@media (prefers-color-scheme: dark) {
+  .c-teal > rect, rect.c-teal { fill: #085041; stroke: #9fe1cb; }
+  .c-teal > .th, .c-teal > .t { fill: #e1f5ee; } .c-teal > .ts { fill: #9fe1cb; }
+  .c-coral > rect, rect.c-coral { fill: #712b13; stroke: #f5c4b3; }
+  .c-coral > .th, .c-coral > .t { fill: #faece7; } .c-coral > .ts { fill: #f5c4b3; }
+  .c-amber > rect, rect.c-amber { fill: #633806; stroke: #fac775; }
+  .c-amber > .th, .c-amber > .t { fill: #faeeda; } .c-amber > .ts { fill: #fac775; }
+  .c-gray > rect, rect.c-gray { fill: #444441; stroke: #d3d1c7; }
+  .c-gray > .th, .c-gray > .t { fill: #f1efe8; } .c-gray > .ts { fill: #d3d1c7; }
+}
+</style>
+<script>window.sendPrompt = function () {};</script>
+</head>
+<body>
+<main>
+<p><a class="back" href="index.html">All visuals</a></p>
+<h1>Phone and laptop layouts</h1>
+<p class="caption">Early layout sketch. It still shows Biscuit, the retriever concept that Maple the bear replaced.</p>
+<div class="frame">
+<style>
+.bob{animation:bob 2.6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.bob{animation:none}}
+.lbl{font-size:12px;color:var(--text-secondary);margin:0 0 6px}
+.bub{font-size:12px;line-height:1.5;padding:8px 10px;border-radius:12px;max-width:85%}
+.me{background:var(--bg-accent);color:var(--text-accent);align-self:flex-end}
+.ai{background:var(--surface-1);color:var(--text-primary);align-self:flex-start}
+.chip{font-size:11px;padding:3px 8px;border-radius:var(--radius);border:0.5px solid var(--border-strong);color:var(--text-secondary);white-space:nowrap}
+.src{font-size:11px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;margin-top:6px}
+.nb{background:var(--surface-2);border:0.5px solid var(--border);border-radius:8px;padding:8px;font-size:12px}
+.nb b{font-weight:500;display:block;font-size:11px;color:var(--text-secondary);margin-bottom:2px}
+</style>
+<h2 class="sr-only">Mockups of the front desk web app on a phone, showing chat with the clerk, and on a laptop, showing a lobby scene, chat and a notice board.</h2>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="dg" viewBox="0 0 160 160"><rect x="45" y="98" width="70" height="56" rx="24" fill="#5B8FC7"/><ellipse cx="48" cy="74" rx="12" ry="24" fill="#B9802A" transform="rotate(15 48 74)"/><ellipse cx="112" cy="74" rx="12" ry="24" fill="#B9802A" transform="rotate(-15 112 74)"/><ellipse cx="80" cy="70" rx="35" ry="32" fill="#E8B04B"/><ellipse cx="80" cy="86" rx="17" ry="12" fill="#F6DDB0"/><ellipse cx="80" cy="79" rx="6" ry="4.5" fill="#2C2C2A"/><circle cx="67" cy="65" r="4" fill="#2C2C2A"/><circle cx="93" cy="65" r="4" fill="#2C2C2A"/><path d="M74 90 Q80 95 86 90" stroke="#2C2C2A" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="56" y="114" width="30" height="24" rx="3" fill="#D85A30"/><circle cx="58" cy="138" r="7" fill="#E8B04B"/><circle cx="86" cy="138" r="7" fill="#E8B04B"/></symbol></defs></svg>
+<div style="display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px;align-items:start;padding:0.5rem 0">
+<div>
+<p class="lbl">Phone: chat first</p>
+<div style="border:0.5px solid var(--border-strong);border-radius:24px;padding:10px;background:var(--surface-2)">
+<div style="display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:0.5px solid var(--border)">
+<div style="width:44px;height:44px;border-radius:50%;background:#FAEEDA;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 160 160" width="40" height="40" aria-hidden="true"><g class="bob"><use href="#dg"/></g></svg></div>
+<div><div style="font-size:13px;font-weight:500">Biscuit</div><div style="font-size:11px;color:var(--text-secondary)">AI front desk, Piñon Grove</div></div>
+</div>
+<div style="font-size:11px;color:var(--text-secondary);padding:6px 0;display:flex;gap:4px;align-items:center"><i class="ti ti-book" aria-hidden="true"></i>Checking the handbook…</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div class="bub me">Mia had a fever of 100.6 at 9 last night. Can Mia come in today?</div>
+<div class="bub ai">Not today. If Mia stays fever-free without medicine, Mia can come back Thursday morning.
+<div class="src"><i class="ti ti-file-text" aria-hidden="true"></i>Illness policy, updated Sep 2</div>
+<div style="margin-top:6px"><span class="chip" style="color:var(--text-accent);border-color:var(--border-accent)">Log today's absence</span></div></div>
+</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"><span class="chip">Today's lunch</span><span class="chip">Closures</span><span class="chip">Talk to staff</span></div>
+<div style="margin-top:8px;border:0.5px solid var(--border);border-radius:16px;padding:6px 10px;font-size:11px;color:var(--text-muted)">Ask the front desk</div>
+</div>
+</div>
+<div>
+<p class="lbl">Laptop or tablet: lobby, chat and notice board</p>
+<div style="border:0.5px solid var(--border-strong);border-radius:12px;padding:10px;background:var(--surface-2);display:grid;grid-template-columns:120px minmax(0,1fr) 110px;gap:8px">
+<svg viewBox="0 0 120 200" width="100%" role="img" aria-label="Lobby scene with the retriever behind a desk, a handbook shelf, a bulletin board and the director's door"><rect x="0" y="0" width="120" height="150" rx="6" fill="#FAEEDA"/><rect x="0" y="150" width="120" height="50" fill="#F1EFE8"/><rect x="6" y="40" width="28" height="70" fill="#B9802A"/><rect x="9" y="46" width="5" height="16" fill="#D85A30"/><rect x="15" y="46" width="5" height="16" fill="#1D9E75"/><rect x="21" y="46" width="5" height="16" fill="#5B8FC7"/><rect x="9" y="70" width="5" height="16" fill="#7F77DD"/><rect x="15" y="70" width="5" height="16" fill="#EF9F27"/><rect x="42" y="24" width="36" height="28" rx="2" fill="#D9B48F"/><rect x="46" y="28" width="10" height="9" fill="#FFFFFF"/><rect x="60" y="30" width="12" height="8" fill="#FAC775"/><rect x="50" y="40" width="12" height="8" fill="#9FE1CB"/><rect x="88" y="62" width="26" height="88" fill="#888780"/><circle cx="108" cy="108" r="2.5" fill="#FAC775"/><g class="bob"><use href="#dg" x="30" y="70" width="64" height="64"/></g><rect x="22" y="124" width="78" height="30" rx="4" fill="#5B8FC7"/></svg>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div class="bub me" style="max-width:95%">Can Mia come in today?</div>
+<div class="bub ai" style="max-width:95%">Not today. Mia can come back Thursday morning if fever-free.<div class="src"><i class="ti ti-file-text" aria-hidden="true"></i>Illness policy</div></div>
+<div style="margin-top:auto;border:0.5px solid var(--border);border-radius:16px;padding:6px 10px;font-size:11px;color:var(--text-muted)">Ask the front desk</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div class="nb"><b>Today</b>Open 7 to 6</div>
+<div class="nb"><b>Lunch</b>Green chile mac, peanut-free</div>
+<div class="nb"><b>Next closure</b>Thanksgiving, Nov 26 and 27</div>
+<div class="nb"><b>Your requests</b>Absence logged</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</main>
+</body>
+</html>

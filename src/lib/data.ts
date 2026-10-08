@@ -1,6 +1,6 @@
 import "server-only";
 import { centers, families, seedHandbook } from "@/content";
-import { generateHistory } from "@/content/history";
+import { generateHistory, HISTORY_VERSION } from "@/content/history";
 import type { Center, CenterId, Family, HandbookSection, Handoff, QuestionLog } from "@/content";
 import { getStore } from "./store";
 
@@ -10,8 +10,14 @@ import { getStore } from "./store";
  * itself on first use and can be reset from the console.
  */
 
-// Bump when the seed content changes shape, so stale stores reseed.
-const SEED_VERSION = "2026-10-07.1";
+// A fingerprint of the seed content. When the content in code changes,
+// stores holding older seed data reseed themselves automatically.
+const SEED_VERSION = (() => {
+  const text = JSON.stringify([HISTORY_VERSION, centers, families, centers.map((c) => seedHandbook(c.id))]);
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  return `v2-${(h >>> 0).toString(36)}`;
+})();
 
 const keys = {
   version: "seed:version",
@@ -21,6 +27,8 @@ const keys = {
   families: (id: CenterId) => `families:${id}`,
   logs: (id: CenterId) => `logs:${id}`,
   handoffs: (id: CenterId) => `handoffs:${id}`,
+  tours: (id: CenterId) => `tours:${id}`,
+  cache: (key: string) => `cache:${key}`,
 };
 
 export const CENTER_IDS: CenterId[] = centers.map((c) => c.id);
@@ -39,6 +47,7 @@ export async function resetDemo(now = new Date()) {
     await store.pushMany(keys.logs(center.id), logs);
     await store.set(keys.handoffs(center.id), handoffs);
   }
+  for (const center of centers) await store.del(keys.tours(center.id));
   await store.set(keys.seededAt, now.toISOString());
   await store.set(keys.version, SEED_VERSION);
 }
@@ -103,4 +112,32 @@ export async function saveHandoffs(id: CenterId, handoffs: Handoff[]) {
 export async function getSeededAt(): Promise<string | null> {
   await ensureSeeded();
   return getStore().get<string>(keys.seededAt);
+}
+
+export async function addHandoff(handoff: Handoff) {
+  const all = await getHandoffs(handoff.centerId);
+  await saveHandoffs(handoff.centerId, [...all, handoff]);
+}
+
+export interface TourBooking {
+  slotId: string;
+  name: string;
+  bookedAt: string;
+}
+
+export async function getTourBookings(id: CenterId): Promise<TourBooking[]> {
+  return (await getStore().get<TourBooking[]>(keys.tours(id))) ?? [];
+}
+
+export async function saveTourBookings(id: CenterId, bookings: TourBooking[]) {
+  await getStore().set(keys.tours(id), bookings);
+}
+
+/** Day-scoped reply cache: identical questions on the same day reuse the answer. */
+export async function getCached<T>(key: string): Promise<T | null> {
+  return getStore().get<T>(keys.cache(key));
+}
+
+export async function setCached<T>(key: string, value: T, ttlSeconds = 12 * 3600) {
+  await getStore().set(keys.cache(key), value, ttlSeconds);
 }

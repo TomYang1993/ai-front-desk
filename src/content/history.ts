@@ -203,6 +203,9 @@ const STAFF_REPLY_NAME: Record<CenterId, Record<"teacher" | "director", string>>
   "quail-ridge": { director: "Hannah Lindqvist", teacher: "Lead teacher" },
 };
 
+/** Bump when the generator changes, so stored history regenerates. */
+export const HISTORY_VERSION = "h2";
+
 export interface GeneratedHistory {
   logs: QuestionLog[];
   handoffs: Handoff[];
@@ -245,8 +248,10 @@ export function generateHistory(center: Center, now: Date, days = 56): Generated
       // Some handbook questions turn out not to be covered.
       if (route === "handbook" && rand() < 0.08) route = "handbook_gap";
       const r = ROUTES[route];
-      const understandTokens = 1300 + Math.floor(rand() * 500);
-      const handbookTokens = 12000 + Math.floor(rand() * 2500);
+      // Measured in Phase 2: understanding about 2,000 tokens; reading the
+      // handbook about 5,000 plus a claim check of about 1,000.
+      const understandTokens = 1800 + Math.floor(rand() * 500);
+      const handbookTokens = 5500 + Math.floor(rand() * 1200);
       const tokens = r.lanes.includes("handbook")
         ? understandTokens + handbookTokens
         : r.lanes.includes("understand")

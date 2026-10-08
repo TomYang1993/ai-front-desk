@@ -121,6 +121,13 @@ export const pinonGrove: Center = {
       showUntil: "2026-11-02",
     },
   ],
+  tableUpdates: {
+    calendar: { updatedAt: "2026-08-03", updatedBy: "Elena Vigil" },
+    menu: { updatedAt: "2026-08-24", updatedBy: "Elena Vigil" },
+    tuition: { updatedAt: "2026-03-20", updatedBy: "Elena Vigil" },
+    tours: { updatedAt: "2026-08-03", updatedBy: "Marcus Benally" },
+    hours: { updatedAt: "2026-08-03", updatedBy: "Elena Vigil" },
+  },
   savedAnswers: [
     {
       id: "pg-sa-parking",
@@ -248,6 +255,13 @@ export const quailRidge: Center = {
       showUntil: "2026-10-15",
     },
   ],
+  tableUpdates: {
+    calendar: { updatedAt: "2026-08-10", updatedBy: "Hannah Lindqvist" },
+    menu: { updatedAt: "2026-08-26", updatedBy: "Hannah Lindqvist" },
+    tuition: { updatedAt: "2026-08-10", updatedBy: "Jamal Wright" },
+    tours: { updatedAt: "2026-09-01", updatedBy: "Jamal Wright" },
+    hours: { updatedAt: "2026-08-10", updatedBy: "Hannah Lindqvist" },
+  },
   savedAnswers: [
     {
       id: "qr-sa-parking",
