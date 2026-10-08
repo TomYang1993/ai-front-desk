@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, LoaderCircle, Lock, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, Check, Database, LoaderCircle, Lock, MessageSquareQuote, Pencil, Trash2 } from "lucide-react";
 import type { KnowledgeView } from "@/lib/console-view";
 import { Field } from "./inbox";
 import { post } from "./shared";
@@ -16,12 +16,20 @@ export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeVie
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="text-2xl font-extrabold text-stone-900">Source of truth</h1>
-        <p className="text-sm text-stone-600">Everything Maple answers from. Changes take effect on the next question.</p>
+        <p className="text-sm text-stone-600">
+          Maple answers only from these three sources and shows families which one it used. It checks your answers first, then the center data, then reads the
+          handbook. If none of them covers a question, Maple passes it to you. Changes take effect on the next question.
+        </p>
       </header>
 
       <section>
-        <h2 className="font-extrabold text-stone-900">Saved answers</h2>
-        <p className="mb-3 text-sm text-stone-500">Answers you wrote once from the inbox. Maple gives them to any family who asks the same thing.</p>
+        <h2 className="flex items-center gap-2 font-extrabold text-stone-900">
+          <MessageSquareQuote size={18} className="text-teal-700" aria-hidden /> Answers you wrote once
+        </h2>
+        <p className="mb-3 text-sm text-stone-500">
+          Questions you answered from the inbox and saved. Maple remembers them and gives the same answer to any family who asks something similar, in that
+          family&apos;s language.
+        </p>
         {k.saved.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-stone-300 p-6 text-center text-sm text-stone-500">No saved answers yet. Reply to a question in the inbox, then save it.</p>
         ) : (
@@ -34,8 +42,13 @@ export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeVie
       </section>
 
       <section>
-        <h2 className="font-extrabold text-stone-900">Family handbook</h2>
-        <p className="mb-3 text-sm text-stone-500">Maple reads these sections for anything the tables below don&apos;t answer.</p>
+        <h2 className="flex items-center gap-2 font-extrabold text-stone-900">
+          <BookOpen size={18} className="text-teal-700" aria-hidden /> Family handbook
+        </h2>
+        <p className="mb-3 text-sm text-stone-500">
+          Your policies, in your words: illness, pickup, meals, behavior and the rest. For questions about how things work, Maple reads the right section, answers
+          from it, and double-checks the answer against it before sending.
+        </p>
         <ul className="flex flex-col gap-2">
           {k.sections.map((s) => (
             <SectionRow key={s.id} section={s} fixLogId={focus?.id === s.id ? focus.fixLogId : null} focused={focus?.id === s.id} />
@@ -44,9 +57,15 @@ export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeVie
       </section>
 
       <section>
-        <h2 className="font-extrabold text-stone-900">Center data</h2>
-        <p className="mb-3 flex items-center gap-1.5 text-sm text-stone-500">
-          <Lock size={14} /> Read-only for now. Maple answers dates, prices and menus from these, without AI.
+        <h2 className="flex items-center gap-2 font-extrabold text-stone-900">
+          <Database size={18} className="text-teal-700" aria-hidden /> Center data
+        </h2>
+        <p className="mb-3 text-sm text-stone-500">
+          The facts that follow a schedule: hours, closures and events, menus, tuition and tour times. Maple looks these up directly, without AI, so dates, prices
+          and menus are always exact.
+        </p>
+        <p className="mb-3 flex items-center gap-1.5 text-xs text-stone-500">
+          <Lock size={13} /> Read-only here for now.
         </p>
         <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {k.tables.map((t) => (

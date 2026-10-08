@@ -37,7 +37,7 @@ export function ConsoleApp({ view, tab, item, section }: { view: ConsoleView; ta
         <div className="flex items-center gap-3 px-4 py-3 lg:px-5 lg:py-5">
           <CenterLogo centerId={view.center.id} size={40} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-extrabold text-stone-900">{view.center.name}</p>
+            <p className="text-sm font-extrabold leading-tight text-stone-900">{view.center.name}</p>
             <p className="truncate text-xs text-stone-500">Director console</p>
           </div>
         </div>
