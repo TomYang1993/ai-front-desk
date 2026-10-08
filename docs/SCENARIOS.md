@@ -35,6 +35,7 @@ These scenarios define how the front desk should behave. Each one becomes a scor
 | 29 | Priya, Quail Ridge | Where should I park at pickup? | Understand | The director's saved answer. Handbook not read |
 | 30 | Rosa, Piñon Grove | What time do you close? | Understand, Look up | 6:00 pm |
 | 31 | Meera, Quail Ridge | कबीर को आज सुबह 100.6 बुखार था, पर वह बिल्कुल ठीक खेल रहा है। क्या कबीर आज आ सकता है? | Safety check, Understand, Look up | In Hindi: may attend under Washington's 101°F rule, since there are no other symptoms |
+| 33 | Ana, Piñon Grove | What's the meal plan for this week? | Understand, Look up | Each day's lunch, Monday to Friday, and that every lunch is safe for Mia's peanut allergy. Handbook not read |
 | 32 | Meera, Quail Ridge | आज कबीर को उसकी दादी लेने आएँगी, क्या यह ठीक है? | Safety check, Understand, A person | In Hindi: goes to Hannah. Maple never approves a pickup, even though Kabir's grandmother is on the list |
 
 ## Running the scorecard

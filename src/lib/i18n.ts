@@ -68,6 +68,11 @@ type Strings = {
     foodContains: (child: string, dish: string, allergens: string) => string;
     foodBackup: (child: string, dish: string) => string;
     foodBackupNone: (child: string) => string;
+    thisWeek: string;
+    weekLunch: string;
+    weekBackup: string;
+    closedDay: string;
+    notSafeFor: (children: string) => string;
   };
   /** Task shortcuts in the chat. Each sends its message as the parent. */
   shortcuts: {
@@ -174,6 +179,11 @@ const en: Strings = {
     foodContains: (c, d, a) => `Heads up: ${d} has ${a}, which ${c} is allergic to.`,
     foodBackup: (c, d) => `If you forget lunch, the backup (${d}) is safe for ${c}.`,
     foodBackupNone: (c) => `Neither backup lunch is safe for ${c} today. If you forget lunch, call the front desk.`,
+    thisWeek: "This week",
+    weekLunch: "Lunch each day",
+    weekBackup: "Backup lunch each day",
+    closedDay: "Closed",
+    notSafeFor: (c) => `Not safe for ${c}`,
   },
   shortcuts: {
     sick: (c) => (c ? `${c} is sick` : "My child is sick"),
@@ -278,6 +288,11 @@ const es: Strings = {
     foodContains: (c, d, a) => `Atención: ${d} tiene ${a}, y ${c} tiene alergia a eso.`,
     foodBackup: (c, d) => `Si olvida el almuerzo, el de reserva (${d}) es seguro para ${c}.`,
     foodBackupNone: (c) => `Ningún almuerzo de reserva es seguro para ${c} hoy. Si olvida el almuerzo, llame a la recepción.`,
+    thisWeek: "Esta semana",
+    weekLunch: "Almuerzo de cada día",
+    weekBackup: "Almuerzo de reserva de cada día",
+    closedDay: "Cerrado",
+    notSafeFor: (c) => `No es seguro para ${c}`,
   },
   shortcuts: {
     sick: (c) => (c ? `${c} no se siente bien` : "Uno de mis hijos no se siente bien"),
@@ -382,6 +397,11 @@ const zh: Strings = {
     foodContains: (c, d, a) => `注意：${d}含有${a}，${c}对此过敏。`,
     foodBackup: (c, d) => `如果忘带午饭，备用午餐（${d}）适合${c}。`,
     foodBackupNone: (c) => `今天没有适合${c}的备用午餐。如果忘带午饭，请致电前台。`,
+    thisWeek: "本周",
+    weekLunch: "每天的午餐",
+    weekBackup: "每天的备用午餐",
+    closedDay: "休园",
+    notSafeFor: (c) => `${c}不宜食用`,
   },
   shortcuts: {
     sick: (c) => (c ? `${c}生病了` : "孩子生病了"),
@@ -484,6 +504,11 @@ const hi: Strings = {
     foodContains: (c, d, a) => `ध्यान दें: ${d} में ${a} है, जिससे ${c} को एलर्जी है।`,
     foodBackup: (c, d) => `अगर लंच भूल जाएँ, तो बैकअप (${d}) ${c} के लिए सुरक्षित है।`,
     foodBackupNone: (c) => `आज कोई भी बैकअप लंच ${c} के लिए सुरक्षित नहीं है। लंच भूल जाएँ तो फ़्रंट डेस्क को कॉल करें।`,
+    thisWeek: "इस हफ़्ते",
+    weekLunch: "हर दिन का दोपहर का खाना",
+    weekBackup: "हर दिन का बैकअप लंच",
+    closedDay: "बंद",
+    notSafeFor: (c) => `${c} के लिए सुरक्षित नहीं`,
   },
   shortcuts: {
     sick: (c) => (c ? `${c} की तबीयत ठीक नहीं है` : "मेरे बच्चे की तबीयत ठीक नहीं है"),

@@ -44,6 +44,39 @@ function TranslatedNote({ s, showing, onToggle }: { s: Strings; showing?: "origi
   );
 }
 
+/** The week's lunches, folded away under "This week" unless today has no menu. */
+function WeekMenu({ week, s, startOpen }: { week: ParentView["board"]["week"]; s: Strings; startOpen: boolean }) {
+  const [open, setOpen] = useState(startOpen);
+  if (!week.days.some((d) => d.dish)) return null;
+  return (
+    <div className="mt-3 border-t border-stone-100 pt-2">
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="text-sm font-semibold text-teal-700 underline-offset-2 hover:underline">
+        {s.board.thisWeek} {open ? "−" : "+"}
+      </button>
+      {open && (
+        <>
+          <p className="mt-1 text-xs text-stone-500">{week.label}</p>
+          <ul className="mt-1 divide-y divide-stone-100">
+            {week.days.map((d) => (
+              <li key={d.date} className={`flex gap-3 py-1.5 ${d.today ? "font-semibold text-stone-900" : ""}`}>
+                <span className="w-24 shrink-0 capitalize text-stone-500">{d.day}</span>
+                <span className="min-w-0">
+                  {d.dish ?? <span className="text-stone-400">{s.board.closedDay}</span>}
+                  {d.notSafeFor.length > 0 && (
+                    <span className="ml-1.5 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
+                      {s.board.notSafeFor(d.notSafeFor.join(", "))}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 /**
  * The information cards on the front desk home: today, food, the next
  * closure, notices, the family's requests and their children.
@@ -75,8 +108,10 @@ export function InfoCards({ view, requests, s, lang, className }: { view: Parent
         <p className="mt-1 text-xs text-stone-500">{view.center.hoursLine}</p>
       </Section>
 
-      {board.menu && (
+      {(board.menu || board.week.days.some((d) => d.dish)) && (
         <Section icon={<UtensilsCrossed size={14} />} title={s.board.meals}>
+          {board.menu && (
+          <>
           <ul className="space-y-1">
             {board.menu.lines.map((l) => (
               <li key={l}>{l}</li>
@@ -96,6 +131,9 @@ export function InfoCards({ view, requests, s, lang, className }: { view: Parent
             </ul>
           )}
           {board.menu.translated && <TranslatedNote s={s} />}
+          </>
+          )}
+          <WeekMenu week={board.week} s={s} startOpen={!board.menu} />
         </Section>
       )}
 

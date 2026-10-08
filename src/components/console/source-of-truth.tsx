@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Check, Database, LoaderCircle, Lock, MessageSquareQuote, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, CalendarClock, Check, Database, LoaderCircle, Lock, MessageSquareQuote, Pencil, Trash2 } from "lucide-react";
 import type { KnowledgeView } from "@/lib/console-view";
 import { Field } from "./inbox";
 import { post } from "./shared";
@@ -61,8 +61,8 @@ export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeVie
           <Database size={18} className="text-teal-700" aria-hidden /> Center data
         </h2>
         <p className="mb-3 text-sm text-stone-500">
-          The facts that follow a schedule: hours, closures and events, menus, tuition and tour times. Maple looks these up directly, without AI, so dates, prices
-          and menus are always exact.
+          Set by you and rarely changes: hours, the calendar and closures, tuition and rooms. Maple looks these up directly, without AI, so dates and prices are
+          always exact.
         </p>
         <p className="mb-3 flex items-center gap-1.5 text-xs text-stone-500">
           <Lock size={13} /> Read-only here for now.
@@ -82,6 +82,69 @@ export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeVie
             </li>
           ))}
         </ul>
+      </section>
+
+      <section>
+        <h2 className="flex items-center gap-2 font-extrabold text-stone-900">
+          <CalendarClock size={18} className="text-teal-700" aria-hidden /> Changes week to week
+        </h2>
+        <p className="mb-3 text-sm text-stone-500">
+          The menu and tour times change from week to week, and families ask about them often. Maple answers from them without AI too: today&apos;s or this
+          week&apos;s food with each child&apos;s allergy check, and the open tour times.
+        </p>
+        <p className="mb-3 flex items-center gap-1.5 text-xs text-stone-500">
+          <Lock size={13} /> Read-only here for now. Editing the menu will come as its own tool.
+        </p>
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+            <p className="font-bold text-stone-900">This week&apos;s menu</p>
+            <ul className="mt-2 divide-y divide-stone-100">
+              {k.weekly.menu.days.map((d) => (
+                <li key={d.date} className="grid gap-1 py-2 text-sm sm:grid-cols-[96px_minmax(0,1fr)]">
+                  <span className="font-semibold text-stone-700">{d.label}</span>
+                  {d.closed ? (
+                    <span className="text-stone-400">Closed: {d.closed}</span>
+                  ) : (
+                    <ul className="space-y-0.5">
+                      {d.items.map((item) => (
+                        <li key={item.label} className="text-stone-700">
+                          <span className="text-stone-500">{item.label}: </span>
+                          {item.name}
+                          {item.allergens.map((a) => (
+                            <span key={a} className="ml-1.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-200">
+                              {a}
+                            </span>
+                          ))}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-stone-500">
+              {updated(k.weekly.menu.updatedBy, k.weekly.menu.updatedAt)} · {used(k.weekly.menu.uses)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+            <p className="font-bold text-stone-900">Tour times, next two weeks</p>
+            <ul className="mt-2 divide-y divide-stone-100">
+              {k.weekly.tours.slots.map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
+                  <span className="text-stone-700">{t.label}</span>
+                  {t.bookedBy ? (
+                    <span className="truncate text-xs font-semibold text-stone-600">Booked: {t.bookedBy}</span>
+                  ) : (
+                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-800">Open</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-stone-500">
+              {updated(k.weekly.tours.updatedBy, k.weekly.tours.updatedAt)} · {used(k.weekly.tours.uses)}
+            </p>
+          </div>
+        </div>
       </section>
     </div>
   );

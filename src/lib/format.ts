@@ -26,3 +26,7 @@ export const formatClock = (time: string, lang: Lang) => {
   }
   return new Date(`2000-01-01T${time}:00Z`).toLocaleTimeString(LOCALE[lang], { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
 };
+
+/** "Monday" in the family's language, for a YYYY-MM-DD date. */
+export const formatWeekday = (date: string, lang: Lang) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString(LOCALE[lang], { weekday: "long", timeZone: "UTC" });

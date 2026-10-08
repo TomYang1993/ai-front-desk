@@ -1,8 +1,10 @@
 import "server-only";
 import type { CenterId, Handoff, Lang, QuestionLog, TableId, Topic } from "@/content";
-import { getCenter, getFamilies, getFeedback, getHandbook, getHandledFeedback, getHandoffs, getLogs, type HandledFeedback } from "./data";
-import { formatDate, formatTime, hoursLine, upcomingClosures } from "./facts/calendar";
-import { menuFor } from "./facts/menu";
+import { getCenter, getFamilies, getFeedback, getHandbook, getHandledFeedback, getHandoffs, getLogs, getTourBookings, type HandledFeedback } from "./data";
+import { dayStatus, formatDate, formatTime, hoursLine, upcomingClosures, weekdayName } from "./facts/calendar";
+import { ALLERGEN_LABEL, menuFor } from "./facts/menu";
+import { upcomingTourSlots } from "./facts/tours";
+import { menuWeek } from "./engine/compose";
 import { usd } from "./facts/money";
 import { toEnglish } from "./engine/drafts";
 import { MINUTES_PER_ANSWER } from "./console-constants";
@@ -69,7 +71,13 @@ export interface Overview {
 export interface KnowledgeView {
   sections: { id: string; title: string; body: string; updatedAt: string; updatedBy: string; uses: number }[];
   saved: { id: string; question: string; answer: string; keywords: string[]; savedBy: string; savedAt: string; uses: number; fromHandoffId: string | null }[];
+  /** Set by the director and rarely changes: calendar, tuition and rooms, hours. */
   tables: { id: TableId; label: string; updatedAt: string; updatedBy: string; uses: number; lines: string[] }[];
+  /** Changes week to week: this week's menu and the next two weeks of tour times. Read-only for now. */
+  weekly: {
+    menu: { updatedAt: string; updatedBy: string; uses: number; days: { date: string; label: string; closed: string | null; items: { label: string; name: string; allergens: string[] }[] }[] };
+    tours: { updatedAt: string; updatedBy: string; uses: number; slots: { id: string; label: string; bookedBy: string | null }[] };
+  };
 }
 
 export interface ConsoleView {
@@ -94,7 +102,7 @@ const GAP_REASONS = new Set(["Not covered by the handbook", "Maple wasn't sure"]
 const handled = (l: QuestionLog) => l.outcome === "answered" || l.outcome === "declined";
 
 export async function getConsoleView(centerId: CenterId, staffId: string | null, now = new Date()): Promise<ConsoleView> {
-  const [center, families, sections, handoffs, logs, feedback, handledFeedback] = await Promise.all([
+  const [center, families, sections, handoffs, logs, feedback, handledFeedback, bookings] = await Promise.all([
     getCenter(centerId),
     getFamilies(centerId),
     getHandbook(centerId),
@@ -102,6 +110,7 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
     getLogs(centerId),
     getFeedback(centerId),
     getHandledFeedback(centerId),
+    getTourBookings(centerId),
   ]);
   const me = center.staff.find((s) => s.id === staffId) ?? center.staff.find((s) => s.role === "director")!;
   const t = now.getTime();
@@ -257,7 +266,37 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
     knowledge: {
       sections: sections.map((s) => ({ id: s.id, title: s.title, body: s.body, updatedAt: s.updatedAt, updatedBy: s.updatedBy, uses: uses(`handbook:${s.id}`) })),
       saved: [...center.savedAnswers].reverse().map((a) => ({ id: a.id, question: a.question, answer: a.answer, keywords: a.keywords, savedBy: a.savedBy, savedAt: a.savedAt, uses: uses(`saved:${a.id}`), fromHandoffId: a.fromHandoffId ?? null })),
-      tables: (Object.keys(TABLE_LABEL) as TableId[]).map((id) => ({ id, label: TABLE_LABEL[id], ...center.tableUpdates[id], uses: uses(`table:${id}`), lines: tableLines[id] })),
+      tables: (["calendar", "tuition", "hours"] as TableId[]).map((id) => ({ id, label: TABLE_LABEL[id], ...center.tableUpdates[id], uses: uses(`table:${id}`), lines: tableLines[id] })),
+      weekly: {
+        menu: {
+          ...center.tableUpdates.menu,
+          uses: uses("table:menu"),
+          days: menuWeek(today).map((date) => {
+            const status = dayStatus(center, date);
+            const m = status.open ? menuFor(center, date) : null;
+            const item = (label: string, x?: { name: string; allergens: string[] }) => (x ? [{ label, name: x.name, allergens: x.allergens.map((a) => ALLERGEN_LABEL[a as keyof typeof ALLERGEN_LABEL]) }] : []);
+            return {
+              date,
+              label: `${weekdayName(date).slice(0, 3)}, ${formatDate(date, false)}`,
+              closed: status.open ? null : status.closure?.name ?? "Closed",
+              items: !m
+                ? []
+                : center.meals === "provided"
+                  ? [...item("Breakfast", m.breakfast), ...item("Lunch", m.lunch), ...item("Snack", m.pmSnack)]
+                  : [...item("Morning snack", m.amSnack), ...item("Afternoon snack", m.pmSnack), ...item("Backup lunch", m.backupLunch?.main), ...item("Allergy-friendly backup", m.backupLunch?.alternative)],
+            };
+          }),
+        },
+        tours: {
+          ...center.tableUpdates.tours,
+          uses: uses("table:tours"),
+          slots: upcomingTourSlots(center, now, 14).map((slot) => ({
+            id: slot.id,
+            label: `${weekdayName(slot.date).slice(0, 3)}, ${formatDate(slot.date, false)} at ${formatTime(slot.time)}`,
+            bookedBy: bookings.find((b) => b.slotId === slot.id)?.name ?? null,
+          })),
+        },
+      },
     },
     families: families.map((f) => ({ id: f.id, label: `${f.parentName} (${f.children.map((c) => c.firstName).join(" and ")})`, language: f.preferredLanguage })),
   };

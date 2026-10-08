@@ -125,6 +125,7 @@ Known gaps:
 - **The test box** calls `ask()` with `dryRun`, which writes no logs, handoffs or cache entries.
 - **"Talk to a person"** (`/api/person`, `engine/person.ts`) appears after the second thumbs down in a conversation: Maple apologizes and offers it, and the button then stays in the chip row until "Start over". It creates a handoff of kind `person` with Maple's last answer as `context`, with no AI involved.
 - **Home and chat suggestions.** The home screen has no question buttons; parents tap Maple or the Ask bar. `ParentView.board.menu.notes` gives each child's food note, and `ParentView.shortcuts` gives the chat's task suggestions, which send ordinary messages (so they go through the AI intake, unlike the old free quick-fact chips). The engine's `chip` path still exists for `/api/ask` and scenario 1.
+- **Weekly menu.** `composeWeekMenu` in `engine/compose.ts` answers whole-week menu questions, chosen by a "week" word in any of the four languages (`WEEK` in `engine/index.ts`); scenario 33 covers it. The Food card's "This week" view comes from `ParentView.board.week`. In the console, `KnowledgeView.weekly` holds this week's menu and the next two weeks of tour slots; both are read-only.
 - **Logs now keep Maple's reply** (`QuestionLog.answer`), so the overview can show what Maple said.
 - **Unhelpful answers.** These come from the thumbs down under each answer. Handled ones are stored under `feedback-handled:` per center.
 - **Center logos** are in `src/components/center-logo.tsx`.
@@ -170,6 +171,7 @@ Collected while building, for the phase after Phase 4 merges.
 - The reply-draft claim check misses softer additions, such as "keep the costume comfortable".
 - Scenario 13 (snow) is flaky. The claim check rejects common-sense lines ("if APS stays open, we keep our normal hours"), possibly because Rosa's answer is in Spanish while the sources are English. Also, heavy testing on one day exhausts Groq's large model, and Gemini sometimes returns "high demand".
 - The two-thumbs-down offer of "Talk to a person" hasn't been clicked through in the browser yet; the pane was in use.
+- Menu editing: the user may want a small tool of its own for it, possibly for kitchen staff. Tour times stay view-only for now.
 
 **Organizing**
 - Three separate language-name maps (`engine/handbook.ts`, `engine/translate.ts`, `engine/drafts.ts`). Make one.

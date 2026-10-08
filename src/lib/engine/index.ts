@@ -12,6 +12,7 @@ import {
   composeBilling,
   composeClosure,
   composeEvents,
+  composeWeekMenu,
   composeForgotLunch,
   composeGreeting,
   composeHours,
@@ -56,6 +57,9 @@ const CHIP_LABEL: Record<ChipId, string> = {
   tuition: "Tuition",
   tours: "Book a tour",
 };
+
+/** A question about the whole week: "this week", "esta semana", "这周", "इस हफ़्ते". */
+const WEEK = /\bweek\b|\bweekly\b|semana|这周|本周|一周|这个星期|हफ़्ते|हफ्ते|सप्ताह/i;
 
 /** Cheap language guess for paths that must not wait for the AI. */
 export function detectLanguage(text: string): Lang {
@@ -325,7 +329,8 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
       composed = WEATHER_WORDS.test(message) ? null : composeClosure(ctx, u.date);
       break;
     case "hours": composed = composeHours(ctx); break;
-    case "menu": composed = composeMenu(ctx, u.date); break;
+    // "This week" without a specific day gets the whole week, in any of the four languages.
+    case "menu": composed = !u.date && WEEK.test(message) ? composeWeekMenu(ctx) : composeMenu(ctx, u.date); break;
     case "forgot_lunch": composed = enrolled ? composeForgotLunch(ctx, child) : null; break;
     case "illness": {
       const symptom = u.symptom

@@ -116,6 +116,8 @@ const SCENARIOS: Scenario[] = [
     expect: { mode: "answer", language: "hi", includes: ["101", /[\u0900-\u097F]/] } },
   { id: "32", name: "Grandparent pickup, Hindi", center: "quail-ridge", family: "sharma", message: "आज कबीर को उसकी दादी लेने आएँगी, क्या यह ठीक है?",
     expect: { mode: "handoff", language: "hi", includes: ["Hannah", /[\u0900-\u097F]/], sources: ["handbook:pickup"] } },
+  { id: "33", name: "This week's menu", center: "pinon-grove", family: "martinez", message: "What's the meal plan for this week?",
+    expect: { mode: "answer", includes: ["Monday", "Friday", /safe for Mia/], lanesExclude: ["handbook"], sources: ["table:menu"] } },
 ];
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
