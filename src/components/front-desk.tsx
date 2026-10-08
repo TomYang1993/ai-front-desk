@@ -121,6 +121,12 @@ export function FrontDesk({ view }: { view: ParentView }) {
     if (ms) resetTimer.current = setTimeout(() => setMaple("ready"), ms);
   }, []);
 
+  // Maple waves hello when the front desk first appears.
+  useEffect(() => {
+    const t = setTimeout(() => moodFor("wave", 2200), 600);
+    return () => clearTimeout(t);
+  }, [moodFor]);
+
   /** Seeing the chat counts as reading the staff replies in it. */
   const markRepliesSeen = useCallback((data: Requests | null) => {
     const ids = (data?.handoffs ?? []).filter((h) => h.reply).map((h) => h.id);
@@ -269,9 +275,11 @@ export function FrontDesk({ view }: { view: ParentView }) {
   // Staff replies the parent hasn't seen yet, announced in Maple's bubble on phones.
   const unread = (requests?.handoffs ?? []).filter((h) => h.reply && !saved.seenReplies.includes(h.id));
 
-  function openChat(opts: { focus?: boolean } = {}) {
+  function openChat(opts: { focus?: boolean; wave?: boolean } = {}) {
     markRepliesSeen(requests);
     setOpen(true);
+    // She waves as she arrives in the card, unless she's busy or in calm mode.
+    if (opts.wave !== false && maple === "ready" && !pending) setTimeout(() => moodFor("wave", 2200), 250);
     // Typing opens the keyboard, so only the "Ask Maple" bar focuses the text box.
     setTimeout(() => (opts.focus ? textarea.current : dialog.current)?.focus({ preventScroll: true }), opts.focus ? 380 : 50);
   }
@@ -284,7 +292,8 @@ export function FrontDesk({ view }: { view: ParentView }) {
   }
 
   function askFromHome(chip: ChipId) {
-    if (!wide) openChat();
+    // No wave here: the question is already on its way.
+    if (!wide) openChat({ wave: false });
     send({ chip });
   }
 

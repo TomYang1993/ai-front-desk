@@ -19,27 +19,6 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Maple's animations. Each state moves only what it needs. */
-.maple .maple-body { transform-box: view-box; transform-origin: 100px 190px; }
-.maple .maple-head { transform-box: view-box; transform-origin: 100px 120px; transition: transform 300ms ease; }
-.maple .maple-ears { transform-box: view-box; transform-origin: 100px 60px; transition: transform 300ms ease; }
-.maple .maple-eyes { transform-box: view-box; transform-origin: 100px 76px; }
-.maple .maple-page { transform-box: view-box; transform-origin: 100px 155px; }
-
-.maple--ready .maple-body, .maple--done .maple-body { animation: maple-breathe 3.2s ease-in-out infinite; }
-.maple--ready .maple-eyes, .maple--listening .maple-eyes, .maple--done .maple-eyes { animation: maple-blink 4.5s infinite; }
-.maple--listening .maple-head { transform: rotate(-7deg); }
-.maple--listening .maple-ears { transform: scaleY(1.12); }
-.maple--thinking .maple-page { animation: maple-page 1.4s ease-in-out infinite; }
-.maple--thinking .maple-head { transform: rotate(4deg); }
-.maple--handoff .maple-head { transform: rotate(-4deg); }
-.maple--done .maple-head { animation: maple-nod 0.9s ease-in-out 1; }
-
-@keyframes maple-breathe { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-2.5px) } }
-@keyframes maple-blink { 0%, 93%, 100% { transform: scaleY(1) } 96% { transform: scaleY(0.1) } }
-@keyframes maple-page { 0%, 100% { transform: scaleX(1) } 50% { transform: scaleX(-0.15) } }
-@keyframes maple-nod { 0%, 100% { transform: rotate(0) } 35% { transform: rotate(9deg) } 70% { transform: rotate(-2deg) } }
-
 /* The desk window: balloons drift over Albuquerque, rain falls on Seattle. */
 .desk-balloon { animation: desk-drift 9s ease-in-out infinite; }
 .desk-balloon--late { animation-duration: 12s; animation-delay: -4s; }
@@ -49,5 +28,5 @@ body {
 @keyframes desk-rain { from { transform: translate(0, -12px) } to { transform: translate(-4px, 12px) } }
 
 @media (prefers-reduced-motion: reduce) {
-  .maple *, .desk-scene * { animation: none !important; transition: none !important; }
+  .desk-scene * { animation: none !important; transition: none !important; }
 }

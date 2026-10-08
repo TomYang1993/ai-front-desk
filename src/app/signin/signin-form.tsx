@@ -88,7 +88,7 @@ export function SignInForm({ groups, password }: { groups: Group[]; password: st
       <section className="flex flex-col gap-6">
         <header className="flex items-center gap-4">
           <div className="shrink-0 rounded-full bg-[#F6EBD9] p-1.5">
-            <Maple size={72} />
+            <Maple state="wave" size={72} />
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-teal-700">AI front desk</p>
