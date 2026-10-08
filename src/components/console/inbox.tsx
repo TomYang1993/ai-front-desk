@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, CheckCircle2, CircleAlert, Languages, LoaderCircle, Repeat2, Send, Sparkles } from "lucide-react";
 import { GENERAL_REASONS } from "@/lib/console-constants";
 import type { InboxItem } from "@/lib/console-view";
+import { ConsoleLink } from "./console-link";
 import { ago, LANGUAGE, post } from "./shared";
 
 export function Inbox({ items, me, selectedId }: { items: InboxItem[]; me: { name: string; firstName: string }; selectedId: string | null }) {
@@ -249,9 +249,9 @@ function SaveAsAnswer({ item }: { item: InboxItem }) {
         <Check size={16} />
         <span>
           Saved as an answer. Maple gives it to every family from now on.{" "}
-          <Link href="/console?tab=source" className="font-semibold underline">
+          <ConsoleLink href="/console?tab=source" className="font-semibold underline">
             See it in Source of truth
-          </Link>
+          </ConsoleLink>
         </span>
       </p>
     );

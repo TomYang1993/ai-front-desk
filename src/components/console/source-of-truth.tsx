@@ -69,7 +69,7 @@ export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeVie
         </p>
         <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {k.tables.map((t) => (
-            <li key={t.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+            <li key={t.id} id={`table-${t.id}`} className="scroll-mt-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
               <p className="font-bold text-stone-900">{t.label}</p>
               <ul className="mt-1.5 space-y-0.5 text-sm text-stone-700">
                 {t.lines.map((l) => (
@@ -96,7 +96,7 @@ export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeVie
           <Lock size={13} /> Read-only here for now. Editing the menu will come as its own tool.
         </p>
         <div className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+          <div id="table-menu" className="scroll-mt-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
             <p className="font-bold text-stone-900">This week&apos;s menu</p>
             <ul className="mt-2 divide-y divide-stone-100">
               {k.weekly.menu.days.map((d) => (
@@ -126,7 +126,7 @@ export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeVie
               {updated(k.weekly.menu.updatedBy, k.weekly.menu.updatedAt)} · {used(k.weekly.menu.uses)}
             </p>
           </div>
-          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+          <div id="table-tours" className="scroll-mt-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
             <p className="font-bold text-stone-900">Tour times, next two weeks</p>
             <ul className="mt-2 divide-y divide-stone-100">
               {k.weekly.tours.slots.map((t) => (

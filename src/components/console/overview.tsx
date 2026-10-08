@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, CheckCircle2, Clock, MessageCircleQuestion, Moon, ThumbsDown, Timer, UserRound, Wrench } from "lucide-react";
+import { Check, CheckCircle2, Clock, Eye, MessageCircleQuestion, Moon, ThumbsDown, Timer, UserRound, Wrench } from "lucide-react";
 import type { Overview } from "@/lib/console-view";
 import { MINUTES_PER_ANSWER } from "@/lib/console-constants";
+import { ConsoleLink } from "./console-link";
 import { ago, LANGUAGE, post } from "./shared";
 
 /** Chart colors: Maple's teal and the amber staff replies already wear. Validated as a pair for color vision differences. */
@@ -207,6 +207,8 @@ function UnhelpfulItem({ item: n }: { item: Overview["notHelpful"][number] }) {
   const [error, setError] = useState("");
   const section = n.sources.find((x) => x.sectionId);
   const savedAnswer = n.sources.find((x) => x.id.startsWith("saved:"));
+  // Hours, tuition and the like are center data, read-only for now: there is nothing to edit, but the director can check what Maple read.
+  const table = !section && !savedAnswer ? n.sources.find((x) => x.id.startsWith("table:")) : undefined;
 
   async function act(run: () => Promise<unknown>) {
     setBusy(true);
@@ -252,14 +254,19 @@ function UnhelpfulItem({ item: n }: { item: Overview["notHelpful"][number] }) {
       {error && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
         <div className="mt-3 flex flex-wrap gap-2">
         {section?.sectionId && (
-          <Link href={`/console?tab=source&section=${section.sectionId}&fix=${n.id}`} className="flex items-center gap-1.5 rounded-full bg-teal-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-800">
+          <ConsoleLink href={`/console?tab=source&section=${section.sectionId}&fix=${n.id}`} className="flex items-center gap-1.5 rounded-full bg-teal-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-800">
             <Wrench size={13} /> Fix &ldquo;{section.label}&rdquo;
-          </Link>
+          </ConsoleLink>
         )}
         {savedAnswer && (
-          <Link href={`/console?tab=source#answer-${savedAnswer.id.slice(6)}`} className="flex items-center gap-1.5 rounded-full bg-teal-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-800">
+          <ConsoleLink href={`/console?tab=source#answer-${savedAnswer.id.slice(6)}`} className="flex items-center gap-1.5 rounded-full bg-teal-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-800">
             <Wrench size={13} /> Edit the saved answer
-          </Link>
+          </ConsoleLink>
+        )}
+        {table && (
+          <ConsoleLink href={`/console?tab=source#table-${table.id.slice(6)}`} className="flex items-center gap-1.5 rounded-full border border-teal-700 px-3 py-1.5 text-xs font-bold text-teal-800 hover:bg-teal-50">
+            <Eye size={13} /> Check &ldquo;{table.label}&rdquo;
+          </ConsoleLink>
         )}
         <button
           onClick={() => act(() => post(`/api/console/feedback/${n.id}`, { how: "reviewed" }))}

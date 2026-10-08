@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BarChart3, BookOpen, FlaskConical, Inbox as InboxIcon, LogOut } from "lucide-react";
 import type { ConsoleView } from "@/lib/console-view";
 import { signOut } from "@/lib/auth-actions";
 import { CenterLogo } from "../center-logo";
+import { ConsoleLink } from "./console-link";
 import { Inbox } from "./inbox";
 import { OverviewPanel } from "./overview";
 import { SourceOfTruth } from "./source-of-truth";
 import { TestBox } from "./test-box";
-import type { Tab } from "./shared";
+import { TABS, type Tab } from "./shared";
 
 const NAV: { tab: Tab; label: string; icon: React.ReactNode }[] = [
   { tab: "inbox", label: "Inbox", icon: <InboxIcon size={18} /> },
@@ -20,9 +20,17 @@ const NAV: { tab: Tab; label: string; icon: React.ReactNode }[] = [
   { tab: "test", label: "Test Maple", icon: <FlaskConical size={18} /> },
 ];
 
-/** The director console shell: navigation, the signed-in director, and the active tab. */
-export function ConsoleApp({ view, tab, item, section }: { view: ConsoleView; tab: Tab; item: string | null; section: { id: string; fixLogId: string | null } | null }) {
+/**
+ * The director console shell: navigation, the signed-in director, and the active tab.
+ * The server sends every tab's data at once, and the URL says which tab to show, so switching tabs never waits on the server.
+ */
+export function ConsoleApp({ view }: { view: ConsoleView }) {
   const router = useRouter();
+  const params = useSearchParams();
+  const tab = (TABS as readonly string[]).includes(String(params.get("tab"))) ? (params.get("tab") as Tab) : "inbox";
+  const item = params.get("item");
+  const sectionId = params.get("section");
+  const section = sectionId ? { id: sectionId, fixLogId: params.get("fix") } : null;
   const waiting = view.inbox.filter((i) => i.status === "open").length;
 
   // New handoffs and parents' activity show up without a reload.
@@ -43,7 +51,7 @@ export function ConsoleApp({ view, tab, item, section }: { view: ConsoleView; ta
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-2 lg:flex-col lg:px-3 lg:pb-0" aria-label="Console">
           {NAV.map((n) => (
-            <Link
+            <ConsoleLink
               key={n.tab}
               href={`/console?tab=${n.tab}`}
               aria-current={tab === n.tab ? "page" : undefined}
@@ -54,7 +62,7 @@ export function ConsoleApp({ view, tab, item, section }: { view: ConsoleView; ta
               {n.tab === "inbox" && waiting > 0 && (
                 <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-bold ${tab === n.tab ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"}`}>{waiting}</span>
               )}
-            </Link>
+            </ConsoleLink>
           ))}
         </nav>
         <div className="hidden items-center justify-between gap-2 border-t border-stone-200 px-5 py-4 lg:mt-auto lg:flex">

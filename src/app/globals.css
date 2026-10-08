@@ -13,6 +13,19 @@
 }
 
 
+/* Tailwind 4 stopped giving buttons a pointer cursor, so links had one and buttons didn't. Every control that can be clicked gets it. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  label:has(input[type="checkbox"]:not(:disabled), input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
