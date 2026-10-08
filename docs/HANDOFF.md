@@ -119,4 +119,25 @@ Phase 3, all done:
 4. **Done: Maple version 2.** Redraw the SVG with more polish and separately animated parts. Animate with Motion springs and add wave and hop moments. Keep the `<Maple state size />` interface, and respect reduced-motion settings. Pick a Motion version at least two weeks old, and read its current docs.
 5. **Done: finish Phase 3.** Test the action buttons at phone size, fix the known gaps, run all checks, and open the pull request.
 
-Then Phase 4, the director console: an inbox with the "answer once" loop, insights, a knowledge editor, a test box and setup from a pasted handbook. Scenario 15 becomes testable then.
+Then Phase 4, the director console: an inbox with the "answer once" loop, an overview, a knowledge editor and a test box. Scenario 15 becomes testable then. Its decisions are in `docs/PLAN.md`, "Phase 4 decisions".
+
+After Phase 4 merges, Phase 5 is debugging and organizing the app: fix the bugs found so far, tidy the code and docs, and re-run every check. Onboarding a new center from a pasted handbook is no longer planned.
+
+## Phase 5 backlog: debug and organize
+
+Collected while building, for the phase after Phase 4 merges.
+
+**Bugs and gaps**
+- "Mateo tiene tos y no va a ir mañana" (a cough plus an absence) goes to the director instead of offering the absence button.
+- Local data holds test records from October 7: a backup lunch for Priya, an absence and a handoff for Rosa. The lunch makes scenario 26 fail locally. Reset local data once it's clear no other session needs it.
+- All preview deployments share one data space (`afd:preview:`), so two previews with different seed content keep resetting each other's data. Consider a prefix per branch.
+- `SESSION_SECRET` isn't set in Vercel.
+- Reduced-motion still poses for Maple are untested in a real browser setting.
+- Source chips show the handbook's English section titles in every language.
+- Hindi replies lean on Gemini's small free quota. Watch for English fallbacks.
+
+**Organizing**
+- Three separate language-name maps (`engine/handbook.ts`, `engine/translate.ts`, `engine/drafts.ts`). Make one.
+- Large files: `i18n.ts` (one file for four languages), `components/front-desk.tsx`, `engine/index.ts` and `engine/compose.ts` are each around 450 to 500 lines.
+- `/status` uses the scaffold's neutral styling and dark-mode classes, unlike the rest of the app.
+- The README predates sign-in, the console and Hindi.

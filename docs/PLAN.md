@@ -22,9 +22,8 @@ Who we design for, from the brightwheel primer:
 ## 2. Scope
 
 **In scope**
-- Parent experience for four enrolled families, behind a simulated sign-in. Visitor mode is deferred; see the Phase 3 redesign.
+- Parent experience for five enrolled families, behind a simulated sign-in. Visitor mode is deferred; see the Phase 3 redesign.
 - Operator console per center: overview, handoff inbox with the "answer once" loop, knowledge editor, test box.
-- Set up a new center by pasting a handbook.
 - Two fictional centers in different regions with realistic local rules.
 - Replies in the parent's language: English, Spanish, Mandarin, Hindi.
 - A scorecard of tricky test questions run against the answer engine.
@@ -34,12 +33,12 @@ Who we design for, from the brightwheel primer:
 - Voice, SMS and phone channels.
 - "Network suggestions": draft an answer from how similar centers answered.
 - Real login, roles, push notifications, brightwheel support tooling.
+- Onboarding a new center by pasting its handbook. Dropped on October 7 in favor of debugging and organizing the app; see the build phases.
 
 **Cut list if time runs short, in order**
 1. Mandarin replies, keeping Spanish.
 2. Knowledge test box.
 3. Eight weeks of seeded history down to two.
-4. New-center setup flow becomes "import into the current center".
 
 ## 3. The centers
 
@@ -135,7 +134,15 @@ Feedback on the first parent app: treat it as a real product, not a demo router.
 - **Inbox.** Handoffs sorted urgent first. Each shows the family, child, the parent's words, why the AI handed off, and a suggested reply. Sending a reply delivers it to the parent, translated if needed, and offers "Save as answer", which drafts a general Q&A for the director to approve.
 - **Knowledge.** Handbook sections, structured tables for calendar, menu, tuition, hours and tour slots, and saved answers. Each item shows who updated it, when, and how many answers used it this week.
 - **Test box.** Ask as any family and see the answer and sources without logging it.
-- **Set up a new center.** Paste a handbook. The AI splits it into sections and extracts facts into tables, each with the quote it came from. The director approves or edits, and the center goes live in visitor mode.
+- **Set up a new center.** Not planned for now. The idea was to paste a handbook, have the AI split it into sections and tables with the quote each fact came from, and let the director approve it.
+
+### Phase 4 decisions, October 7
+
+- **Directors see only their own center.** No center switcher: sign out and pick the other director from Demo accounts, like a real product.
+- **Laptop first.** The inbox and replies still work on a phone.
+- **Knowledge editing.** Directors edit handbook sections and saved answers. The calendar, menu, tuition, hours and tour tables are read-only for now, each showing who updated it and when.
+- **Suggested replies on request.** A "Draft a reply" button asks Maple for a draft from the handbook. Where the handbook is silent, the draft leaves a bracketed blank for the director instead of inventing an answer.
+- **Replies reach parents in their language.** The parent sees the translation, with the original one tap away. The director sees what the parent got.
 
 ## 8. Answer engine: a router with lanes
 
@@ -195,7 +202,7 @@ Groq goes first. On the scorecard it answered every question it received correct
 - Seeded question history is generated relative to the current date, so the demo never looks stale.
 - Deployed on the user's Vercel account.
 
-Routes: landing page, parent app, operator console per center, demo split view, and API routes for asking, handoffs, knowledge, actions, setup and reset.
+Routes: landing page, parent app, operator console per center, demo split view, and API routes for asking, handoffs, knowledge, actions and reset.
 
 ## 10. Scorecard
 
@@ -210,7 +217,7 @@ The scenarios in SCENARIOS.md become the test set. About thirty test questions a
 | 0:45 | Fever: Mia's return time is computed and the absence is logged |
 | 1:00 | Ethan's grandparent pickup goes straight to staff, in Mandarin |
 | 1:10 | Halloween: Rosa asks in Spanish, the director answers once, Ana gets it instantly |
-| 1:35 | A new center goes live from a pasted handbook, then the overview shows time saved and gaps |
+| 1:35 | The director's overview shows time saved, after-hours answers and the gaps Maple couldn't answer |
 | 1:50 | Bonus teaser |
 
 ## 12. Build phases and checkpoints
@@ -222,7 +229,7 @@ The scenarios in SCENARIOS.md become the test set. About thirty test questions a
 | 2 | Answer engine and scorecard | Scorecard results |
 | 3 | Parent experience: simulated sign-in, front desk home, chat card, Maple version 2 | Try it on your phone |
 | 4 | Operator console and "answer once" loop | Walk the full loop |
-| 5 | New-center setup from a handbook | Try a paste |
+| 5 | Debug and organize: fix bugs found so far, tidy the code and docs, and re-run every check on the merged app | Clean scorecard and a walk through every screen |
 | 6 | Demo view, deploy, polish, video shot list | Hosted URL ready to record |
 
 ## 13. Risks
