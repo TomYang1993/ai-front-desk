@@ -149,4 +149,43 @@ export const families: Family[] = [
     },
     notesOnFile: [],
   },
+  {
+    id: "sharma",
+    centerId: "quail-ridge",
+    parentName: "Meera Sharma",
+    parentFirstName: "Meera",
+    preferredLanguage: "hi",
+    authorizedPickup: [
+      { name: "Meera Sharma", relation: "Parent" },
+      { name: "Rohan Sharma", relation: "Parent" },
+      { name: "Sunita Sharma", relation: "Grandmother" },
+    ],
+    emergencyContacts: [
+      { name: "Sunita Sharma", relation: "Grandmother" },
+      { name: "Anjali Verma", relation: "Family friend" },
+    ],
+    children: [
+      {
+        id: "kabir",
+        firstName: "Kabir",
+        lastName: "Sharma",
+        birthDate: "2023-03-21",
+        roomId: "ferns",
+        allergies: ["egg"],
+        allergyNote: "Egg allergy. Care plan on file.",
+      },
+    ],
+    billing: {
+      plan: "Full-time tuition, Ferns",
+      monthlyAmount: 2050,
+      autopay: true,
+      ledger: [
+        { date: "2026-09-01", description: "September tuition, Ferns", amount: 2050 },
+        { date: "2026-09-01", description: "Autopay payment", amount: -2050 },
+        { date: "2026-10-01", description: "October tuition, Ferns", amount: 2050 },
+        { date: "2026-10-01", description: "Autopay payment", amount: -2050 },
+      ],
+    },
+    notesOnFile: ["Grandmother Sunita Sharma is visiting from Jaipur until mid-December. She is on the authorized pickup list, with photo ID on file."],
+  },
 ];

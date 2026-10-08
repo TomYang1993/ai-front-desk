@@ -1,6 +1,6 @@
 import type { Lang } from "@/content/types";
 
-const LOCALE: Record<Lang, string> = { en: "en-US", es: "es-US", zh: "zh-CN" };
+const LOCALE: Record<Lang, string> = { en: "en-US", es: "es-US", zh: "zh-CN", hi: "hi-IN" };
 
 /** "Tuesday, October 13" for a YYYY-MM-DD calendar date. */
 export const formatDay = (date: string, lang: Lang) =>

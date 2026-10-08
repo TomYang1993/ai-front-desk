@@ -158,7 +158,7 @@ export const quailRidge: Center = {
   address: "2210 NE Quail Ridge Way, Seattle, WA 98115",
   phone: "206-555-0187",
   email: "hello@quailridge.example",
-  languages: ["en", "zh"],
+  languages: ["en", "zh", "hi"],
   hours: { open: "07:30", close: "18:00", days: "Monday to Friday" },
   officeHours: { start: "08:00", end: "17:30", typicalReplyMinutes: 120 },
   meals: "pack_lunch",
@@ -269,7 +269,7 @@ export const quailRidge: Center = {
       answer: "Use the four 15-minute spots in our lot, or street parking on NE 75th. Please don't block the neighbors' driveways.",
       savedBy: "Hannah Lindqvist",
       savedAt: "2026-09-10T22:10:00Z",
-      keywords: ["parking", "park", "pickup spot", "停车"],
+      keywords: ["parking", "park", "pickup spot", "停车", "पार्क"],
     },
     {
       id: "qr-sa-cloth-diapers",

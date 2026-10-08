@@ -24,6 +24,7 @@ export const accounts: DemoAccount[] = [
   { email: "elena.vigil@example.com", name: "Elena Vigil", role: "director", centerId: "pinon-grove", staffId: "elena-vigil" },
   { email: "priya.raman@example.com", name: "Priya Raman", role: "parent", centerId: "quail-ridge", familyId: "raman" },
   { email: "wei.chen@example.com", name: "Wei Chen", role: "parent", centerId: "quail-ridge", familyId: "chen" },
+  { email: "meera.sharma@example.com", name: "Meera Sharma", role: "parent", centerId: "quail-ridge", familyId: "sharma" },
   { email: "hannah.lindqvist@example.com", name: "Hannah Lindqvist", role: "director", centerId: "quail-ridge", staffId: "hannah-lindqvist" },
 ];
 

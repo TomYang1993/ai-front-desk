@@ -10,6 +10,7 @@ Last updated October 7, 2026. Read this first in a new session, then `docs/PLAN.
 | Repo | https://github.com/TomYang1993/ai-front-desk |
 | `main` | Phases 0 to 2 and the Groq provider, merged through pull requests #1 and #2 |
 | `phase-3-parent-app` | Phase 3 is done, in pull request #3: sign-in, removing visitor mode, the front desk home, Maple version 2, and the finishing pass |
+| `hindi-family` | Built on `phase-3-parent-app`: Hindi as a fourth language and Meera Sharma's family at Quail Ridge |
 
 ## How we work
 
@@ -95,6 +96,16 @@ Known gaps:
 - **Saved-answer guard.** At the scorecard's test time, the Groq intake model answered "How much is infant care?" with the saved parking answer (scenario 9). In English, a saved answer is now used only when the message contains one of its keywords; other languages still trust the model, so the Spanish "answer once" path isn't blocked.
 - **Scorecard** on October 7: 28 passed, scenario 15 pending until Phase 4. Scenario 26 fails only because of local test data: a backup lunch ordered for Priya with the test clock is now her newest $8 charge. `POST /api/admin/reset` clears it, but the local data is shared with other sessions, so it wasn't reset.
 - **Checked at phone size:** Rosa's Spanish home and the "show original" toggle; logging an absence in Spanish, including a stale button being refused; Priya's backup-lunch button and the after-cutoff message. The successful lunch order was checked with curl and the test clock.
+
+## Hindi and the Sharma family (branch `hindi-family`)
+
+- `Lang` now includes `"hi"`. Hindi has interface strings in `i18n.ts`, written with the respectful "आप" and feminine verb forms for Maple. It also has the `hi-IN` locale for dates and times, fixed handoff and safety messages in `engine/handoff.ts`, and translation instructions in `engine/translate.ts`.
+- The intake step returns `"hi"`, and Hindi written in Latin letters (Hinglish) counts as Hindi. `detectLanguage` recognizes Devanagari.
+- The safety screen has Hindi patterns for emergencies, custody and abuse, in Devanagari plus common romanized emergency phrases.
+- Noto Sans Devanagari is a fallback after Nunito, loaded without preload, so it only downloads when Hindi is on screen.
+- Meera Sharma (`meera.sharma@example.com`) has Kabir, 3, in Ferns, with an egg allergy. Grandmother Sunita Sharma is visiting from Jaipur and is on the pickup list. Quail Ridge's languages now include Hindi, and the seeded history mixes in Hindi questions without changing Piñon Grove's history.
+- **Names survive translation.** The small Groq model wrote "Hannah" and "Quail Ridge" in Devanagari. `translate()` now takes the center's, staff's and family's names, tells the model to keep them in Latin letters, and rejects a translation that changes them, as it does for numbers. It tries the small model, then a small model from another provider (Gemini, which keeps names and Maple's feminine verb forms), then the large chain, before keeping English. Hindi replies usually come from Gemini, so they use its daily free quota.
+- Scorecard scenarios 31 (low fever, in Hindi) and 32 (grandparent pickup, in Hindi) are added, and both require Devanagari so an English fallback can't pass. The full run on this branch: 30 passed and scenario 15 pending, before the name fix; after it, all six translated scenarios pass.
 
 ## Next steps
 

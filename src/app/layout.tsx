@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Nunito } from "next/font/google";
+import { Geist_Mono, Noto_Sans_Devanagari, Nunito } from "next/font/google";
 import "./globals.css";
 
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
+});
+
+/** Hindi text. Nunito has no Devanagari, and this file only downloads when Devanagari is on screen. */
+const devanagari = Noto_Sans_Devanagari({
+  variable: "--font-devanagari",
+  subsets: ["devanagari"],
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
@@ -21,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${nunito.variable} ${devanagari.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

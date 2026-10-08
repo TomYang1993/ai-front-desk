@@ -18,6 +18,8 @@ const RULES: Record<SafetyHit, RegExp[]> = {
     /\bswallowed (a )?(battery|magnet|pill|medicine|bleach|detergent|poison)/i,
     /no (puede )?respira|dificultad para respirar|convulsi|inconsciente|se est[aá] ahogando|labios hinchados|sangra mucho/i,
     /不能呼吸|呼吸困难|喘不过气|抽搐|昏迷|失去意识|窒息|嘴唇肿|过敏性休克/,
+    /सा[ँं]स (नहीं|लेने में (दिक्कत|तकलीफ़?|परेशानी))|दौरा पड़|बेहोश|होंठ सूज|गला सूज|दम घुट|खून (बंद नहीं|बहुत)/,
+    /\bsaa?ns (nahi|nahin|lene me(in)? (dikkat|takleef|pareshani))|\bbehosh\b|\bdaura pad/i,
   ],
   custody: [
     /\bcustody|court order|restraining order|protective order|parenting plan|visitation\b/i,
@@ -25,6 +27,7 @@ const RULES: Record<SafetyHit, RegExp[]> = {
     /\bnot allowed to (pick|see|take|contact)/i,
     /custodia|orden de (restricci[oó]n|protecci[oó]n)|mi ex\b|divorcio/i,
     /监护权|抚养权|限制令|保护令|离婚|前夫|前妻/,
+    /कस्टडी|अदालत(ी)? (का )?आदेश|कोर्ट (का )?(आदेश|ऑर्डर)|तलाक|पूर्व (पति|पत्नी)|मेरे एक्स\b|मेरी एक्स\b/,
   ],
   abuse: [
     /\babus(e|ed|ing)\b|\bneglect/i,
@@ -32,6 +35,7 @@ const RULES: Record<SafetyHit, RegExp[]> = {
     /\btouched (him|her|them|my (son|daughter|child|kid)) inappropriately/i,
     /abuso|maltrato|negligencia/i,
     /虐待|打了我(的)?孩子|性侵/,
+    /दुर्व्यवहार|शोषण|(टीचर|शिक्षक|स्टाफ़?|किसी) ने .{0,30}(मारा|थप्पड़|धक्का दिया|गलत तरीके से छुआ)/,
   ],
 };
 
