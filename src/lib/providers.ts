@@ -34,7 +34,7 @@ export class ProviderError extends Error {
   constructor(
     message: string,
     readonly kind: FailureKind,
-    /** For daily limits: how long until the quota resets. */
+    /** How long the provider asked us to wait, when it said. */
     readonly retryAfterMs?: number,
   ) {
     super(message);
@@ -88,7 +88,8 @@ const gemini: Provider = {
           const seconds = Number(message.match(/"retryDelay":\s*"(\d+)s"/)?.[1] ?? 3600);
           throw new ProviderError(message, "rate_limit_day", seconds * 1000);
         }
-        throw new ProviderError(message, "rate_limit_minute");
+        const wait = Number(message.match(/"retryDelay":\s*"(\d+(?:\.\d+)?)s"/)?.[1]);
+        throw new ProviderError(message, "rate_limit_minute", wait ? wait * 1000 : undefined);
       }
       if (status === 500 || status === 503) throw new ProviderError(message, "overloaded");
       if (status === 400 || status === 404) throw new ProviderError(message, "rejected");
@@ -158,7 +159,8 @@ function openAICompatible(opts: {
             const header = Number(res.headers.get("retry-after"));
             throw new ProviderError(message, "rate_limit_day", parseWait(body) ?? (header ? header * 1000 : 3_600_000));
           }
-          throw new ProviderError(message, "rate_limit_minute");
+          const header = Number(res.headers.get("retry-after"));
+          throw new ProviderError(message, "rate_limit_minute", parseWait(body) ?? (header ? header * 1000 : undefined));
         }
         if (res.status >= 500) throw new ProviderError(message, "overloaded");
         // 400 covers schema failures; 413 means the prompt exceeds the per-minute token limit.

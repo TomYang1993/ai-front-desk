@@ -6,20 +6,25 @@ import "server-only";
  */
 
 /**
- * Default model order for each step, as "provider:model". Free-tier limits
- * are per model per day, so each step falls back through several models and
- * providers. Entries for providers without a key are skipped.
+ * Default model order for each step, as "provider:model". Entries for
+ * providers without a key are skipped.
+ *
+ * Groq goes first: it passed every scorecard question it answered and
+ * responds in about a second, with 1,000 requests a day per model. Its
+ * free tier allows only 8,000 tokens a minute per model, about three
+ * questions a minute, so bursts spill over to Gemini, whose free limits
+ * are per model per day and can be as low as 20.
  */
 const DEFAULT_SMALL = [
-  "gemini:gemini-3.5-flash-lite",
   "groq:openai/gpt-oss-20b",
+  "gemini:gemini-3.5-flash-lite",
   "gemini:gemini-3.1-flash-lite",
   "gemini:gemini-2.5-flash-lite",
 ].join(",");
 
 const DEFAULT_LARGE = [
-  "gemini:gemini-3.6-flash",
   "groq:openai/gpt-oss-120b",
+  "gemini:gemini-3.6-flash",
   "gemini:gemini-3.5-flash",
   "gemini:gemini-3.5-flash-lite",
   "gemini:gemini-3.1-flash-lite",

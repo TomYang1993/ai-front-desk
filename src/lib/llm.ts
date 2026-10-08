@@ -1,4 +1,5 @@
 import "server-only";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
 import { env } from "./env";
 import { PROVIDERS, ProviderError, parseModelSpec } from "./providers";
@@ -42,9 +43,16 @@ export class LlmUnavailableError extends Error {
   }
 }
 
+/** A per-request model order, for tests that compare models. Never used in production. */
+const modelOverride = new AsyncLocalStorage<Partial<Record<ModelTier, string[]>>>();
+export const withModels = <T>(override: Partial<Record<ModelTier, string[]>>, fn: () => Promise<T>) =>
+  modelOverride.run(override, fn);
+
 /** The configured model order for a step, as "provider:model", skipping providers without a key. */
 export function modelChain(tier: ModelTier): string[] {
-  return (tier === "small" ? env.modelsSmall : env.modelsLarge).filter((spec) => {
+  const override = modelOverride.getStore()?.[tier];
+  const specs = override?.length ? override : tier === "small" ? env.modelsSmall : env.modelsLarge;
+  return specs.filter((spec) => {
     const { provider } = parseModelSpec(spec);
     return PROVIDERS[provider]?.configured() ?? false;
   });
@@ -156,8 +164,11 @@ export async function generateJson<S extends z.ZodType>(req: JsonRequest<S>, onl
           break;
         }
         if (e.kind === "rate_limit_minute" && attempt === 1) {
-          // A brief pause often clears a per-minute limit.
-          await sleep(1500 + Math.random() * 500);
+          // A brief pause often clears a per-minute limit. When no other model
+          // is left, wait as long as the provider asks, up to 15 seconds.
+          const lastChoice = spec === order[order.length - 1];
+          const asked = e.retryAfterMs && e.retryAfterMs <= 15_000 ? e.retryAfterMs + 250 : undefined;
+          await sleep(lastChoice && asked ? asked : 1500 + Math.random() * 500);
           continue;
         }
         // Rejected requests and anything else: move to the next model.

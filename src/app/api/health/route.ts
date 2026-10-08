@@ -17,10 +17,13 @@ import {
  * GET /api/health            what is configured
  * GET /api/health?live=1     round-trips the database and calls the first model of each step
  * GET /api/health?live=all   also calls every configured model once, to verify each provider
+ *                            (add &provider=groq to check one provider)
  */
 export async function GET(request: Request) {
   await connection();
-  const live = new URL(request.url).searchParams.get("live");
+  const params = new URL(request.url).searchParams;
+  const live = params.get("live");
+  const onlyProvider = params.get("provider");
 
   const config = {
     providers: configuredProviders(),
@@ -64,7 +67,9 @@ export async function GET(request: Request) {
   };
 
   if (live === "all") {
-    const specs = [...new Set([...modelChain("small"), ...modelChain("large")])];
+    const specs = [...new Set([...modelChain("small"), ...modelChain("large")])].filter(
+      (spec) => !onlyProvider || spec.startsWith(`${onlyProvider}:`),
+    );
     for (const spec of specs) checks[spec] = await ping(modelChain("small").includes(spec) ? "small" : "large", spec);
   } else {
     for (const tier of ["small", "large"] as ModelTier[]) checks[`model_${tier}`] = await ping(tier);

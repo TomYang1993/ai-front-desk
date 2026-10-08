@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ask } from "@/lib/engine";
+import { withModels } from "@/lib/llm";
 import { getFamily } from "@/lib/data";
 
 const Body = z.object({
@@ -15,6 +16,8 @@ const Body = z.object({
   demoNow: z.string().datetime().optional(),
   simulateOutage: z.boolean().optional(),
   noCache: z.boolean().optional(),
+  /** Model order per step, as comma-separated "provider:model". */
+  models: z.object({ small: z.string().optional(), large: z.string().optional() }).optional(),
 });
 
 export async function POST(request: Request) {
@@ -27,7 +30,9 @@ export async function POST(request: Request) {
   }
 
   const production = process.env.VERCEL_ENV === "production";
-  const reply = await ask({
+  const split = (v?: string) => v?.split(",").map((m) => m.trim()).filter(Boolean);
+  const override = !production && body.models ? { small: split(body.models.small), large: split(body.models.large) } : {};
+  const reply = await withModels(override, () => ask({
     centerId: body.centerId,
     familyId: body.familyId ?? null,
     message: body.message,
@@ -36,7 +41,7 @@ export async function POST(request: Request) {
     now: !production && body.demoNow ? new Date(body.demoNow) : undefined,
     simulateOutage: !production && body.simulateOutage,
     noCache: !production && body.noCache,
-  });
+  }));
   const { checks, ...publicReply } = reply;
   return Response.json(production ? publicReply : { ...publicReply, checks });
 }

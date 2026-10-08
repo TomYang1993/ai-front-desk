@@ -4,6 +4,8 @@
  *
  *   npm run scorecard                      # against http://localhost:3000
  *   BASE_URL=https://... npm run scorecard # against a preview deployment
+ *   SCORECARD_SMALL=groq:openai/gpt-oss-20b SCORECARD_LARGE=groq:openai/gpt-oss-120b npm run scorecard
+ *                                          # with a specific model order (not in production)
  *
  * The clock is pinned to Tuesday, October 13, 2026 at 8:10 am in each
  * center's time zone, except in production, which ignores test controls.
@@ -146,7 +148,13 @@ for (const s of SCENARIOS) {
   const res = await fetch(`${BASE}/api/ask`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ centerId: s.center, familyId: s.family, message: s.message, chip: s.chip, demoNow: DEMO_NOW[s.center], simulateOutage: s.outage, noCache: true }),
+    body: JSON.stringify({
+      centerId: s.center, familyId: s.family, message: s.message, chip: s.chip,
+      demoNow: DEMO_NOW[s.center], simulateOutage: s.outage, noCache: true,
+      models: process.env.SCORECARD_SMALL || process.env.SCORECARD_LARGE
+        ? { small: process.env.SCORECARD_SMALL, large: process.env.SCORECARD_LARGE }
+        : undefined,
+    }),
   });
   if (!res.ok) {
     failed++;
