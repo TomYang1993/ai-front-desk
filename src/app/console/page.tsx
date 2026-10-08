@@ -17,6 +17,7 @@ export default async function ConsolePage(props: PageProps<"/console">) {
   const params = await props.searchParams;
   const tab = (TABS as readonly string[]).includes(String(params.tab)) ? (params.tab as Tab) : "inbox";
   const item = typeof params.item === "string" ? params.item : null;
+  const section = typeof params.section === "string" ? { id: params.section, fixLogId: typeof params.fix === "string" ? params.fix : null } : null;
   const view = await getConsoleView(session.centerId, session.staffId);
-  return <ConsoleApp view={view} tab={tab} item={item} />;
+  return <ConsoleApp view={view} tab={tab} item={item} section={section} />;
 }

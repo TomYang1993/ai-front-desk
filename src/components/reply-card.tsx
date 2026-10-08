@@ -18,7 +18,7 @@ function howLine(reply: AskReply, s: Strings) {
       : s.how.facts
     : l.includes("handbook")
       ? s.how.handbook
-      : l.includes("person") && !l.includes("understand")
+      : l.includes("person") && l.includes("safety") && !l.includes("understand")
         ? s.how.safety
         : l.includes("person")
           ? s.how.person

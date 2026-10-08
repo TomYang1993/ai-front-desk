@@ -155,6 +155,13 @@ function Detail({ item, me, onBack }: { item: InboxItem; me: { name: string; fir
         )}
       </blockquote>
 
+      {item.context && (
+        <div className="mt-3 rounded-2xl border border-stone-200 px-4 py-3 text-sm text-stone-600">
+          <p className="mb-1 text-xs font-semibold text-stone-500">What Maple said just before</p>
+          <p className="line-clamp-4 whitespace-pre-line">{item.context}</p>
+        </div>
+      )}
+
       {item.status === "open" ? (
         <div className="mt-5">
           <label htmlFor="reply" className="text-sm font-bold text-stone-800">
@@ -229,8 +236,8 @@ function SaveAsAnswer({ item }: { item: InboxItem }) {
         <Check size={16} />
         <span>
           Saved as an answer. Maple gives it to every family from now on.{" "}
-          <Link href="/console?tab=knowledge" className="font-semibold underline">
-            See it in Knowledge
+          <Link href="/console?tab=source" className="font-semibold underline">
+            See it in Source of truth
           </Link>
         </span>
       </p>

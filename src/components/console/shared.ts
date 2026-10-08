@@ -1,6 +1,6 @@
 import type { Lang } from "@/content/types";
 
-export const TABS = ["inbox", "overview", "knowledge", "test"] as const;
+export const TABS = ["inbox", "overview", "source", "test"] as const;
 export type Tab = (typeof TABS)[number];
 
 export const LANGUAGE: Record<Lang, string> = { en: "English", es: "Spanish", zh: "Mandarin", hi: "Hindi" };

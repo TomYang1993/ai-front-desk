@@ -32,6 +32,7 @@ const keys = {
   lunches: (id: CenterId) => `lunches:${id}`,
   feedback: (id: CenterId) => `feedback:${id}`,
   cache: (key: string) => `cache:${key}`,
+  handled: (id: CenterId) => `feedback-handled:${id}`,
 };
 
 export const CENTER_IDS: CenterId[] = centers.map((c) => c.id);
@@ -51,7 +52,7 @@ export async function resetDemo(now = new Date()) {
     await store.set(keys.handoffs(center.id), handoffs);
   }
   for (const center of centers) {
-    for (const key of [keys.tours, keys.absences, keys.lunches, keys.feedback]) await store.del(key(center.id));
+    for (const key of [keys.tours, keys.absences, keys.lunches, keys.feedback, keys.handled]) await store.del(key(center.id));
   }
   await store.set(keys.seededAt, now.toISOString());
   await store.set(keys.version, SEED_VERSION);
@@ -250,6 +251,23 @@ export async function setFeedback(centerId: CenterId, logId: string, value: "up"
   const all = (await getStore().get<Record<string, "up" | "down">>(keys.feedback(centerId))) ?? {};
   all[logId] = value;
   await getStore().set(keys.feedback(centerId), all);
+}
+
+/** Unhelpful answers a director has dealt with, keyed by log id. */
+export interface HandledFeedback {
+  by: string;
+  at: string;
+  how: "source" | "answer" | "reviewed";
+}
+
+export async function getHandledFeedback(centerId: CenterId) {
+  return (await getStore().get<Record<string, HandledFeedback>>(keys.handled(centerId))) ?? {};
+}
+
+export async function markFeedbackHandled(centerId: CenterId, logId: string, handled: HandledFeedback) {
+  const all = await getHandledFeedback(centerId);
+  all[logId] = handled;
+  await getStore().set(keys.handled(centerId), all);
 }
 
 export async function getFeedback(centerId: CenterId) {

@@ -6,22 +6,22 @@ import { useRouter } from "next/navigation";
 import { BarChart3, BookOpen, FlaskConical, Inbox as InboxIcon, LogOut } from "lucide-react";
 import type { ConsoleView } from "@/lib/console-view";
 import { signOut } from "@/lib/auth-actions";
-import { Maple } from "../maple";
+import { CenterLogo } from "../center-logo";
 import { Inbox } from "./inbox";
 import { OverviewPanel } from "./overview";
-import { Knowledge } from "./knowledge";
+import { SourceOfTruth } from "./source-of-truth";
 import { TestBox } from "./test-box";
 import type { Tab } from "./shared";
 
 const NAV: { tab: Tab; label: string; icon: React.ReactNode }[] = [
   { tab: "inbox", label: "Inbox", icon: <InboxIcon size={18} /> },
   { tab: "overview", label: "Overview", icon: <BarChart3 size={18} /> },
-  { tab: "knowledge", label: "Knowledge", icon: <BookOpen size={18} /> },
+  { tab: "source", label: "Source of truth", icon: <BookOpen size={18} /> },
   { tab: "test", label: "Test Maple", icon: <FlaskConical size={18} /> },
 ];
 
 /** The director console shell: navigation, the signed-in director, and the active tab. */
-export function ConsoleApp({ view, tab, item }: { view: ConsoleView; tab: Tab; item: string | null }) {
+export function ConsoleApp({ view, tab, item, section }: { view: ConsoleView; tab: Tab; item: string | null; section: { id: string; fixLogId: string | null } | null }) {
   const router = useRouter();
   const waiting = view.inbox.filter((i) => i.status === "open").length;
 
@@ -35,9 +35,7 @@ export function ConsoleApp({ view, tab, item }: { view: ConsoleView; tab: Tab; i
     <div className="min-h-dvh bg-[#FBF7F0] text-stone-800 lg:grid lg:grid-cols-[232px_minmax(0,1fr)]">
       <aside className="border-b border-stone-200 bg-white/70 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-3 px-4 py-3 lg:px-5 lg:py-5">
-          <div className="h-10 w-10 shrink-0 rounded-full bg-[#F6EBD9] [&>svg]:h-full [&>svg]:w-full">
-            <Maple size={40} />
-          </div>
+          <CenterLogo centerId={view.center.id} size={40} />
           <div className="min-w-0">
             <p className="truncate text-sm font-extrabold text-stone-900">{view.center.name}</p>
             <p className="truncate text-xs text-stone-500">Director console</p>
@@ -80,7 +78,7 @@ export function ConsoleApp({ view, tab, item }: { view: ConsoleView; tab: Tab; i
         </div>
         {tab === "inbox" && <Inbox items={view.inbox} me={view.me} selectedId={item} />}
         {tab === "overview" && <OverviewPanel overview={view.overview} />}
-        {tab === "knowledge" && <Knowledge knowledge={view.knowledge} />}
+        {tab === "source" && <SourceOfTruth knowledge={view.knowledge} focus={section} />}
         {tab === "test" && <TestBox families={view.families} centerName={view.center.shortName} />}
       </main>
     </div>

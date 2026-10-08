@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, LoaderCircle, Lock, Pencil, Trash2 } from "lucide-react";
 import type { KnowledgeView } from "@/lib/console-view";
@@ -10,12 +10,12 @@ import { post } from "./shared";
 const used = (n: number) => (n === 0 ? "Not used this week" : `Used in ${n} answer${n === 1 ? "" : "s"} this week`);
 const updated = (by: string, at: string) => `Updated ${new Date(`${at.slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} by ${by}`;
 
-/** What Maple answers from. Edits take effect on the next question. */
-export function Knowledge({ knowledge: k }: { knowledge: KnowledgeView }) {
+/** The source of truth: everything Maple answers from. Edits take effect on the next question. */
+export function SourceOfTruth({ knowledge: k, focus }: { knowledge: KnowledgeView; focus: { id: string; fixLogId: string | null } | null }) {
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-2xl font-extrabold text-stone-900">Knowledge</h1>
+        <h1 className="text-2xl font-extrabold text-stone-900">Source of truth</h1>
         <p className="text-sm text-stone-600">Everything Maple answers from. Changes take effect on the next question.</p>
       </header>
 
@@ -38,7 +38,7 @@ export function Knowledge({ knowledge: k }: { knowledge: KnowledgeView }) {
         <p className="mb-3 text-sm text-stone-500">Maple reads these sections for anything the tables below don&apos;t answer.</p>
         <ul className="flex flex-col gap-2">
           {k.sections.map((s) => (
-            <SectionRow key={s.id} section={s} />
+            <SectionRow key={s.id} section={s} fixLogId={focus?.id === s.id ? focus.fixLogId : null} focused={focus?.id === s.id} />
           ))}
         </ul>
       </section>
@@ -104,7 +104,7 @@ function SavedAnswerCard({ answer: a }: { answer: KnowledgeView["saved"][number]
   }
 
   return (
-    <li className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+    <li id={`answer-${a.id}`} className="scroll-mt-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm target:border-teal-600 target:ring-2 target:ring-teal-600/20">
       {form ? (
         <div className="flex flex-col gap-3">
           <Field label="Question" value={form.question} onChange={(v) => setForm({ ...form, question: v })} />
@@ -166,10 +166,18 @@ function SavedAnswerCard({ answer: a }: { answer: KnowledgeView["saved"][number]
   );
 }
 
-function SectionRow({ section: s }: { section: KnowledgeView["sections"][number] }) {
+/**
+ * One handbook section. Opened from an unhelpful answer on the overview, it
+ * starts in edit mode, and saving marks that answer as handled.
+ */
+function SectionRow({ section: s, focused, fixLogId }: { section: KnowledgeView["sections"][number]; focused: boolean; fixLogId: string | null }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ title: string; body: string } | null>(null);
+  const row = useRef<HTMLLIElement>(null);
+  const [open, setOpen] = useState(focused);
+  const [form, setForm] = useState<{ title: string; body: string } | null>(fixLogId ? { title: s.title, body: s.body } : null);
+  useEffect(() => {
+    if (focused) row.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focused]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -179,6 +187,7 @@ function SectionRow({ section: s }: { section: KnowledgeView["sections"][number]
     setError("");
     try {
       await post(`/api/console/handbook/${s.id}`, form, "PATCH");
+      if (fixLogId) await post(`/api/console/feedback/${fixLogId}`, { how: "source" });
       setForm(null);
       router.refresh();
     } catch (e) {
@@ -189,7 +198,10 @@ function SectionRow({ section: s }: { section: KnowledgeView["sections"][number]
   }
 
   return (
-    <li className="rounded-2xl border border-stone-200 bg-white shadow-sm">
+    <li ref={row} className={`scroll-mt-6 rounded-2xl border bg-white shadow-sm ${focused ? "border-teal-600 ring-2 ring-teal-600/20" : "border-stone-200"}`}>
+      {fixLogId && form && (
+        <p className="rounded-t-2xl bg-amber-50 px-4 py-2 text-sm text-amber-900">Fixing this section for an answer parents found unhelpful. Saving marks it as handled.</p>
+      )}
       <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
         <span className="min-w-0">
           <span className="block font-bold text-stone-900">{s.title}</span>

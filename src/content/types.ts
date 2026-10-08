@@ -108,6 +108,8 @@ export interface SavedAnswer {
   keywords: string[];
   /** The handoff this answer was written from, when it came from the inbox. */
   fromHandoffId?: string;
+  /** The unhelpful answer this replaces, when it came from the overview. */
+  fromLogId?: string;
 }
 
 export interface IllnessPolicy {
@@ -267,6 +269,8 @@ export interface QuestionLog {
   tokens: number;
   feedback?: "up" | "down";
   afterHours: boolean;
+  /** What Maple replied, in the parent's language. Older seeded logs don't have it. */
+  answer?: string;
 }
 
 export interface Handoff {
@@ -283,6 +287,8 @@ export interface Handoff {
   priority: "urgent" | "normal";
   to: "director" | "teacher";
   status: "open" | "answered";
+  /** What Maple last said in the conversation, when the parent asked for a person. */
+  context?: string;
   reply?: {
     /** What staff wrote, in English. */
     text: string;

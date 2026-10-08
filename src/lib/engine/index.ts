@@ -147,6 +147,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
       sources: draft.sources.map((s) => s.id),
       tokens,
       afterHours: realLocal.weekday > 5 || minute < oh * 60 + om || minute >= ch * 60 + cm,
+      answer: draft.text.slice(0, 2000),
     };
     if (!req.dryRun) await appendLog(log);
     if (cacheKey && (draft.mode === "answer" || draft.mode === "declined" || draft.mode === "clarify")) {
@@ -236,7 +237,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
       await appendLog({
         id: `${cached.logId}-c${Date.now().toString(36)}`, centerId: center.id, familyId: family?.id ?? null, askedBy: family ? undefined : "Visitor",
         askedAt: realNow.toISOString(), language: cached.language, text: message, topic: cached.topic, lanes: ["safety"], outcome: "answered",
-        sources: cached.sources.map((s) => s.id), tokens: 0, afterHours: false,
+        sources: cached.sources.map((s) => s.id), tokens: 0, afterHours: false, answer: cached.text.slice(0, 2000),
       });
       return reply;
     }
@@ -295,7 +296,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   };
   const personKind = personFor[u.sensitive];
   if (personKind && personKind !== "outage") {
-    const { text } = handoffText(personKind as Exclude<HandoffKind, "emergency" | "custody" | "abuse" | "outage">, center, now, child);
+    const { text } = handoffText(personKind as Exclude<HandoffKind, "emergency" | "custody" | "abuse" | "outage" | "person">, center, now, child);
     if (personKind === "pickup") lanes.push("lookup");
     const sourceIds = { pickup: ["pickup"], incident: ["safety"], staff_complaint: ["concerns"], billing_dispute: ["tuition"], behavior: ["behavior"] }[personKind as string] ?? [];
     return finish(await handoffDraft({ kind: personKind, language, child, messageText: message, englishText: text, sources: sectionSources(sections, sourceIds) }), message);

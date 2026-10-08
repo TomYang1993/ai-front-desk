@@ -11,6 +11,7 @@ const LANG_LABEL = { en: "English", es: "Español", zh: "中文", hi: "हिन
 /** The front door. Sign-in is simulated; the demo accounts sign in with one click. */
 export default function SignInPage() {
   const groups = centers.map((center) => ({
+    centerId: center.id,
     centerName: center.name,
     place: `${center.city}, ${center.state}`,
     accounts: accounts

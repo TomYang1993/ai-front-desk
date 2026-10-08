@@ -10,6 +10,7 @@ import { STRINGS, type DayPart } from "@/lib/i18n";
 import { signOut } from "@/lib/auth-actions";
 import { formatSlot, listDays } from "@/lib/format";
 import { Maple, type MapleState } from "./maple";
+import { CenterLogo } from "./center-logo";
 import { DeskScene } from "./desk-scene";
 import { InfoCards, type Requests } from "./info-cards";
 import { ChatHeader, ChatThread, Composer, type ChatItem, type StaffReply } from "./chat";
@@ -251,6 +252,30 @@ export function FrontDesk({ view }: { view: ParentView }) {
     setTimeout(refresh, 300);
   }
 
+  /** "Talk to a person": straight to the director, with what Maple last said as context. */
+  async function sendToPerson(text: string): Promise<boolean> {
+    const last = [...saved.items].reverse().find((i) => i.kind === "reply");
+    setSaved((prev) => ({ ...prev, items: [...prev.items, { kind: "parent", id: uid(), text }] }));
+    try {
+      const res = await fetch("/api/person", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text, context: last?.kind === "reply" ? last.reply.text : undefined }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const reply = (await res.json()) as AskReply;
+      setSaved((prev) => ({ ...prev, items: [...prev.items, { kind: "reply", id: uid(), reply }] }));
+      if (input.trim() === text) setInput("");
+      if (reply.handoff) setHandoffName(reply.handoff.staffName);
+      moodFor("handoff", 6000);
+      setTimeout(refresh, 500);
+      return true;
+    } catch {
+      setSaved((prev) => ({ ...prev, items: [...prev.items, { kind: "error", id: uid() }] }));
+      return false;
+    }
+  }
+
   async function giveFeedback(itemId: string, logId: string, value: "up" | "down") {
     setSaved((prev) => ({ ...prev, feedback: { ...prev.feedback, [itemId]: value } }));
     fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId, value }) }).catch(() => {});
@@ -356,7 +381,10 @@ export function FrontDesk({ view }: { view: ParentView }) {
   const topBar = (
     <header className="flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="truncate text-xs font-bold uppercase tracking-wide text-teal-700">{view.center.name}</p>
+        <p className="flex items-center gap-1.5 truncate text-xs font-bold uppercase tracking-wide text-teal-700">
+          <CenterLogo centerId={view.center.id} size={20} />
+          {view.center.name}
+        </p>
         <h1 className="truncate text-xl font-extrabold text-stone-900 sm:text-2xl">{s.home.greeting(view.family.parentFirstName, part)}</h1>
       </div>
       <form action={signOut} onSubmit={forgetChats}>
@@ -388,7 +416,17 @@ export function FrontDesk({ view }: { view: ParentView }) {
   );
 
   const composer = (
-    <Composer s={s} chips={view.chips} pending={pending} input={input} textarea={textarea} onInput={setInput} onFocusChange={setFocused} onSend={send} />
+    <Composer
+      s={s}
+      chips={view.chips}
+      pending={pending}
+      input={input}
+      textarea={textarea}
+      onInput={setInput}
+      onFocusChange={setFocused}
+      onSend={send}
+      person={{ directorName: view.center.directorName, prefill: () => input.trim(), onSend: sendToPerson }}
+    />
   );
 
   if (wide) {

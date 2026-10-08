@@ -5,6 +5,8 @@ import { useFormStatus } from "react-dom";
 import { ArrowRight, Info, LayoutDashboard, LoaderCircle } from "lucide-react";
 import { signIn, type SignInState } from "@/lib/auth-actions";
 import { Maple } from "@/components/maple";
+import { CenterLogo } from "@/components/center-logo";
+import type { CenterId } from "@/content/types";
 
 export interface DemoCard {
   email: string;
@@ -15,6 +17,7 @@ export interface DemoCard {
 }
 
 interface Group {
+  centerId: CenterId;
   centerName: string;
   place: string;
   accounts: DemoCard[];
@@ -145,9 +148,12 @@ export function SignInForm({ groups, password }: { groups: Group[]; password: st
         <form action={action} className="mt-4 grid gap-5 md:grid-cols-2">
           {groups.map((g) => (
             <div key={g.centerName} className="flex flex-col gap-2">
-              <h3 className="px-1">
-                <span className="block font-bold text-stone-900">{g.centerName}</span>
-                <span className="block text-xs text-stone-500">{g.place}</span>
+              <h3 className="flex items-center gap-2.5 px-1">
+                <CenterLogo centerId={g.centerId} size={36} />
+                <span>
+                  <span className="block font-bold text-stone-900">{g.centerName}</span>
+                  <span className="block text-xs text-stone-500">{g.place}</span>
+                </span>
               </h3>
               {g.accounts.map((a) => (
                 <DemoButton key={a.email} account={a} />

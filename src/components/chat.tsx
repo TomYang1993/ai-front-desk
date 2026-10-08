@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode, type RefObject } from "react";
-import { ChevronDown, Languages, RotateCcw, SendHorizontal } from "lucide-react";
+import { ChevronDown, Languages, LoaderCircle, RotateCcw, SendHorizontal, UserRound } from "lucide-react";
 import type { Lang } from "@/content/types";
 import type { Action, AskReply, ChipId } from "@/lib/engine/types";
 import type { Strings } from "@/lib/i18n";
@@ -175,6 +175,7 @@ export function Composer({
   onInput,
   onFocusChange,
   onSend,
+  person,
 }: {
   s: Strings;
   chips: ChipId[];
@@ -184,10 +185,33 @@ export function Composer({
   onInput: (value: string) => void;
   onFocusChange: (focused: boolean) => void;
   onSend: (opts: { text?: string; chip?: ChipId }) => void;
+  /** The always-visible way to reach the director, bypassing Maple. */
+  person: { directorName: string; prefill: () => string; onSend: (text: string) => Promise<boolean> };
 }) {
+  const [personText, setPersonText] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const first = person.directorName.split(" ")[0];
+
+  async function sendToPerson() {
+    if (!personText?.trim()) return;
+    setSending(true);
+    const ok = await person.onSend(personText.trim());
+    setSending(false);
+    if (ok) setPersonText(null);
+  }
+
   return (
     <div className="rounded-b-[28px] border-t border-stone-200 bg-white/90 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2">
-      <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+      <div className="mb-2 flex items-center gap-2">
+        <button
+          onClick={() => setPersonText((t) => (t === null ? person.prefill() : null))}
+          aria-expanded={personText !== null}
+          className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ring-1 ${personText !== null ? "bg-amber-100 text-amber-900 ring-amber-300" : "bg-amber-50 text-amber-900 ring-amber-200 hover:bg-amber-100"}`}
+        >
+          <UserRound size={15} aria-hidden />
+          {s.person.button}
+        </button>
+        <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 pt-1">
         {chips.map((c) => (
           <button
             key={c}
@@ -198,7 +222,33 @@ export function Composer({
             {s.chips[c]}
           </button>
         ))}
+        </div>
       </div>
+      {personText !== null ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+          <p className="text-xs text-amber-900">{s.person.direct(person.directorName)}</p>
+          <label className="mt-1 block text-sm font-semibold text-stone-800">
+            {s.person.prompt(first)}
+            <textarea
+              value={personText}
+              onChange={(e) => setPersonText(e.target.value)}
+              rows={3}
+              maxLength={1000}
+              autoFocus
+              className="mt-1 w-full resize-none rounded-xl border border-stone-300 bg-white px-3 py-2 text-[15px] font-normal outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
+            />
+          </label>
+          <div className="mt-2 flex gap-2">
+            <button onClick={sendToPerson} disabled={sending || !personText.trim()} className="flex items-center gap-1.5 rounded-full bg-amber-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-40">
+              {sending ? <LoaderCircle size={15} className="animate-spin" /> : <SendHorizontal size={15} />}
+              {s.person.send(first)}
+            </button>
+            <button onClick={() => setPersonText(null)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-stone-600 hover:bg-white">
+              {s.person.cancel}
+            </button>
+          </div>
+        </div>
+      ) : (
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -228,6 +278,7 @@ export function Composer({
           <SendHorizontal size={18} />
         </button>
       </form>
+      )}
     </div>
   );
 }

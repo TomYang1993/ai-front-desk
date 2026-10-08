@@ -1,6 +1,6 @@
 import "server-only";
 import type { CenterId, Handoff, Lang, QuestionLog, TableId, Topic } from "@/content";
-import { getCenter, getFamilies, getFeedback, getHandbook, getHandoffs, getLogs } from "./data";
+import { getCenter, getFamilies, getFeedback, getHandbook, getHandledFeedback, getHandoffs, getLogs, type HandledFeedback } from "./data";
 import { formatDate, formatTime, hoursLine, upcomingClosures } from "./facts/calendar";
 import { menuFor } from "./facts/menu";
 import { usd } from "./facts/money";
@@ -27,6 +27,8 @@ export interface InboxItem {
   /** The parent's words in English, when they wrote in another language. */
   textEnglish: string | null;
   reason: string;
+  /** What Maple said just before, when the parent asked for a person. */
+  context: string | null;
   priority: "urgent" | "normal";
   to: "director" | "teacher";
   toName: string;
@@ -49,7 +51,19 @@ export interface Overview {
   languages: { language: Lang; count: number }[];
   /** Questions Maple couldn't answer, grouped when families asked the same thing. */
   gaps: { id: string; text: string; textEnglish: string | null; at: string; count: number; status: "open" | "answered"; saved: boolean }[];
-  notHelpful: { id: string; text: string; textEnglish: string | null; at: string; topic: string }[];
+  notHelpful: {
+    id: string;
+    text: string;
+    textEnglish: string | null;
+    /** What Maple said, in English for the director. Older seeded questions don't have it. */
+    answer: string | null;
+    at: string;
+    topic: string;
+    sources: { id: string; label: string; sectionId: string | null }[];
+    handled: HandledFeedback | null;
+  }[];
+  /** Problems with a fix waiting: gaps nobody saved an answer for, and unhelpful answers not yet handled. */
+  toFix: { gaps: number; unhelpful: number };
 }
 
 export interface KnowledgeView {
@@ -80,13 +94,14 @@ const GAP_REASONS = new Set(["Not covered by the handbook", "Maple wasn't sure"]
 const handled = (l: QuestionLog) => l.outcome === "answered" || l.outcome === "declined";
 
 export async function getConsoleView(centerId: CenterId, staffId: string | null, now = new Date()): Promise<ConsoleView> {
-  const [center, families, sections, handoffs, logs, feedback] = await Promise.all([
+  const [center, families, sections, handoffs, logs, feedback, handledFeedback] = await Promise.all([
     getCenter(centerId),
     getFamilies(centerId),
     getHandbook(centerId),
     getHandoffs(centerId),
     getLogs(centerId),
     getFeedback(centerId),
+    getHandledFeedback(centerId),
   ]);
   const me = center.staff.find((s) => s.id === staffId) ?? center.staff.find((s) => s.role === "director")!;
   const t = now.getTime();
@@ -109,11 +124,25 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
     shown.push(h);
     listed.add(h.id);
   }
-  const down = logs.filter((l) => (l.feedback ?? feedback[l.id]) === "down").sort((a, b) => b.askedAt.localeCompare(a.askedAt)).slice(0, 8);
+  // Unhandled first, then the most recently handled.
+  const down = logs
+    .filter((l) => (l.feedback ?? feedback[l.id]) === "down" && inWindow(l.askedAt, 28, 0))
+    .sort((a, b) => Number(Boolean(handledFeedback[a.id])) - Number(Boolean(handledFeedback[b.id])) || b.askedAt.localeCompare(a.askedAt))
+    .slice(0, 8);
   const english = await withTimeout(
-    toEnglish([...shown.filter((h) => h.language !== "en").map((h) => h.text), ...down.filter((l) => l.language !== "en").map((l) => l.text)]),
+    toEnglish([
+      ...shown.filter((h) => h.language !== "en").map((h) => h.text),
+      ...down.filter((l) => l.language !== "en").flatMap((l) => [l.text, l.answer ?? ""]),
+    ]),
     new Map<string, string>(),
   );
+  const sourceLabel = (id: string): { id: string; label: string; sectionId: string | null } => {
+    const [kind, key] = [id.slice(0, id.indexOf(":")), id.slice(id.indexOf(":") + 1)];
+    if (kind === "handbook") return { id, label: sections.find((x) => x.id === key)?.title ?? key, sectionId: key };
+    if (kind === "table") return { id, label: TABLE_LABEL[key as TableId] ?? key, sectionId: null };
+    if (kind === "saved") return { id, label: `Saved answer: ${center.savedAnswers.find((a) => a.id === key)?.question ?? key}`, sectionId: null };
+    return { id, label: id, sectionId: null };
+  };
   const savedFrom = new Map(center.savedAnswers.filter((a) => a.fromHandoffId).map((a) => [a.fromHandoffId!, a.id]));
 
   const inboxItem = (h: Handoff): InboxItem => {
@@ -132,6 +161,7 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
       text: h.text,
       textEnglish: h.language === "en" ? null : english.get(h.text) ?? null,
       reason: h.reason,
+      context: h.context ?? null,
       priority: h.priority,
       to: h.to,
       toName: teacher?.name ?? (h.to === "teacher" ? "the lead teacher" : me.name),
@@ -209,7 +239,20 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
         })
         .sort((a, b) => b.count - a.count || b.at.localeCompare(a.at))
         .slice(0, 8),
-      notHelpful: down.map((l) => ({ id: l.id, text: l.text, textEnglish: l.language === "en" ? null : english.get(l.text) ?? null, at: l.askedAt, topic: TOPIC_LABEL[l.topic] })),
+      notHelpful: down.map((l) => ({
+        id: l.id,
+        text: l.text,
+        textEnglish: l.language === "en" ? null : english.get(l.text) ?? null,
+        answer: l.answer ? (l.language === "en" ? l.answer : english.get(l.answer) ?? l.answer) : null,
+        at: l.askedAt,
+        topic: TOPIC_LABEL[l.topic],
+        sources: l.sources.map(sourceLabel),
+        handled: handledFeedback[l.id] ?? null,
+      })),
+      toFix: {
+        gaps: [...gapGroups.values()].filter((list) => !list.some((h) => savedFrom.has(h.id))).length,
+        unhelpful: down.filter((l) => !handledFeedback[l.id]).length,
+      },
     },
     knowledge: {
       sections: sections.map((s) => ({ id: s.id, title: s.title, body: s.body, updatedAt: s.updatedAt, updatedBy: s.updatedBy, uses: uses(`handbook:${s.id}`) })),

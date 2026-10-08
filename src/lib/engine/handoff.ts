@@ -18,6 +18,7 @@ export type HandoffKind =
   | "child_day"
   | "running_late"
   | "outage"
+  | "person"
   | "emergency";
 
 const SPEC: Record<HandoffKind, { to: "director" | "teacher"; priority: "urgent" | "normal"; mode: ReplyMode; reason: string; topic: Topic }> = {
@@ -33,6 +34,7 @@ const SPEC: Record<HandoffKind, { to: "director" | "teacher"; priority: "urgent"
   child_day: { to: "teacher", priority: "normal", mode: "handoff", reason: "Only the teacher knows", topic: "child_day" },
   running_late: { to: "director", priority: "urgent", mode: "handoff", reason: "Parent running late for pickup", topic: "pickup" },
   outage: { to: "director", priority: "normal", mode: "handoff", reason: "AI unavailable", topic: "other" },
+  person: { to: "director", priority: "normal", mode: "handoff", reason: "Parent asked to talk to a person", topic: "other" },
   emergency: { to: "director", priority: "urgent", mode: "emergency", reason: "Possible emergency", topic: "incident" },
 };
 
@@ -77,7 +79,13 @@ export function etaPhrase(center: Center, now: Date, to: "director" | "teacher",
 /* Fixed replies for paths that must work without any AI. */
 
 type Fill = { center: string; phone: string; director: string; directorFirst: string; eta: string };
-const FIXED: Record<"emergency" | "custody" | "abuse" | "outage", Record<Lang, (f: Fill) => string>> = {
+const FIXED: Record<"emergency" | "custody" | "abuse" | "outage" | "person", Record<Lang, (f: Fill) => string>> = {
+  person: {
+    en: (f) => `Of course. I've passed this to ${f.director}, and ${f.directorFirst} ${f.eta}. For anything urgent, call ${f.phone}.`,
+    es: (f) => `Por supuesto. Le pasé esto a ${f.director}, y ${f.directorFirst} ${f.eta}. Para algo urgente, llame al ${f.phone}.`,
+    zh: (f) => `好的。我已经把这件事转给了${f.director}，${f.directorFirst}${f.eta}。如有紧急情况，请致电${f.phone}。`,
+    hi: (f) => `ज़रूर। मैंने यह ${f.director} को भेज दिया है, और ${f.directorFirst} ${f.eta}। कुछ भी ज़रूरी हो तो ${f.phone} पर कॉल करें।`,
+  },
   emergency: {
     en: (f) => `If this is an emergency, call 911 now. Then call ${f.center} at ${f.phone}. I've alerted ${f.director} too.`,
     es: (f) => `Si es una emergencia, llame al 911 ahora. Después llame a ${f.center} al ${f.phone}. También le avisé a ${f.director}.`,
@@ -104,7 +112,7 @@ const FIXED: Record<"emergency" | "custody" | "abuse" | "outage", Record<Lang, (
   },
 };
 
-export function fixedReply(kind: "emergency" | "custody" | "abuse" | "outage", center: Center, now: Date, lang: Lang) {
+export function fixedReply(kind: "emergency" | "custody" | "abuse" | "outage" | "person", center: Center, now: Date, lang: Lang) {
   const d = director(center);
   return FIXED[kind][lang]({
     center: center.shortName,
@@ -117,7 +125,7 @@ export function fixedReply(kind: "emergency" | "custody" | "abuse" | "outage", c
 
 /** English handoff replies; the engine translates them when needed. */
 export function handoffText(
-  kind: Exclude<HandoffKind, "emergency" | "custody" | "abuse" | "outage">,
+  kind: Exclude<HandoffKind, "emergency" | "custody" | "abuse" | "outage" | "person">,
   center: Center,
   now: Date,
   child: Child | undefined,

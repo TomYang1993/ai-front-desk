@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Clock, MessageCircleQuestion, Moon, ThumbsDown, Timer, UserRound } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, CheckCircle2, Clock, LoaderCircle, MessageCircleQuestion, Moon, PenLine, ThumbsDown, Timer, UserRound, Wrench } from "lucide-react";
 import type { Overview } from "@/lib/console-view";
 import { MINUTES_PER_ANSWER } from "@/lib/console-constants";
-import { ago, LANGUAGE } from "./shared";
+import { ago, LANGUAGE, post } from "./shared";
+import { Field } from "./inbox";
 
 /** Chart colors: Maple's teal and the amber staff replies already wear. Validated as a pair for color vision differences. */
 const MAPLE = "#0d9488";
@@ -40,6 +42,27 @@ export function OverviewPanel({ overview: o }: { overview: Overview }) {
       <header>
         <h1 className="text-2xl font-extrabold text-stone-900">Overview</h1>
         <p className="text-sm text-stone-600">The last 7 days, compared with the 7 days before.</p>
+        {o.toFix.gaps + o.toFix.unhelpful > 0 ? (
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-900 ring-1 ring-amber-200">
+            <Wrench size={16} className="shrink-0" />
+            <span className="font-bold">To fix:</span>
+            {o.toFix.gaps > 0 && (
+              <a href="#gaps" className="underline-offset-2 hover:underline">
+                {o.toFix.gaps} question{o.toFix.gaps === 1 ? "" : "s"} Maple couldn&apos;t answer
+              </a>
+            )}
+            {o.toFix.gaps > 0 && o.toFix.unhelpful > 0 && <span>·</span>}
+            {o.toFix.unhelpful > 0 && (
+              <a href="#unhelpful" className="underline-offset-2 hover:underline">
+                {o.toFix.unhelpful} answer{o.toFix.unhelpful === 1 ? "" : "s"} parents found unhelpful
+              </a>
+            )}
+          </p>
+        ) : (
+          <p className="mt-3 flex items-center gap-2 rounded-2xl bg-teal-50 px-4 py-2.5 text-sm text-teal-900">
+            <CheckCircle2 size={16} /> Nothing to fix. Every gap has an answer and every complaint has been handled.
+          </p>
+        )}
       </header>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
@@ -70,7 +93,7 @@ export function OverviewPanel({ overview: o }: { overview: Overview }) {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
+        <section id="gaps" className="scroll-mt-6 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
           <h2 className="font-extrabold text-stone-900">Gaps Maple couldn&apos;t answer</h2>
           <p className="text-sm text-stone-500">The last 4 weeks. Answer one once and save it, and Maple handles it from then on.</p>
           {o.gaps.length === 0 ? (
@@ -101,22 +124,17 @@ export function OverviewPanel({ overview: o }: { overview: Overview }) {
             </ul>
           )}
         </section>
-        <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
+        <section id="unhelpful" className="scroll-mt-6 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
           <h2 className="flex items-center gap-2 font-extrabold text-stone-900">
             <ThumbsDown size={16} className="text-stone-500" /> Answers parents found unhelpful
           </h2>
-          <p className="text-sm text-stone-500">Worth a look: the handbook may need a clearer section.</p>
+          <p className="text-sm text-stone-500">From the thumbs down under Maple&apos;s answers, last 4 weeks. Fix the source Maple used, or write a better answer.</p>
           {o.notHelpful.length === 0 ? (
             <p className="mt-4 text-sm text-stone-500">No thumbs down yet.</p>
           ) : (
-            <ul className="mt-3 divide-y divide-stone-100">
+            <ul className="mt-3 flex flex-col gap-3">
               {o.notHelpful.map((n) => (
-                <li key={n.id} className="py-2.5">
-                  <p className="line-clamp-2 text-sm text-stone-800">{n.textEnglish ?? n.text}</p>
-                  <p className="flex items-center gap-1 text-xs text-stone-500">
-                    <Clock size={12} /> {ago(n.at)} · {n.topic}
-                  </p>
-                </li>
+                <UnhelpfulItem key={n.id} item={n} />
               ))}
             </ul>
           )}
@@ -219,5 +237,114 @@ function TopicBars({ topics }: { topics: Overview["topics"] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** One unhelpful answer, with what Maple said and the ways to fix it. */
+function UnhelpfulItem({ item: n }: { item: Overview["notHelpful"][number] }) {
+  const router = useRouter();
+  const [writing, setWriting] = useState<{ question: string; answer: string; keywords: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const section = n.sources.find((x) => x.sectionId);
+  const savedAnswer = n.sources.find((x) => x.id.startsWith("saved:"));
+
+  async function act(run: () => Promise<unknown>) {
+    setBusy(true);
+    setError("");
+    try {
+      await run();
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+    }
+  }
+
+  if (n.handled) {
+    return (
+      <li className="flex items-start gap-2 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-500">
+        <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-teal-700" />
+        <span>
+          <span className="line-clamp-1 text-stone-700">{n.textEnglish ?? n.text}</span>
+          {n.handled.how === "answer" ? "Better answer saved" : n.handled.how === "source" ? "Source fixed" : "Reviewed"} by {n.handled.by} · {ago(n.handled.at)}
+        </span>
+      </li>
+    );
+  }
+
+  return (
+    <li className="rounded-2xl border border-stone-200 px-4 py-3">
+      <p className="text-sm font-semibold text-stone-900">{n.textEnglish ?? n.text}</p>
+      <p className="flex items-center gap-1 text-xs text-stone-500">
+        <Clock size={12} /> {ago(n.at)} · {n.topic}
+      </p>
+      {n.answer && (
+        <p className="mt-2 line-clamp-3 rounded-xl bg-[#FBF7F0] px-3 py-2 text-sm text-stone-700">
+          <span className="font-semibold text-stone-800">Maple said: </span>
+          {n.answer}
+        </p>
+      )}
+      {n.sources.length > 0 && (
+        <p className="mt-2 text-xs text-stone-500">
+          Maple used: {n.sources.map((x) => x.label).join(", ")}
+        </p>
+      )}
+      {error && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
+      {writing ? (
+        <div className="mt-3 flex flex-col gap-3">
+          <Field label="Question" value={writing.question} onChange={(v) => setWriting({ ...writing, question: v })} />
+          <Field label="Better answer" value={writing.answer} onChange={(v) => setWriting({ ...writing, answer: v })} rows={3} />
+          <Field label="Words parents might use, separated by commas" value={writing.keywords} onChange={(v) => setWriting({ ...writing, keywords: v })} />
+          <div className="flex gap-2">
+            <button
+              onClick={() =>
+                act(() =>
+                  post("/api/console/answers", {
+                    question: writing.question,
+                    answer: writing.answer,
+                    keywords: writing.keywords.split(",").map((k) => k.trim()).filter(Boolean),
+                    fromLogId: n.id,
+                  }),
+                )
+              }
+              disabled={busy || !writing.question.trim() || !writing.answer.trim()}
+              className="flex items-center gap-1.5 rounded-full bg-teal-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-40"
+            >
+              {busy ? <LoaderCircle size={15} className="animate-spin" /> : <Check size={15} />} Save answer
+            </button>
+            <button onClick={() => setWriting(null)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-stone-600 hover:bg-stone-100">
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {section?.sectionId && (
+            <Link href={`/console?tab=source&section=${section.sectionId}&fix=${n.id}`} className="flex items-center gap-1.5 rounded-full bg-teal-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-800">
+              <Wrench size={13} /> Fix &ldquo;{section.label}&rdquo;
+            </Link>
+          )}
+          {savedAnswer && (
+            <Link href={`/console?tab=source#answer-${savedAnswer.id.slice(6)}`} className="flex items-center gap-1.5 rounded-full bg-teal-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-800">
+              <Wrench size={13} /> Edit the saved answer
+            </Link>
+          )}
+          <button
+            onClick={() => setWriting({ question: n.textEnglish ?? n.text, answer: "", keywords: "" })}
+            className="flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+          >
+            <PenLine size={13} /> Write a better answer
+          </button>
+          <button
+            onClick={() => act(() => post(`/api/console/feedback/${n.id}`, { how: "reviewed" }))}
+            disabled={busy}
+            className="rounded-full px-3 py-1.5 text-xs font-semibold text-stone-500 hover:bg-stone-100 disabled:opacity-50"
+          >
+            Mark as handled
+          </button>
+        </div>
+      )}
+    </li>
   );
 }

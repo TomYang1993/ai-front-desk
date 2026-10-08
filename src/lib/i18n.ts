@@ -68,6 +68,13 @@ type Strings = {
   };
   startOver: string;
   signOut: string;
+  person: {
+    button: string;
+    direct: (name: string) => string;
+    prompt: (firstName: string) => string;
+    send: (firstName: string) => string;
+    cancel: string;
+  };
   home: {
     greeting: (name: string, part: DayPart) => string;
     bubble: string;
@@ -163,6 +170,13 @@ const en: Strings = {
     showTranslation: "",
   },
   startOver: "Start over",
+  person: {
+    button: "Talk to a person",
+    direct: (n) => `This goes straight to ${n}, not to Maple.`,
+    prompt: (f) => `What should ${f} know?`,
+    send: (f) => `Send to ${f}`,
+    cancel: "Cancel",
+  },
   signOut: "Sign out",
   home: {
     greeting: (n, p) => `Good ${p}, ${n}`,
@@ -257,6 +271,13 @@ const es: Strings = {
     showTranslation: "Ver traducción",
   },
   startOver: "Empezar de nuevo",
+  person: {
+    button: "Hablar con una persona",
+    direct: (n) => `Esto le llega directamente a ${n}, no a Maple.`,
+    prompt: (f) => `¿Qué debe saber ${f}?`,
+    send: (f) => `Enviar a ${f}`,
+    cancel: "Cancelar",
+  },
   signOut: "Cerrar sesión",
   home: {
     greeting: (n, p) => `${p === "morning" ? "Buenos días" : p === "afternoon" ? "Buenas tardes" : "Buenas noches"}, ${n}`,
@@ -351,6 +372,13 @@ const zh: Strings = {
     showTranslation: "查看译文",
   },
   startOver: "重新开始",
+  person: {
+    button: "联系工作人员",
+    direct: (n) => `这条消息会直接发给${n}，不经过 Maple。`,
+    prompt: (f) => `需要告诉${f}什么？`,
+    send: (f) => `发送给${f}`,
+    cancel: "取消",
+  },
   signOut: "退出登录",
   home: {
     greeting: (n, p) => `${n}，${p === "morning" ? "早上好" : p === "afternoon" ? "下午好" : "晚上好"}`,
@@ -444,6 +472,13 @@ const hi: Strings = {
     showTranslation: "अनुवाद देखें",
   },
   startOver: "फिर से शुरू करें",
+  person: {
+    button: "किसी व्यक्ति से बात करें",
+    direct: (n) => `यह संदेश सीधे ${n} को जाएगा, Maple को नहीं।`,
+    prompt: (f) => `${f} को क्या बताना है?`,
+    send: (f) => `${f} को भेजें`,
+    cancel: "रद्द करें",
+  },
   signOut: "साइन आउट",
   home: {
     greeting: (n, p) => `${p === "morning" ? "सुप्रभात" : p === "afternoon" ? "नमस्ते" : "शुभ संध्या"}, ${n}`,
