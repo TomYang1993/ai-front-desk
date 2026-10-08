@@ -65,6 +65,19 @@ type Strings = {
     translated: string;
     showOriginal: string;
     showTranslation: string;
+    foodInfant: (child: string) => string;
+    foodSafe: (child: string, allergens: string) => string;
+    foodContains: (child: string, dish: string, allergens: string) => string;
+    foodBackup: (child: string, dish: string) => string;
+    foodBackupNone: (child: string) => string;
+  };
+  /** Task shortcuts in the chat. Each sends its message as the parent. */
+  shortcuts: {
+    sick: (child: string | null) => string;
+    absence: string;
+    absenceMessage: string;
+    lunch: string;
+    lunchMessage: string;
   };
   startOver: string;
   signOut: string;
@@ -168,6 +181,18 @@ const en: Strings = {
     translated: "",
     showOriginal: "",
     showTranslation: "",
+    foodInfant: (c) => `${c} follows the infant feeding plan.`,
+    foodSafe: (c, a) => `Today's food is ${a}-free, so it's all safe for ${c}.`,
+    foodContains: (c, d, a) => `Heads up: ${d} has ${a}, which ${c} is allergic to.`,
+    foodBackup: (c, d) => `If you forget lunch, the backup (${d}) is safe for ${c}.`,
+    foodBackupNone: (c) => `Neither backup lunch is safe for ${c} today. If you forget lunch, call the front desk.`,
+  },
+  shortcuts: {
+    sick: (c) => (c ? `${c} is sick` : "My child is sick"),
+    absence: "Report an absence",
+    absenceMessage: "I need to report an absence.",
+    lunch: "Forgot lunch",
+    lunchMessage: "I forgot to pack lunch today.",
   },
   startOver: "Start over",
   person: {
@@ -269,6 +294,18 @@ const es: Strings = {
     translated: "Traducido por Maple",
     showOriginal: "Ver original",
     showTranslation: "Ver traducción",
+    foodInfant: (c) => `${c} sigue el plan de alimentación infantil.`,
+    foodSafe: (c, a) => `Nada de hoy tiene ${a}, así que todo es seguro para ${c}.`,
+    foodContains: (c, d, a) => `Atención: ${d} tiene ${a}, y ${c} tiene alergia a eso.`,
+    foodBackup: (c, d) => `Si olvida el almuerzo, el de reserva (${d}) es seguro para ${c}.`,
+    foodBackupNone: (c) => `Ningún almuerzo de reserva es seguro para ${c} hoy. Si olvida el almuerzo, llame a la recepción.`,
+  },
+  shortcuts: {
+    sick: (c) => (c ? `${c} no se siente bien` : "Uno de mis hijos no se siente bien"),
+    absence: "Reportar una ausencia",
+    absenceMessage: "Necesito reportar una ausencia.",
+    lunch: "Olvidé el almuerzo",
+    lunchMessage: "Olvidé empacar el almuerzo hoy.",
   },
   startOver: "Empezar de nuevo",
   person: {
@@ -370,6 +407,18 @@ const zh: Strings = {
     translated: "由 Maple 翻译",
     showOriginal: "查看原文",
     showTranslation: "查看译文",
+    foodInfant: (c) => `${c}按婴儿喂养计划进食。`,
+    foodSafe: (c, a) => `今天的餐点不含${a}，${c}都可以吃。`,
+    foodContains: (c, d, a) => `注意：${d}含有${a}，${c}对此过敏。`,
+    foodBackup: (c, d) => `如果忘带午饭，备用午餐（${d}）适合${c}。`,
+    foodBackupNone: (c) => `今天没有适合${c}的备用午餐。如果忘带午饭，请致电前台。`,
+  },
+  shortcuts: {
+    sick: (c) => (c ? `${c}生病了` : "孩子生病了"),
+    absence: "请假",
+    absenceMessage: "我要给孩子请假。",
+    lunch: "忘带午饭",
+    lunchMessage: "今天忘了带午饭。",
   },
   startOver: "重新开始",
   person: {
@@ -470,6 +519,18 @@ const hi: Strings = {
     translated: "Maple द्वारा अनुवादित",
     showOriginal: "मूल देखें",
     showTranslation: "अनुवाद देखें",
+    foodInfant: (c) => `${c} के लिए शिशु आहार योजना लागू है।`,
+    foodSafe: (c, a) => `आज के खाने में ${a} नहीं है, इसलिए ${c} के लिए सब सुरक्षित है।`,
+    foodContains: (c, d, a) => `ध्यान दें: ${d} में ${a} है, जिससे ${c} को एलर्जी है।`,
+    foodBackup: (c, d) => `अगर लंच भूल जाएँ, तो बैकअप (${d}) ${c} के लिए सुरक्षित है।`,
+    foodBackupNone: (c) => `आज कोई भी बैकअप लंच ${c} के लिए सुरक्षित नहीं है। लंच भूल जाएँ तो फ़्रंट डेस्क को कॉल करें।`,
+  },
+  shortcuts: {
+    sick: (c) => (c ? `${c} की तबीयत ठीक नहीं है` : "मेरे बच्चे की तबीयत ठीक नहीं है"),
+    absence: "अनुपस्थिति बताएँ",
+    absenceMessage: "मुझे अनुपस्थिति दर्ज करनी है।",
+    lunch: "लंच भूल गए",
+    lunchMessage: "आज लंच पैक नहीं हो पाया।",
   },
   startOver: "फिर से शुरू करें",
   person: {

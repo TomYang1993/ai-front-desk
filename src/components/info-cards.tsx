@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarX2, Clock, Languages, Megaphone, MessageSquareReply, Users, UtensilsCrossed } from "lucide-react";
+import { CalendarX2, Clock, Info, Languages, Megaphone, MessageSquareReply, ShieldCheck, TriangleAlert, Users, UtensilsCrossed } from "lucide-react";
 import type { Lang } from "@/content/types";
 import type { ParentView } from "@/lib/parent-view";
 import type { Strings } from "@/lib/i18n";
@@ -82,6 +82,19 @@ export function InfoCards({ view, requests, s, lang, className }: { view: Parent
               <li key={l}>{l}</li>
             ))}
           </ul>
+          {board.menu.notes.length > 0 && (
+            <ul className="mt-2.5 space-y-1.5">
+              {board.menu.notes.map((n) => (
+                <li
+                  key={n.text}
+                  className={`flex gap-2 rounded-xl px-3 py-2 text-sm ${n.tone === "safe" ? "bg-teal-50 text-teal-900" : n.tone === "warn" ? "bg-amber-50 text-amber-900" : "bg-stone-50 text-stone-700"}`}
+                >
+                  {n.tone === "safe" ? <ShieldCheck size={16} className="mt-0.5 shrink-0" aria-hidden /> : n.tone === "warn" ? <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden /> : <Info size={16} className="mt-0.5 shrink-0" aria-hidden />}
+                  {n.text}
+                </li>
+              ))}
+            </ul>
+          )}
           {board.menu.translated && <TranslatedNote s={s} />}
         </Section>
       )}

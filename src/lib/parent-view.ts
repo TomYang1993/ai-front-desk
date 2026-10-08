@@ -4,13 +4,12 @@ import type { Allergen, CenterId, Lang } from "@/content";
 import { getCached, getCenter, getFamily, setCached } from "./data";
 import { openStatus, upcomingClosures } from "./facts/calendar";
 import { ageInMonths } from "./facts/illness";
-import { menuFor } from "./facts/menu";
+import { conflicts, menuFor, safeBackupLunch } from "./facts/menu";
 import { usd } from "./facts/money";
 import { formatClock, formatDay } from "./format";
 import { STRINGS } from "./i18n";
 import { translateList } from "./engine/translate";
 import { addDays, zonedParts } from "./time";
-import type { ChipId } from "./engine/types";
 
 /** Staff-written text shown to a family, with the original kept when Maple translated it. */
 export interface Translatable {
@@ -48,13 +47,15 @@ export interface ParentView {
     dateLabel: string;
     open: boolean;
     statusLine: string;
-    menu: { lines: string[]; translated: boolean } | null;
+    /** Today's food, with what it means for each child: allergies checked by code, no AI. */
+    menu: { lines: string[]; translated: boolean; notes: { tone: "safe" | "warn" | "info"; text: string }[] } | null;
     nextClosure: Translatable | null;
     announcements: { id: string; title: Translatable; body: Translatable; postedBy: string }[];
   };
   /** Dish names in the family's language, keyed by the English name, for lunch actions. */
   dishes: Record<string, string>;
-  chips: ChipId[];
+  /** Task shortcuts in the chat. Each sends its message as the parent. */
+  shortcuts: { label: string; message: string }[];
 }
 
 const TRANSLATE_TIMEOUT_MS = 6000;
@@ -104,10 +105,34 @@ export async function getParentView(centerId: CenterId, familyId: string, now = 
 
   let menu: ParentView["board"]["menu"] = null;
   const menuTranslated = dishNames.some((n) => tr.has(n));
+  const allergens = (list: Allergen[]) => list.map((a) => s.allergens[a]).join(` ${s.or} `);
+  // English dish names start lowercase mid-sentence.
+  const inSentence = (name: string) => (lang === "en" ? name.charAt(0).toLowerCase() + name.slice(1) : name);
+  const notes: NonNullable<ParentView["board"]["menu"]>["notes"] = [];
+  if (day) {
+    for (const child of family.children) {
+      if (ageInMonths(child.birthDate, today) < 12) {
+        notes.push({ tone: "info", text: s.foodInfant(child.firstName) });
+        continue;
+      }
+      if (!child.allergies.length) continue;
+      if (center.meals === "provided") {
+        const items = [day.breakfast, day.lunch, day.pmSnack].filter((x): x is NonNullable<typeof x> => Boolean(x));
+        const hits = items.filter((item) => conflicts(item, child).length);
+        if (!hits.length) notes.push({ tone: "safe", text: s.foodSafe(child.firstName, allergens(child.allergies)) });
+        for (const item of hits) notes.push({ tone: "warn", text: s.foodContains(child.firstName, inSentence(dish(item.name)), allergens(conflicts(item, child))) });
+      } else {
+        const pick = safeBackupLunch(day, child);
+        if (pick?.item) notes.push({ tone: "safe", text: s.foodBackup(child.firstName, inSentence(dish(pick.item.name))) });
+        else if (pick) notes.push({ tone: "warn", text: s.foodBackupNone(child.firstName) });
+      }
+    }
+  }
   if (day && center.meals === "provided") {
     menu = {
       lines: [`${s.breakfast}: ${dish(day.breakfast!.name)}`, `${s.lunchLabel}: ${dish(day.lunch!.name)}`, `${s.snack}: ${dish(day.pmSnack!.name)}`],
       translated: menuTranslated,
+      notes,
     };
   } else if (day?.backupLunch) {
     const alt = dish(day.backupLunch.alternative.name);
@@ -118,6 +143,7 @@ export async function getParentView(centerId: CenterId, familyId: string, now = 
         `${s.backupLunch(usd(center.fees.backupLunch!))}: ${dish(day.backupLunch.main.name)}, ${s.or} ${lang === "en" ? alt.charAt(0).toLowerCase() + alt.slice(1) : alt}`,
       ],
       translated: menuTranslated,
+      notes,
     };
   }
 
@@ -169,6 +195,10 @@ export async function getParentView(centerId: CenterId, familyId: string, now = 
       announcements: notices.map((a) => ({ id: a.id, title: t(a.title), body: t(a.body), postedBy: a.postedBy })),
     },
     dishes: Object.fromEntries(dishNames.filter((n) => tr.has(n)).map((n) => [n, tr.get(n)!])),
-    chips: ["today_lunch", "next_closure", "hours"],
+    shortcuts: [
+      { label: STRINGS[lang].shortcuts.sick(family.children.length === 1 ? family.children[0].firstName : null), message: STRINGS[lang].shortcuts.sick(family.children.length === 1 ? family.children[0].firstName : null) },
+      { label: STRINGS[lang].shortcuts.absence, message: STRINGS[lang].shortcuts.absenceMessage },
+      ...(center.meals === "pack_lunch" ? [{ label: STRINGS[lang].shortcuts.lunch, message: STRINGS[lang].shortcuts.lunchMessage }] : []),
+    ],
   };
 }

@@ -124,6 +124,7 @@ Known gaps:
 - **Knowledge edits bump `center.revision`.** It's part of every reply-cache key, so no cached answer outlives an edit.
 - **The test box** calls `ask()` with `dryRun`, which writes no logs, handoffs or cache entries.
 - **"Talk to a person"** (`/api/person`, `engine/person.ts`) appears after the second thumbs down in a conversation: Maple apologizes and offers it, and the button then stays in the chip row until "Start over". It creates a handoff of kind `person` with Maple's last answer as `context`, with no AI involved.
+- **Home and chat suggestions.** The home screen has no question buttons; parents tap Maple or the Ask bar. `ParentView.board.menu.notes` gives each child's food note, and `ParentView.shortcuts` gives the chat's task suggestions, which send ordinary messages (so they go through the AI intake, unlike the old free quick-fact chips). The engine's `chip` path still exists for `/api/ask` and scenario 1.
 - **Logs now keep Maple's reply** (`QuestionLog.answer`), so the overview can show what Maple said.
 - **Unhelpful answers.** These come from the thumbs down under each answer. Handled ones are stored under `feedback-handled:` per center.
 - **Center logos** are in `src/components/center-logo.tsx`.

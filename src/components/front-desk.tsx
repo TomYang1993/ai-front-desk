@@ -337,12 +337,6 @@ export function FrontDesk({ view }: { view: ParentView }) {
     setTimeout(() => setFlying(false), 900);
   }
 
-  function askFromHome(chip: ChipId) {
-    // No wave here: the question is already on its way.
-    if (!wide) openChat({ wave: false });
-    send({ chip });
-  }
-
   /** Maple herself. The shared layoutId moves her between the desk and the chat card. */
   const mapleFigure = (
     <motion.div
@@ -436,7 +430,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
   const composer = (
     <Composer
       s={s}
-      chips={view.chips}
+      shortcuts={view.shortcuts}
       pending={pending}
       input={input}
       textarea={textarea}
@@ -482,18 +476,6 @@ export function FrontDesk({ view }: { view: ParentView }) {
         <div className="mx-auto flex max-w-xl flex-col gap-4">
           {topBar}
           {desk}
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-            {view.chips.map((c) => (
-              <button
-                key={c}
-                onClick={() => askFromHome(c)}
-                disabled={pending}
-                className="shrink-0 rounded-full border border-stone-300 bg-white px-3.5 py-1.5 text-sm font-semibold text-stone-700 hover:border-teal-600 hover:text-teal-700 disabled:opacity-50"
-              >
-                {s.chips[c]}
-              </button>
-            ))}
-          </div>
           <InfoCards view={view} requests={requests} s={s} lang={lang} />
         </div>
       </div>

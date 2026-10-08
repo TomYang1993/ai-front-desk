@@ -182,7 +182,7 @@ export function ChatThread({
 
 export function Composer({
   s,
-  chips,
+  shortcuts,
   pending,
   input,
   textarea,
@@ -192,7 +192,8 @@ export function Composer({
   person,
 }: {
   s: Strings;
-  chips: ChipId[];
+  /** Task shortcuts; each sends its message as the parent. */
+  shortcuts: { label: string; message: string }[];
   pending: boolean;
   input: string;
   textarea: RefObject<HTMLTextAreaElement | null>;
@@ -224,14 +225,14 @@ export function Composer({
         </button>
         )}
         <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 pt-1">
-        {chips.map((c) => (
+        {shortcuts.map((c) => (
           <button
-            key={c}
-            onClick={() => onSend({ chip: c })}
+            key={c.label}
+            onClick={() => onSend({ text: c.message })}
             disabled={pending}
             className="shrink-0 rounded-full border border-stone-300 bg-white px-3 py-1 text-sm font-semibold text-stone-700 hover:border-teal-600 hover:text-teal-700 disabled:opacity-50"
           >
-            {s.chips[c]}
+            {c.label}
           </button>
         ))}
         </div>
