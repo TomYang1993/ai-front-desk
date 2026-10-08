@@ -38,7 +38,9 @@ export type ChatItem =
   | { kind: "greeting"; id: string }
   | { kind: "parent"; id: string; text: string }
   | { kind: "reply"; id: string; reply: AskReply }
-  | { kind: "error"; id: string };
+  | { kind: "error"; id: string }
+  /** Maple's offer to reach a person, after two thumbs down in a conversation. */
+  | { kind: "offer"; id: string };
 
 /** Maple's name, the AI label and what she is doing. `avatar` reserves room for Maple on phones. */
 export function ChatHeader({
@@ -94,6 +96,7 @@ export function ChatThread({
   onOption,
   onFeedback,
   dish,
+  person,
 }: {
   items: ChatItem[];
   greeting: string;
@@ -109,6 +112,7 @@ export function ChatThread({
   onOption: (text: string) => void;
   onFeedback: (itemId: string, logId: string, value: "up" | "down") => void;
   dish: (name: string) => string;
+  person: { firstName: string; onOpen: () => void };
 }) {
   return (
     <div ref={scroller} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
@@ -124,6 +128,16 @@ export function ChatThread({
           return (
             <div key={item.id} className="max-w-[85%] self-end whitespace-pre-line rounded-2xl rounded-tr-md bg-teal-700 px-4 py-2.5 text-[15px] leading-relaxed text-white shadow-sm">
               {item.text}
+            </div>
+          );
+        }
+        if (item.kind === "offer") {
+          return (
+            <div key={item.id} className="max-w-[92%] rounded-2xl rounded-tl-md border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] leading-relaxed shadow-sm">
+              <p>{s.person.offer(person.firstName)}</p>
+              <button onClick={person.onOpen} className="mt-2 flex items-center gap-1.5 rounded-full bg-amber-700 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-amber-800">
+                <UserRound size={15} aria-hidden /> {s.person.button}
+              </button>
             </div>
           );
         }
@@ -185,32 +199,30 @@ export function Composer({
   onInput: (value: string) => void;
   onFocusChange: (focused: boolean) => void;
   onSend: (opts: { text?: string; chip?: ChipId }) => void;
-  /** The always-visible way to reach the director, bypassing Maple. */
-  person: { directorName: string; prefill: () => string; onSend: (text: string) => Promise<boolean> };
+  /**
+   * The way to reach the director, bypassing Maple. It appears once a parent
+   * has given two thumbs down in a conversation, so it doesn't pull people
+   * away from answers Maple can give.
+   */
+  person: { visible: boolean; directorName: string; text: string | null; onText: (text: string | null) => void; onSend: () => void; sending: boolean; onToggle: () => void };
 }) {
-  const [personText, setPersonText] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
+  const personText = person.text;
+  const sending = person.sending;
   const first = person.directorName.split(" ")[0];
-
-  async function sendToPerson() {
-    if (!personText?.trim()) return;
-    setSending(true);
-    const ok = await person.onSend(personText.trim());
-    setSending(false);
-    if (ok) setPersonText(null);
-  }
 
   return (
     <div className="rounded-b-[28px] border-t border-stone-200 bg-white/90 px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-2">
       <div className="mb-2 flex items-center gap-2">
+        {person.visible && (
         <button
-          onClick={() => setPersonText((t) => (t === null ? person.prefill() : null))}
+          onClick={person.onToggle}
           aria-expanded={personText !== null}
           className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ring-1 ${personText !== null ? "bg-amber-100 text-amber-900 ring-amber-300" : "bg-amber-50 text-amber-900 ring-amber-200 hover:bg-amber-100"}`}
         >
           <UserRound size={15} aria-hidden />
           {s.person.button}
         </button>
+        )}
         <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 pt-1">
         {chips.map((c) => (
           <button
@@ -231,7 +243,7 @@ export function Composer({
             {s.person.prompt(first)}
             <textarea
               value={personText}
-              onChange={(e) => setPersonText(e.target.value)}
+              onChange={(e) => person.onText(e.target.value)}
               rows={3}
               maxLength={1000}
               autoFocus
@@ -239,11 +251,11 @@ export function Composer({
             />
           </label>
           <div className="mt-2 flex gap-2">
-            <button onClick={sendToPerson} disabled={sending || !personText.trim()} className="flex items-center gap-1.5 rounded-full bg-amber-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-40">
+            <button onClick={person.onSend} disabled={sending || !personText.trim()} className="flex items-center gap-1.5 rounded-full bg-amber-700 px-4 py-1.5 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-40">
               {sending ? <LoaderCircle size={15} className="animate-spin" /> : <SendHorizontal size={15} />}
               {s.person.send(first)}
             </button>
-            <button onClick={() => setPersonText(null)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-stone-600 hover:bg-white">
+            <button onClick={() => person.onText(null)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-stone-600 hover:bg-white">
               {s.person.cancel}
             </button>
           </div>

@@ -1,6 +1,6 @@
 # Handoff: where the project stands
 
-Last updated October 7, 2026. Read this first in a new session, then `docs/PLAN.md` and `docs/SCENARIOS.md`.
+Last updated October 8, 2026. Read this first in a new session, then `docs/PLAN.md` and `docs/SCENARIOS.md`.
 
 ## Status
 
@@ -8,9 +8,8 @@ Last updated October 7, 2026. Read this first in a new session, then `docs/PLAN.
 |---|---|
 | Live site | https://ai-front-desk-xi.vercel.app, deployed from `main` |
 | Repo | https://github.com/TomYang1993/ai-front-desk |
-| `main` | Phases 0 to 2 and the Groq provider, merged through pull requests #1 and #2 |
-| `phase-3-parent-app` | Phase 3 is done, in pull request #3: sign-in, removing visitor mode, the front desk home, Maple version 2, and the finishing pass |
-| `hindi-family` | Built on `phase-3-parent-app`: Hindi as a fourth language and Meera Sharma's family at Quail Ridge |
+| `main` | Phases 0 to 3 and Hindi, merged through pull requests #1 to #4 |
+| `phase-4-director-console` | Phase 4 in progress: the director console, plus the restyled Maple and front desk |
 
 ## How we work
 
@@ -107,6 +106,35 @@ Known gaps:
 - **Names survive translation.** The small Groq model wrote "Hannah" and "Quail Ridge" in Devanagari. `translate()` now takes the center's, staff's and family's names, tells the model to keep them in Latin letters, and rejects a translation that changes them, as it does for numbers. It tries the small model, then a small model from another provider (Gemini, which keeps names and Maple's feminine verb forms), then the large chain, before keeping English. Hindi replies usually come from Gemini, so they use its daily free quota.
 - Scorecard scenarios 31 (low fever, in Hindi) and 32 (grandparent pickup, in Hindi) are added, and both require Devanagari so an English fallback can't pass. The full run on this branch: 30 passed and scenario 15 pending, before the name fix; after it, all six translated scenarios pass.
 
+## Director console, Phase 4 (branch `phase-4-director-console`)
+
+- **Routes.** `/console?tab=inbox|overview|source|test`, server-rendered by `src/app/console/page.tsx` from `src/lib/console-view.ts`. `?item=` opens an inbox message, and `?section=&fix=` opens a handbook section to fix an unhelpful answer. Client components are in `src/components/console/`.
+- **APIs** under `src/app/api/console/`:
+  - `handoffs/[id]/reply` and `handoffs/[id]/draft`
+  - `answers` (create), `answers/[id]` (edit, delete) and `answers/draft`
+  - `handbook/[id]`, `feedback/[logId]` and `test`
+- **Who can call them.** All use `directorFor()` in `src/lib/console-auth.ts`. Outside production, a request with no session may name `centerId`, which is how the scorecard walks the loop.
+- **The "answer once" loop.**
+  1. The director replies.
+  2. The reply is translated into the parent's language, with names checked.
+  3. The parent sees it in their chat, with the original one tap away.
+  4. For general questions only ("Not covered", "Maple wasn't sure"), "Save as an answer for everyone" drafts a nameless question and answer with keywords. The director edits and saves it.
+  5. Maple uses it on the next question. Scenario 15 now tests this: the scorecard adds the saved answer through the API, asks, then removes it.
+- **Reply drafts** run only on request (`engine/drafts.ts`). They put the decision in brackets for the director, and the engine's claim check lists anything not in the sources under "Not in the handbook".
+- **Knowledge edits bump `center.revision`.** It's part of every reply-cache key, so no cached answer outlives an edit.
+- **The test box** calls `ask()` with `dryRun`, which writes no logs, handoffs or cache entries.
+- **"Talk to a person"** (`/api/person`, `engine/person.ts`) appears after the second thumbs down in a conversation: Maple apologizes and offers it, and the button then stays in the chip row until "Start over". It creates a handoff of kind `person` with Maple's last answer as `context`, with no AI involved.
+- **Logs now keep Maple's reply** (`QuestionLog.answer`), so the overview can show what Maple said.
+- **Unhelpful answers.** These come from the thumbs down under each answer. Handled ones are stored under `feedback-handled:` per center.
+- **Center logos** are in `src/components/center-logo.tsx`.
+- **Maple and the desk were restyled** from the user's reference: a flat, grainy, full-body bear, and Maple standing beside a low counter. The grain is an SVG `feTurbulence` filter.
+- **Engine fix.** Event questions that name something not on the calendar ("When is pajama day?") now go to the handbook instead of getting an unrelated list of events.
+- **Scorecard** on October 8: 31 of 32 passed, with nothing pending. Scenario 15, the "answer once" payoff, passes. Scenario 13 (snow) failed once to the claim check and once to provider capacity; see the backlog.
+- **Checked in the browser:**
+  - Rosa asks in Spanish, Elena drafts and replies, Rosa sees Spanish with the English original.
+  - Saving the answer, then Ana gets it instantly with no handbook read.
+  - The overview, Source of truth editing, the test box (nothing logged), and "Talk to a person".
+
 ## Next steps
 
 Decided with the user; details in `docs/PLAN.md`, "Phase 3 redesign."
@@ -129,12 +157,18 @@ Collected while building, for the phase after Phase 4 merges.
 
 **Bugs and gaps**
 - "Mateo tiene tos y no va a ir mañana" (a cough plus an absence) goes to the director instead of offering the absence button.
-- Local data holds test records from October 7: a backup lunch for Priya, an absence and a handoff for Rosa. The lunch makes scenario 26 fail locally. Reset local data once it's clear no other session needs it.
+- Local data was reseeded on October 8 when the Hindi content merged, which cleared October 7's test records. October 8 testing left an answered Halloween handoff for Rosa and a "Talk to a person" handoff for Ana.
 - All preview deployments share one data space (`afd:preview:`), so two previews with different seed content keep resetting each other's data. Consider a prefix per branch.
 - `SESSION_SECRET` isn't set in Vercel.
 - Reduced-motion still poses for Maple are untested in a real browser setting.
 - Source chips show the handbook's English section titles in every language.
 - Hindi replies lean on Gemini's small free quota. Watch for English fallbacks.
+- Saved-answer drafts can include odd keywords, such as "mascara" for "máscara". The director can edit them, but a check would help.
+- `composeEvents` decides a question is general with an English word list, so a general events question in another language goes to the handbook (still correct, just slower).
+- Seeded unhelpful answers have no reply text, because older seeded logs never stored Maple's answer.
+- The reply-draft claim check misses softer additions, such as "keep the costume comfortable".
+- Scenario 13 (snow) is flaky. The claim check rejects common-sense lines ("if APS stays open, we keep our normal hours"), possibly because Rosa's answer is in Spanish while the sources are English. Also, heavy testing on one day exhausts Groq's large model, and Gemini sometimes returns "high demand".
+- The two-thumbs-down offer of "Talk to a person" hasn't been clicked through in the browser yet; the pane was in use.
 
 **Organizing**
 - Three separate language-name maps (`engine/handbook.ts`, `engine/translate.ts`, `engine/drafts.ts`). Make one.

@@ -74,6 +74,7 @@ type Strings = {
     prompt: (firstName: string) => string;
     send: (firstName: string) => string;
     cancel: string;
+    offer: (firstName: string) => string;
   };
   home: {
     greeting: (name: string, part: DayPart) => string;
@@ -176,6 +177,7 @@ const en: Strings = {
     prompt: (f) => `What should ${f} know?`,
     send: (f) => `Send to ${f}`,
     cancel: "Cancel",
+    offer: (f) => `Sorry I haven't been more help. Would you like to reach ${f} directly?`,
   },
   signOut: "Sign out",
   home: {
@@ -277,6 +279,7 @@ const es: Strings = {
     prompt: (f) => `¿Qué debe saber ${f}?`,
     send: (f) => `Enviar a ${f}`,
     cancel: "Cancelar",
+    offer: (f) => `Siento no haberle ayudado más. ¿Quiere comunicarse directamente con ${f}?`,
   },
   signOut: "Cerrar sesión",
   home: {
@@ -378,6 +381,7 @@ const zh: Strings = {
     prompt: (f) => `需要告诉${f}什么？`,
     send: (f) => `发送给${f}`,
     cancel: "取消",
+    offer: (f) => `抱歉没能帮上忙。要直接联系${f}吗？`,
   },
   signOut: "退出登录",
   home: {
@@ -478,6 +482,7 @@ const hi: Strings = {
     prompt: (f) => `${f} को क्या बताना है?`,
     send: (f) => `${f} को भेजें`,
     cancel: "रद्द करें",
+    offer: (f) => `माफ़ कीजिए, मैं ज़्यादा मदद नहीं कर पाई। क्या आप सीधे ${f} से बात करना चाहेंगे?`,
   },
   signOut: "साइन आउट",
   home: {

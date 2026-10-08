@@ -84,6 +84,9 @@ export function FrontDesk({ view }: { view: ParentView }) {
   const [maple, setMaple] = useState<MapleState>("ready");
   const [handoffName, setHandoffName] = useState("");
   const [requests, setRequests] = useState<Requests | null>(null);
+  // "Talk to a person": the open panel's text (null when closed) and whether it's sending.
+  const [personText, setPersonText] = useState<string | null>(null);
+  const [personSending, setPersonSending] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const dialog = useRef<HTMLElement>(null);
@@ -253,7 +256,15 @@ export function FrontDesk({ view }: { view: ParentView }) {
   }
 
   /** "Talk to a person": straight to the director, with what Maple last said as context. */
-  async function sendToPerson(text: string): Promise<boolean> {
+  async function sendToPerson() {
+    const text = personText?.trim();
+    if (!text) return;
+    setPersonSending(true);
+    if (await deliverToPerson(text)) setPersonText(null);
+    setPersonSending(false);
+  }
+
+  async function deliverToPerson(text: string): Promise<boolean> {
     const last = [...saved.items].reverse().find((i) => i.kind === "reply");
     setSaved((prev) => ({ ...prev, items: [...prev.items, { kind: "parent", id: uid(), text }] }));
     try {
@@ -277,12 +288,19 @@ export function FrontDesk({ view }: { view: ParentView }) {
   }
 
   async function giveFeedback(itemId: string, logId: string, value: "up" | "down") {
-    setSaved((prev) => ({ ...prev, feedback: { ...prev.feedback, [itemId]: value } }));
+    setSaved((prev) => {
+      const feedback = { ...prev.feedback, [itemId]: value };
+      // After a second thumbs down, Maple offers to reach a person. Once per conversation.
+      const downs = Object.values(feedback).filter((v) => v === "down").length;
+      const offer = value === "down" && downs === 2 && !prev.items.some((i) => i.kind === "offer");
+      return { ...prev, feedback, items: offer ? [...prev.items, { kind: "offer", id: uid() }] : prev.items };
+    });
     fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId, value }) }).catch(() => {});
   }
 
   function startOver() {
     setSaved((prev) => ({ ...prev, items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {} }));
+    setPersonText(null);
     moodFor("ready");
   }
 
@@ -412,6 +430,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
       onOption={(o) => send({ text: o })}
       onFeedback={giveFeedback}
       dish={dish}
+      person={{ firstName: directorFirstName, onOpen: () => setPersonText(input.trim()) }}
     />
   );
 
@@ -425,7 +444,15 @@ export function FrontDesk({ view }: { view: ParentView }) {
       onInput={setInput}
       onFocusChange={setFocused}
       onSend={send}
-      person={{ directorName: view.center.directorName, prefill: () => input.trim(), onSend: sendToPerson }}
+      person={{
+        visible: saved.items.some((i) => i.kind === "offer") || personText !== null,
+        directorName: view.center.directorName,
+        text: personText,
+        onText: setPersonText,
+        onToggle: () => setPersonText((t) => (t === null ? input.trim() : null)),
+        onSend: sendToPerson,
+        sending: personSending,
+      }}
     />
   );
 

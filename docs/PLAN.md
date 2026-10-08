@@ -109,13 +109,13 @@ Custody and restraining orders, pickup authorization changes, suspected abuse or
 - **Phone layout.** Chat first. A small animated clerk sits in the header, with a status line that says what it is doing.
 - **Laptop and tablet layout.** Three panes: a simple lobby scene with the clerk at the desk, the chat, and a notice board. The notice board shows today's hours, today's menu, the next closure and the parent's open requests. It is the digital version of the parent bulletin board the Albuquerque handbook describes.
 - **One clerk, not several.** Parents build trust with one character. Real staff appear as people with names and initials, never as cartoons, so it is always clear who is AI and who is human.
-- **Character: Maple the bear.** A round, soft brown bear in a teal apron with the center's name tag and the handbook tucked in the apron pocket. Same Maple at both centers. Kept deliberately unthreatening: rounded shapes, small eyes, rosy cheeks, no teeth or claws.
+- **Character: Maple the bear.** A full-body, slightly turned rust-brown bear in flat colors with film grain, wearing a teal apron with a "Maple" name tag and the handbook in the pocket. Same Maple at both centers. Kept deliberately unthreatening: rounded shapes, small eyes, rosy cheeks, no teeth or claws.
 - **Maple's voice.** Warm, steady and plain. Short sentences, no baby talk, no exclamation marks in serious answers.
 - **Maple's states.** Ready: slow breathing and blinking. Listening: ears perk and head tilts while the parent types. Checking the handbook: reading glasses on, pages turning. Getting a person: holds a phone and gestures toward the director's door. Done: a small nod after an action is confirmed. Calm mode: still, soft eyes, paw on chest.
 - **Animation explains the work.** Each state maps to what the system is doing: ready, listening while the parent types, checking the handbook, getting a person during a handoff, and calm mode.
 - **Calm mode for hard moments.** On urgent or sensitive topics the clerk stops bouncing, the copy turns plain, and the human handoff takes center stage.
 - **Always labeled as AI.** The clerk never claims to be a person.
-- **Built as SVG with CSS animation.** Light, fully controllable, and respects reduced-motion settings. No 3D.
+- **Built as SVG, animated with Motion.** Light, fully controllable, and respects reduced-motion settings. No 3D.
 
 ### Phase 3 redesign, decided October 7
 
@@ -126,6 +126,7 @@ Feedback on the first parent app: treat it as a real product, not a demo router.
 - **No visitor mode for now.** Prospective-family flows are hidden from the interface. The engine still supports visitors, so they can return later as a public page per center.
 - **The front desk is the home screen.** On phones, the animated front desk with Maple is the hero, with information cards below: today, food, next closure, notices, your requests and your children. Tapping Maple opens the chat as a card that springs up while Maple moves from the desk into its header, using Motion's shared-layout animation. Maple acts out each state during the conversation, and closing the card returns her to the desk. On laptops, the desk and cards stay in view with the chat docked beside them.
 - **Maple, version 2.** Redrawn in code with more polish: softer shading, highlights and rounder proportions, with the same design and separately animated parts. Animated with the Motion library using springs, and a wave hello and happy hop added to the existing states. The component keeps its `state` and `size` interface, so a Rive-made Maple could replace it later.
+- **Maple and the desk, restyled October 8.** From a reference the user shared: Maple stands full body in a flat, grainy illustration style, and the front desk matches, with Maple standing beside a low counter instead of behind it.
 
 ## 7. Operator console
 
@@ -143,6 +144,14 @@ Feedback on the first parent app: treat it as a real product, not a demo router.
 - **Knowledge editing.** Directors edit handbook sections and saved answers. The calendar, menu, tuition, hours and tour tables are read-only for now, each showing who updated it and when.
 - **Suggested replies on request.** A "Draft a reply" button asks Maple for a draft from the handbook. Where the handbook is silent, the draft leaves a bracketed blank for the director instead of inventing an answer.
 - **Replies reach parents in their language.** The parent sees the translation, with the original one tap away. The director sees what the parent got.
+
+Added after the first walkthrough, October 8:
+
+- **Each center's own logo** in the console, on sign-in and on the parent home. Maple stays the parents' assistant; staff tools carry the center's brand.
+- **"Knowledge" is called "Source of truth",** matching the brief's wording.
+- **The test box keeps its own tab,** "Test Maple", for checking answers after an edit.
+- **"Talk to a person" appears after two thumbs down.** An always-visible button would pull parents away from answers Maple can give. After a second thumbs down in a conversation, Maple apologizes and offers to reach the director, and the button stays in the chip row for that conversation. It goes straight to the director with Maple's last answer as context, with no AI involved.
+- **The overview leads with fixes.** A "To fix" line counts open gaps and unhelpful answers. Each unhelpful answer shows what Maple said and the source it used, with buttons to fix that source, edit the saved answer, write a better answer, or mark it handled.
 
 ## 8. Answer engine: a router with lanes
 
