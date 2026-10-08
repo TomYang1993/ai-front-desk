@@ -29,7 +29,7 @@ type Strings = {
   actionFailed: string;
   board: { today: string; meals: string; nextClosure: string; notices: string; requests: string; noRequests: string; waiting: (name: string) => string; replied: (name: string) => string; absence: (child: string, dates: string) => string; lunch: (item: string, child: string) => string; tour: (when: string) => string; children: string };
   startOver: string;
-  switchFamily: string;
+  signOut: string;
   error: string;
 };
 
@@ -88,7 +88,7 @@ const en: Strings = {
     children: "Your children",
   },
   startOver: "Start over",
-  switchFamily: "Switch family",
+  signOut: "Sign out",
   error: "Something went wrong. Please try again, or call the front desk.",
 };
 
@@ -140,7 +140,7 @@ const es: Strings = {
     children: "Sus hijos",
   },
   startOver: "Empezar de nuevo",
-  switchFamily: "Cambiar de familia",
+  signOut: "Cerrar sesión",
   error: "Algo salió mal. Intente de nuevo o llame a la recepción.",
 };
 
@@ -189,7 +189,7 @@ const zh: Strings = {
     children: "您的孩子",
   },
   startOver: "重新开始",
-  switchFamily: "切换家庭",
+  signOut: "退出登录",
   error: "出错了。请重试或致电前台。",
 };
 

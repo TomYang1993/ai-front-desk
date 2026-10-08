@@ -1,18 +1,22 @@
 import { connection } from "next/server";
 import type { CenterId } from "@/content";
+import { resolveParent } from "@/lib/session";
 import { CENTER_IDS, getAbsences, getCenter, getFamily, getHandoffs, getLunchOrders, getTourBookings, type TourBookingRecord } from "@/lib/data";
 
 /**
  * A family's open and recent requests, for the notice board: handoffs and
- * staff replies, logged absences, lunch orders and tour bookings. Visitors
- * have no account, so they pass the ids of their own handoffs and tours.
+ * staff replies, logged absences, lunch orders and tour bookings. The
+ * family comes from the session. Visitors, available only to test scripts
+ * for now, pass the ids of their own handoffs and tours.
  */
 export async function GET(request: Request) {
   await connection();
   const params = new URL(request.url).searchParams;
-  const centerId = params.get("centerId") as CenterId;
-  if (!CENTER_IDS.includes(centerId)) return Response.json({ error: "Unknown center" }, { status: 400 });
-  const familyId = params.get("familyId");
+  const requested = params.get("centerId") as CenterId | null;
+  if (requested && !CENTER_IDS.includes(requested)) return Response.json({ error: "Unknown center" }, { status: 400 });
+  const asker = await resolveParent({ centerId: requested ?? undefined, familyId: params.get("familyId") });
+  if (!asker) return Response.json({ error: "Sign in as a parent" }, { status: 401 });
+  const { centerId, familyId } = asker;
   const ids = new Set((params.get("ids") ?? "").split(",").filter(Boolean));
   const mine = (record: { id: string; familyId: string | null }) => (familyId ? record.familyId === familyId : ids.has(record.id));
 

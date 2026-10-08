@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { ChevronDown, RotateCcw, SendHorizontal } from "lucide-react";
+import { ChevronDown, LogOut, RotateCcw, SendHorizontal } from "lucide-react";
 import type { Lang } from "@/content/types";
 import type { Action, AskReply, ChipId, HistoryTurn } from "@/lib/engine/types";
 import type { ParentView } from "@/lib/parent-view";
 import { STRINGS } from "@/lib/i18n";
+import { signOut } from "@/lib/auth-actions";
 import { formatSlot, listDays } from "@/lib/format";
 import { Maple, type MapleState } from "./maple";
 import { Lobby } from "./lobby";
@@ -28,6 +28,15 @@ interface Saved {
 
 const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const storageKey = (view: ParentView) => `afd:chat:${view.center.id}:${view.family?.id ?? "visitor"}`;
+
+/** On sign-out, so the next person on this device doesn't see the conversation. */
+function forgetChats() {
+  try {
+    for (const key of Object.keys(localStorage)) if (key.startsWith("afd:chat:")) localStorage.removeItem(key);
+  } catch {
+    /* Nothing stored. */
+  }
+}
 
 function load(view: ParentView): Saved {
   const empty: Saved = { items: [{ kind: "greeting", id: "greeting" }], done: {}, feedback: {}, visitorIds: [] };
@@ -240,9 +249,11 @@ export function FrontDesk({ view }: { view: ParentView }) {
           <button onClick={startOver} className="rounded-full p-2 text-stone-500 hover:bg-stone-100" aria-label={s.startOver} title={s.startOver}>
             <RotateCcw size={18} />
           </button>
-          <Link href="/" className="hidden rounded-full border border-stone-300 px-3 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-50 sm:block">
-            {s.switchFamily}
-          </Link>
+          <form action={signOut} onSubmit={forgetChats}>
+            <button type="submit" className="rounded-full p-2 text-stone-500 hover:bg-stone-100" aria-label={s.signOut} title={s.signOut}>
+              <LogOut size={18} />
+            </button>
+          </form>
         </header>
 
         {/* Today, phones and tablets */}

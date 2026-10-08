@@ -3,6 +3,7 @@ import { addAbsence, addLunchOrder, addTourBooking, getCenter, getFamily } from 
 import { dayStatus } from "@/lib/facts/calendar";
 import { menuFor, safeBackupLunch } from "@/lib/facts/menu";
 import { upcomingTourSlots } from "@/lib/facts/tours";
+import { resolveParent } from "@/lib/session";
 import { zonedParts } from "@/lib/time";
 
 /**
@@ -10,8 +11,9 @@ import { zonedParts } from "@/lib/time";
  * times are recomputed here; nothing the browser sends is trusted for them.
  */
 const Body = z.object({
-  centerId: z.enum(["pinon-grove", "quail-ridge"]),
-  familyId: z.string().nullable(),
+  /** Read from the session; honored only for test scripts outside production. */
+  centerId: z.enum(["pinon-grove", "quail-ridge"]).optional(),
+  familyId: z.string().nullable().optional(),
   action: z.discriminatedUnion("type", [
     z.object({ type: z.literal("log_absence"), childId: z.string(), dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).min(1).max(10), reason: z.string().max(200) }),
     z.object({ type: z.literal("order_backup_lunch"), childId: z.string() }),
@@ -24,7 +26,10 @@ const id = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.rand
 export async function POST(request: Request) {
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Invalid request" }, { status: 400 });
-  const { centerId, familyId, action } = parsed.data;
+  const asker = await resolveParent(parsed.data);
+  if (!asker) return Response.json({ error: "Sign in as a parent" }, { status: 401 });
+  const { centerId, familyId } = asker;
+  const { action } = parsed.data;
   const center = await getCenter(centerId);
   const family = familyId ? await getFamily(centerId, familyId) : undefined;
   if (familyId && !family) return Response.json({ error: "Unknown family" }, { status: 400 });
