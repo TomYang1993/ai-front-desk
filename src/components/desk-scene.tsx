@@ -2,9 +2,9 @@ import { useId, type ReactNode } from "react";
 import type { CenterId } from "@/content/types";
 
 /**
- * The front desk, in Maple's flat, grainy style: a window onto the
- * center's city, the handbook shelf, the notice board, the director's door
- * and a low counter with the center's name. Maple stands on the floor
+ * The front desk, in Maple's flat, grainy style: a still window onto the
+ * center's city, a bookshelf, the notice board, the director's door and a
+ * low counter with the center's name. Maple stands on the floor
  * beside the counter, full body. She is passed in as `maple`, so she can
  * leave the desk for the chat; her spot overlaps nothing drawn in front of
  * her, so she can fly in and out above everything else.
@@ -19,16 +19,14 @@ const pct = (n: number, of: number) => `${(n / of) * 100}%`;
 export function DeskScene({
   centerId,
   centerName,
-  directorFirstName,
-  labels,
+  frontDeskLabel,
   doorLit,
   maple,
   bubble,
 }: {
   centerId: CenterId;
   centerName: string;
-  directorFirstName: string;
-  labels: { frontDesk: string; handbook: string };
+  frontDeskLabel: string;
   doorLit: boolean;
   maple: ReactNode;
   bubble?: ReactNode;
@@ -55,20 +53,21 @@ export function DeskScene({
 
           <Window centerId={centerId} />
 
-          {/* Handbook shelf under the window */}
+          {/* Bookshelf under the window */}
           <rect x="20" y="126" width="88" height="5" rx="2" fill="#A86E3E" />
           {[
             ["#C2603A", 26, 22],
             ["#3F6F66", 35, 25],
             ["#5B7FA3", 44, 20],
             ["#E39A45", 53, 24],
+            ["#A9CDBF", 62, 18],
+            ["#C2603A", 71, 23],
           ].map(([color, x, h]) => (
             <rect key={x} x={x as number} y={126 - (h as number)} width="8" height={h as number} rx="1.5" fill={color as string} />
           ))}
-          <rect x="66" y="108" width="36" height="18" rx="2.5" fill="#FBF6EC" />
-          <text x="84" y="120" textAnchor="middle" fontSize="7" fontWeight="700" fill="#7A5A3A">
-            {labels.handbook}
-          </text>
+          <rect x="84" y="104" width="8" height="22" rx="1.5" fill="#5B7FA3" transform="rotate(16 88 126)" />
+          <path d="M94 126 L104 126 L102 116 L96 116 Z" fill="#E9E1D2" />
+          <path d="M99 117 C96 111 97 107 99 104 C101 107 102 111 99 117 Z" fill="#4E7F6A" />
 
           {/* A floor plant */}
           <path d="M30 186 L48 186 L45 204 L33 204 Z" fill="#C2603A" />
@@ -84,10 +83,7 @@ export function DeskScene({
 
           {/* The director's door lights up while a person is being brought in. */}
           <rect x="300" y="52" width="46" height="96" rx="3" fill={doorLit ? "#F2C66D" : "#C9B8A3"} className="transition-colors duration-500" />
-          <rect x="306" y="60" width="34" height="14" rx="3" fill="#FBF6EC" />
-          <text x="323" y="70" textAnchor="middle" fontSize="7" fontWeight="700" fill="#2E1C14">
-            {directorFirstName}
-          </text>
+          <rect x="309" y="62" width="28" height="20" rx="2.5" fill="#FBF6EC" opacity="0.55" />
           <circle cx="339" cy="112" r="2.6" fill="#6B5A48" />
 
           {/* The counter, with a bell and a mug */}
@@ -102,7 +98,7 @@ export function DeskScene({
             {centerName}
           </text>
           <text x="298" y="191" textAnchor="middle" fontSize="7.5" fill="#CFE3DC">
-            {labels.frontDesk}
+            {frontDeskLabel}
           </text>
         </g>
       </svg>
@@ -120,7 +116,7 @@ export function DeskScene({
   );
 }
 
-/** Albuquerque gets the Sandia Mountains and balloons; Seattle gets rain and evergreens. */
+/** A still view of the city: the Sandia Mountains and balloons for Albuquerque, rain and evergreens for Seattle. */
 function Window({ centerId }: { centerId: CenterId }) {
   const clip = `desk-window-${centerId}`;
   return (
@@ -136,12 +132,12 @@ function Window({ centerId }: { centerId: CenterId }) {
             <rect x="24" y="28" width="80" height="64" fill="#BCDDEA" />
             <path d="M24 92 L24 72 L38 61 L50 67 L62 53 L77 63 L90 57 L104 68 L104 92Z" fill="#C98F84" />
             <path d="M24 92 L24 82 L44 76 L66 80 L88 74 L104 78 L104 92Z" fill="#B47766" />
-            <g className="desk-balloon">
+            <g>
               <path d="M50 36 c-7 0 -10 6 -10 10 c0 6 6 10 10 14 c4 -4 10 -8 10 -14 c0 -4 -3 -10 -10 -10z" fill="#D9643F" />
               <path d="M50 36 c-3 0 -4 6 -4 10 c0 6 2 10 4 14 c2 -4 4 -8 4 -14 c0 -4 -1 -10 -4 -10z" fill="#EDB860" />
               <rect x="48" y="61" width="4" height="3" rx="1" fill="#7A5A3A" />
             </g>
-            <g className="desk-balloon desk-balloon--late">
+            <g>
               <path d="M84 44 c-4 0 -6 4 -6 6 c0 4 4 6 6 8 c2 -2 6 -4 6 -8 c0 -2 -2 -6 -6 -6z" fill="#5B7FA3" />
               <rect x="83" y="58" width="2.5" height="2" rx="0.5" fill="#7A5A3A" />
             </g>
@@ -150,7 +146,7 @@ function Window({ centerId }: { centerId: CenterId }) {
           <>
             <rect x="24" y="28" width="80" height="64" fill="#C6D0D6" />
             <path d="M30 92 L40 64 L50 92Z M46 92 L57 56 L68 92Z M64 92 L74 68 L84 92Z M80 92 L92 60 L104 92Z" fill="#3E6B5C" />
-            <g className="desk-rain" stroke="#8C9FAE" strokeWidth="1.4" strokeLinecap="round">
+            <g stroke="#8C9FAE" strokeWidth="1.4" strokeLinecap="round">
               {[30, 42, 54, 66, 78, 90, 100].map((x, i) => (
                 <line key={x} x1={x} y1={18 + (i % 3) * 12} x2={x - 3} y2={26 + (i % 3) * 12} />
               ))}

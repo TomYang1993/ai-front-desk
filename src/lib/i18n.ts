@@ -84,7 +84,6 @@ type Strings = {
     close: string;
     chatWith: string;
     frontDesk: string;
-    handbook: string;
   };
   error: string;
 };
@@ -188,7 +187,6 @@ const en: Strings = {
     close: "Close chat",
     chatWith: "Chat with Maple",
     frontDesk: "Front desk",
-    handbook: "Handbook",
   },
   error: "Something went wrong. Please try again, or call the front desk.",
 };
@@ -290,7 +288,6 @@ const es: Strings = {
     close: "Cerrar chat",
     chatWith: "Chatear con Maple",
     frontDesk: "Recepción",
-    handbook: "Manual",
   },
   error: "Algo salió mal. Intente de nuevo o llame a la recepción.",
 };
@@ -392,7 +389,6 @@ const zh: Strings = {
     close: "关闭聊天",
     chatWith: "和 Maple 聊天",
     frontDesk: "前台",
-    handbook: "家长手册",
   },
   error: "出错了。请重试或致电前台。",
 };
@@ -493,7 +489,6 @@ const hi: Strings = {
     close: "चैट बंद करें",
     chatWith: "Maple से चैट करें",
     frontDesk: "फ़्रंट डेस्क",
-    handbook: "हैंडबुक",
   },
   error: "कुछ गलत हो गया। कृपया फिर से कोशिश करें या फ़्रंट डेस्क को कॉल करें।",
 };

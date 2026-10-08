@@ -378,8 +378,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
     <DeskScene
       centerId={view.center.id}
       centerName={view.center.shortName}
-      directorFirstName={directorFirstName}
-      labels={{ frontDesk: s.home.frontDesk, handbook: s.home.handbook }}
+      frontDeskLabel={s.home.frontDesk}
       doorLit={mood === "handoff" || mood === "calm"}
       bubble={open && !wide ? null : bubble}
       maple={
