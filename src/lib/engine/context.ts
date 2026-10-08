@@ -41,6 +41,16 @@ export function ageLabel(birthDate: string, today: string) {
   return months < 24 ? `${months} months` : `${Math.floor(months / 12)} years`;
 }
 
+/** Names that must come back from translation exactly as written. */
+export function keepNames(center: Center, family: Family | undefined): string[] {
+  return [
+    center.name,
+    center.shortName,
+    ...center.staff.flatMap((s) => [s.name, s.name.split(" ")[0]]),
+    ...(family ? [family.parentName, family.parentFirstName, ...family.children.map((c) => c.firstName)] : []),
+  ];
+}
+
 /** The family's own profile, for prompts. Other families are never included. */
 export function renderFamily(center: Center, family: Family | undefined, today: string): string {
   if (!family) return "The person asking is a visitor, not an enrolled family. No child or account details are available.";

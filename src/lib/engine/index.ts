@@ -28,7 +28,7 @@ import {
   type ComposeContext,
   type Composed,
 } from "./compose";
-import { familyLedgerText, handbookSource, savedSource, tableBlocks, tableSource } from "./context";
+import { familyLedgerText, handbookSource, keepNames, savedSource, tableBlocks, tableSource } from "./context";
 import { fixedReply, handoffSpec, handoffText, newHandoff, etaPhrase, type HandoffKind } from "./handoff";
 import { answerFromHandbook, checkClaims } from "./handbook";
 import { verifyAnswer } from "./verify";
@@ -95,6 +95,8 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     bookedTours: bookings.map((b) => b.slotId),
   };
   const history = req.history ?? [];
+  // The test box never reads or writes the cache, so it always shows a fresh answer.
+  const noCache = req.noCache || req.dryRun;
   const lanes: Lane[] = [];
   const models = new Set<string>();
   let tokens = 0;
@@ -146,20 +148,14 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
       tokens,
       afterHours: realLocal.weekday > 5 || minute < oh * 60 + om || minute >= ch * 60 + cm,
     };
-    await appendLog(log);
+    if (!req.dryRun) await appendLog(log);
     if (cacheKey && (draft.mode === "answer" || draft.mode === "declined" || draft.mode === "clarify")) {
       await setCached(cacheKey, reply);
     }
     return reply;
   };
 
-  // Names that must come back from translation exactly as written.
-  const names = [
-    center.name,
-    center.shortName,
-    ...center.staff.flatMap((s) => [s.name, s.name.split(" ")[0]]),
-    ...(family ? [family.parentName, family.parentFirstName, ...family.children.map((c) => c.firstName)] : []),
-  ];
+  const names = keepNames(center, family);
   const localize = async (text: string, language: Lang) => {
     if (language === "en") return text;
     const started = Date.now();
@@ -183,7 +179,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   }): Promise<Draft> => {
     const spec = handoffSpec(args.kind);
     const h = newHandoff({ kind: args.kind, center, family, child: args.child, text: args.messageText, language: args.language, now: realNow, topic: args.topic });
-    await addHandoff(h);
+    if (!req.dryRun) await addHandoff(h);
     lanes.push("person");
     const body = args.fixedText ?? (await localize(args.englishText ?? "", args.language));
     const text = args.partialLocalized ? `${args.partialLocalized.trim()} ${body}` : body;
@@ -208,7 +204,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     lanes.push("quick_facts");
     const composed = chipCompose(ctx, req.chip);
     const language = family?.preferredLanguage ?? "en";
-    const cacheKey = req.noCache ? undefined : `${BUILD}:${center.id}:${family?.id ?? "visitor"}:${today}:chip:${req.chip}`;
+    const cacheKey = noCache ? undefined : `${BUILD}:r${center.revision ?? 0}:${center.id}:${family?.id ?? "visitor"}:${today}:chip:${req.chip}`;
     const cached = cacheKey ? await getCached<AskReply>(cacheKey) : null;
     if (cached) return { ...cached, cached: true, ms: Date.now() - started };
     const text = await localize(composed.text, language);
@@ -232,7 +228,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   }
 
   /* 3. Same question today: reuse the answer. */
-  const cacheKey = history.length || req.noCache ? undefined : `${BUILD}:${center.id}:${family?.id ?? "visitor"}:${today}:${hashText(message.toLowerCase().replace(/\s+/g, " "))}`;
+  const cacheKey = history.length || noCache ? undefined : `${BUILD}:r${center.revision ?? 0}:${center.id}:${family?.id ?? "visitor"}:${today}:${hashText(message.toLowerCase().replace(/\s+/g, " "))}`;
   if (cacheKey) {
     const cached = await getCached<AskReply>(cacheKey);
     if (cached) {
@@ -344,7 +340,7 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
     case "waitlist": composed = composeWaitlist(ctx, u.program); break;
     case "tour": composed = composeTour(ctx, u.date); break;
     case "billing": composed = composeBilling(ctx, u.amount); break;
-    case "events": composed = composeEvents(ctx, u.date); break;
+    case "events": composed = composeEvents(ctx, u.date, message); break;
     case "child_day":
       if (enrolled) {
         const { text } = handoffText("child_day", center, now, child);

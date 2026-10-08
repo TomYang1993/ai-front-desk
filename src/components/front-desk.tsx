@@ -12,7 +12,7 @@ import { formatSlot, listDays } from "@/lib/format";
 import { Maple, type MapleState } from "./maple";
 import { DeskScene } from "./desk-scene";
 import { InfoCards, type Requests } from "./info-cards";
-import { ChatHeader, ChatThread, Composer, type ChatItem } from "./chat";
+import { ChatHeader, ChatThread, Composer, type ChatItem, type StaffReply } from "./chat";
 import type { ActionResult } from "./reply-card";
 
 interface Saved {
@@ -164,8 +164,8 @@ export function FrontDesk({ view }: { view: ParentView }) {
 
   /** Staff replies to this chat's handoffs, shown right after the handoff. */
   const staffReplies = useMemo(() => {
-    const map = new Map<string, { by: string; text: string }>();
-    for (const h of requests?.handoffs ?? []) if (h.reply) map.set(h.id, { by: h.reply.by, text: h.reply.text });
+    const map = new Map<string, StaffReply>();
+    for (const h of requests?.handoffs ?? []) if (h.reply) map.set(h.id, { by: h.reply.by, text: h.reply.text, original: h.reply.original });
     return map;
   }, [requests]);
 

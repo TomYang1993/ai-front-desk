@@ -8,7 +8,7 @@ import type { Strings } from "@/lib/i18n";
 import { formatSlot, listDays } from "@/lib/format";
 
 export interface Requests {
-  handoffs: { id: string; createdAt: string; text: string; status: "open" | "answered"; to: string; staffName?: string; reply: { text: string; by: string; at: string } | null }[];
+  handoffs: { id: string; createdAt: string; text: string; status: "open" | "answered"; to: string; staffName?: string; reply: { text: string; original: string | null; by: string; at: string } | null }[];
   absences: { id: string; childName: string; dates: string[] }[];
   lunches: { id: string; childName: string; item: string }[];
   tours: { id: string; slotId: string; name: string }[];

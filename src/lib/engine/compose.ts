@@ -414,7 +414,16 @@ export function composeBilling(ctx: ComposeContext, amount: number | null): Comp
   return answer("billing", `${plan} ${balanceLine}`, src);
 }
 
-export function composeEvents(ctx: ComposeContext, date: string | null): Composed | null {
+/** Words that make an events question general, such as "what's coming up?" */
+const GENERAL_EVENTS = /coming up|upcoming|any (events|special)|what'?s (happening|on)|this (week|month)|calendar|events/i;
+
+/**
+ * Events from the calendar. Without a date, answers a general question with
+ * what's coming up, or a question naming an event on the calendar. A
+ * question about anything else, like "When is pajama day?", returns null so
+ * the handbook gets a chance instead of an unrelated list.
+ */
+export function composeEvents(ctx: ComposeContext, date: string | null, message = ""): Composed | null {
   const { center, today } = ctx;
   const src = [tableSource(center, "calendar")];
   if (date) {
@@ -423,6 +432,14 @@ export function composeEvents(ctx: ComposeContext, date: string | null): Compose
     if (!events.length) return null;
     return answer("events", events.map((e) => `${e.name}, ${formatDate(e.date)}${e.endDate ? ` through ${formatDate(e.endDate)}` : ""}. ${e.note}`).join(" "), src);
   }
+  const lower = message.toLowerCase();
+  const named = center.events.filter(
+    (e) => (e.endDate ?? e.date) >= today && e.name.toLowerCase().split(/[^a-zà-ÿ]+/).some((w) => w.length >= 5 && lower.includes(w)),
+  );
+  if (named.length) {
+    return answer("events", named.map((e) => `${e.name}, ${formatDate(e.date)}${e.endDate ? ` through ${formatDate(e.endDate)}` : ""}. ${e.note}`).join(" "), src);
+  }
+  if (!GENERAL_EVENTS.test(message)) return null;
   const upcoming = center.events.filter((e) => (e.endDate ?? e.date) >= today && e.date <= addDays(today, 60));
   if (!upcoming.length) return null;
   return answer("events", `Coming up at ${center.shortName}: ${upcoming.map((e) => `${e.name}, ${formatDate(e.date)}${e.endDate ? ` through ${formatDate(e.endDate)}` : ""}`).join("; ")}.`, src);

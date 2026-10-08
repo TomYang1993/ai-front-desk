@@ -42,3 +42,16 @@ export async function resolveParent(body: { centerId?: CenterId; familyId?: stri
   if (session || process.env.VERCEL_ENV === "production" || !body.centerId) return null;
   return { centerId: body.centerId, familyId: body.familyId ?? null };
 }
+
+/**
+ * Which center a console request is for. A signed-in director always gets
+ * their own center. Outside production, a request with no session may name
+ * a center, acting as its director, so the scorecard can walk the
+ * "answer once" loop.
+ */
+export async function resolveDirector(body: { centerId?: CenterId | null }): Promise<{ centerId: CenterId; staffId: string | null } | null> {
+  const session = await getSession();
+  if (session?.role === "director") return { centerId: session.centerId, staffId: session.staffId };
+  if (session || process.env.VERCEL_ENV === "production" || !body.centerId) return null;
+  return { centerId: body.centerId, staffId: null };
+}

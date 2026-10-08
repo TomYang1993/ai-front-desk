@@ -1,0 +1,226 @@
+import "server-only";
+import type { CenterId, Handoff, Lang, QuestionLog, TableId, Topic } from "@/content";
+import { getCenter, getFamilies, getFeedback, getHandbook, getHandoffs, getLogs } from "./data";
+import { formatDate, formatTime, hoursLine, upcomingClosures } from "./facts/calendar";
+import { menuFor } from "./facts/menu";
+import { usd } from "./facts/money";
+import { toEnglish } from "./engine/drafts";
+import { MINUTES_PER_ANSWER } from "./console-constants";
+import { zonedParts } from "./time";
+
+/**
+ * Everything the director console shows, for one center. Built on the
+ * server from the shared store, so it always matches what parents see.
+ */
+
+const DAY = 24 * 3600 * 1000;
+
+export interface InboxItem {
+  id: string;
+  createdAt: string;
+  from: string;
+  familyId: string | null;
+  childName: string | null;
+  roomName: string | null;
+  language: Lang;
+  text: string;
+  /** The parent's words in English, when they wrote in another language. */
+  textEnglish: string | null;
+  reason: string;
+  priority: "urgent" | "normal";
+  to: "director" | "teacher";
+  toName: string;
+  status: "open" | "answered";
+  reply: { text: string; by: string; at: string; translated: string | null } | null;
+  savedAnswerId: string | null;
+}
+
+export interface Overview {
+  questions: number;
+  questionsBefore: number;
+  handledShare: number;
+  handledShareBefore: number;
+  minutesSaved: number;
+  afterHours: number;
+  openHandoffs: number;
+  urgentOpen: number;
+  weeks: { label: string; byMaple: number; byStaff: number }[];
+  topics: { topic: Topic; label: string; count: number; before: number }[];
+  languages: { language: Lang; count: number }[];
+  /** Questions Maple couldn't answer, grouped when families asked the same thing. */
+  gaps: { id: string; text: string; textEnglish: string | null; at: string; count: number; status: "open" | "answered"; saved: boolean }[];
+  notHelpful: { id: string; text: string; textEnglish: string | null; at: string; topic: string }[];
+}
+
+export interface KnowledgeView {
+  sections: { id: string; title: string; body: string; updatedAt: string; updatedBy: string; uses: number }[];
+  saved: { id: string; question: string; answer: string; keywords: string[]; savedBy: string; savedAt: string; uses: number; fromHandoffId: string | null }[];
+  tables: { id: TableId; label: string; updatedAt: string; updatedBy: string; uses: number; lines: string[] }[];
+}
+
+export interface ConsoleView {
+  center: { id: CenterId; name: string; shortName: string; city: string; state: string };
+  me: { name: string; firstName: string };
+  inbox: InboxItem[];
+  overview: Overview;
+  knowledge: KnowledgeView;
+  families: { id: string; label: string; language: Lang }[];
+}
+
+export const TOPIC_LABEL: Record<Topic, string> = {
+  hours: "Hours", closures: "Closures", weather: "Weather", illness: "Illness", medication: "Medication",
+  meals: "Meals", allergies: "Allergies", tuition: "Tuition", billing: "Billing", enrollment: "Enrollment",
+  tours: "Tours", pickup: "Pickup", absence: "Absences", schedule: "Daily schedule", toileting: "Toileting",
+  clothing: "Clothing", celebrations: "Celebrations", outdoor: "Outdoor play", events: "Events", custody: "Custody",
+  behavior: "Behavior", incident: "Incidents", child_day: "My child's day", other: "Other",
+};
+
+const TABLE_LABEL: Record<TableId, string> = { calendar: "Calendar and closures", menu: "Menu", tuition: "Tuition and rooms", tours: "Tour times", hours: "Hours" };
+const GAP_REASONS = new Set(["Not covered by the handbook", "Maple wasn't sure"]);
+const handled = (l: QuestionLog) => l.outcome === "answered" || l.outcome === "declined";
+
+export async function getConsoleView(centerId: CenterId, staffId: string | null, now = new Date()): Promise<ConsoleView> {
+  const [center, families, sections, handoffs, logs, feedback] = await Promise.all([
+    getCenter(centerId),
+    getFamilies(centerId),
+    getHandbook(centerId),
+    getHandoffs(centerId),
+    getLogs(centerId),
+    getFeedback(centerId),
+  ]);
+  const me = center.staff.find((s) => s.id === staffId) ?? center.staff.find((s) => s.role === "director")!;
+  const t = now.getTime();
+  const inWindow = (iso: string, fromDaysAgo: number, toDaysAgo: number) => {
+    const at = new Date(iso).getTime();
+    return at > t - fromDaysAgo * DAY && at <= t - toDaysAgo * DAY;
+  };
+  const week = logs.filter((l) => inWindow(l.askedAt, 7, 0));
+  const weekBefore = logs.filter((l) => inWindow(l.askedAt, 14, 7));
+
+  /* Inbox: open first, urgent first, then whoever has waited longest. Recent answered ones follow. */
+  const open = handoffs.filter((h) => h.status === "open").sort((a, b) => (a.priority === b.priority ? a.createdAt.localeCompare(b.createdAt) : a.priority === "urgent" ? -1 : 1));
+  const answered = handoffs.filter((h) => h.status === "answered").sort((a, b) => (b.reply?.at ?? b.createdAt).localeCompare(a.reply?.at ?? a.createdAt)).slice(0, 25);
+  const gapHandoffs = handoffs.filter((h) => GAP_REASONS.has(h.reason) && inWindow(h.createdAt, 28, 0)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  // Gap links open the message in the inbox, so every gap's latest message is listed there too.
+  const shown = [...open, ...answered];
+  const listed = new Set(shown.map((h) => h.id));
+  for (const h of gapHandoffs) {
+    if (listed.has(h.id)) continue;
+    shown.push(h);
+    listed.add(h.id);
+  }
+  const down = logs.filter((l) => (l.feedback ?? feedback[l.id]) === "down").sort((a, b) => b.askedAt.localeCompare(a.askedAt)).slice(0, 8);
+  const english = await withTimeout(
+    toEnglish([...shown.filter((h) => h.language !== "en").map((h) => h.text), ...down.filter((l) => l.language !== "en").map((l) => l.text)]),
+    new Map<string, string>(),
+  );
+  const savedFrom = new Map(center.savedAnswers.filter((a) => a.fromHandoffId).map((a) => [a.fromHandoffId!, a.id]));
+
+  const inboxItem = (h: Handoff): InboxItem => {
+    const family = h.familyId ? families.find((f) => f.id === h.familyId) : undefined;
+    const child = family?.children.find((c) => c.id === h.childId) ?? (family?.children.length === 1 ? family.children[0] : undefined);
+    const room = child ? center.rooms.find((r) => r.id === child.roomId) : undefined;
+    const teacher = h.to === "teacher" && room ? center.staff.find((s) => s.id === room.leadTeacherId) : undefined;
+    return {
+      id: h.id,
+      createdAt: h.createdAt,
+      from: family?.parentName ?? h.askedBy ?? "A parent",
+      familyId: family?.id ?? null,
+      childName: child?.firstName ?? null,
+      roomName: room?.name ?? null,
+      language: h.language,
+      text: h.text,
+      textEnglish: h.language === "en" ? null : english.get(h.text) ?? null,
+      reason: h.reason,
+      priority: h.priority,
+      to: h.to,
+      toName: teacher?.name ?? (h.to === "teacher" ? "the lead teacher" : me.name),
+      status: h.status,
+      reply: h.reply ? { text: h.reply.text, by: h.reply.by, at: h.reply.at, translated: h.reply.translated?.text ?? null } : null,
+      savedAnswerId: savedFrom.get(h.id) ?? null,
+    };
+  };
+
+  /* Overview */
+  const share = (list: QuestionLog[]) => (list.length ? list.filter(handled).length / list.length : 0);
+  const weeks = Array.from({ length: 8 }, (_, i) => {
+    const from = 7 * (8 - i);
+    const list = logs.filter((l) => inWindow(l.askedAt, from, from - 7));
+    const start = zonedParts(new Date(t - from * DAY + DAY), center.timeZone).date;
+    return { label: formatDate(start, false).replace(/^(\w{3})\w*/, "$1"), byMaple: list.filter(handled).length, byStaff: list.filter((l) => !handled(l)).length };
+  });
+  const count = <K extends string>(list: QuestionLog[], key: (l: QuestionLog) => K) => list.reduce((m, l) => m.set(key(l), (m.get(key(l)) ?? 0) + 1), new Map<K, number>());
+  const topicNow = count(week, (l) => l.topic);
+  const topicBefore = count(weekBefore, (l) => l.topic);
+  const languages = count(week, (l) => l.language);
+  const gapGroups = new Map<string, Handoff[]>();
+  for (const h of gapHandoffs) {
+    const key = (english.get(h.text) ?? h.text).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, "").trim();
+    gapGroups.set(key, [...(gapGroups.get(key) ?? []), h]);
+  }
+
+  /* Knowledge, with how often each source was used this week */
+  const uses = (id: string) => week.filter((l) => l.sources.includes(id)).length;
+  const today = zonedParts(now, center.timeZone).date;
+  const day = menuFor(center, today);
+  const tableLines: Record<TableId, string[]> = {
+    hours: [hoursLine(center), `Office answers messages ${formatTime(center.officeHours.start)} to ${formatTime(center.officeHours.end)}`],
+    calendar: upcomingClosures(center, today, 3).map((c) => `${c.name}: ${formatDate(c.date)}${c.endDate ? ` to ${formatDate(c.endDate)}` : ""}`),
+    menu: day
+      ? center.meals === "provided"
+        ? [`Today's lunch: ${day.lunch?.name}`, `${center.menu.weeks.length}-week menu cycle`]
+        : [`Today's backup lunch: ${day.backupLunch?.main.name}, or ${day.backupLunch?.alternative.name}`, `${center.menu.weeks.length}-week menu cycle`]
+      : [`${center.menu.weeks.length}-week menu cycle`],
+    tuition: center.rooms.map((r) => `${r.name} (${r.ages}): ${usd(r.tuitionMonthly)} a month, waitlist ${r.waitlist}`),
+    tours: center.tours.map((x) => `${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"][x.weekday - 1]} at ${formatTime(x.time)}`),
+  };
+
+  return {
+    center: { id: center.id, name: center.name, shortName: center.shortName, city: center.city, state: center.state },
+    me: { name: me.name, firstName: me.name.split(" ")[0] },
+    inbox: shown.map(inboxItem),
+    overview: {
+      questions: week.length,
+      questionsBefore: weekBefore.length,
+      handledShare: share(week),
+      handledShareBefore: share(weekBefore),
+      minutesSaved: week.filter(handled).length * MINUTES_PER_ANSWER,
+      afterHours: week.filter((l) => l.afterHours && handled(l)).length,
+      openHandoffs: open.length,
+      urgentOpen: open.filter((h) => h.priority === "urgent").length,
+      weeks,
+      topics: [...topicNow.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([topic, n]) => ({ topic, label: TOPIC_LABEL[topic], count: n, before: topicBefore.get(topic) ?? 0 })),
+      languages: [...languages.entries()].sort((a, b) => b[1] - a[1]).map(([language, n]) => ({ language, count: n })),
+      gaps: [...gapGroups.values()]
+        .map((list) => {
+          const latest = list[0];
+          return {
+            id: latest.id,
+            text: latest.text,
+            textEnglish: latest.language === "en" ? null : english.get(latest.text) ?? null,
+            at: latest.createdAt,
+            count: list.length,
+            status: list.some((h) => h.status === "open") ? ("open" as const) : ("answered" as const),
+            saved: list.some((h) => savedFrom.has(h.id)),
+          };
+        })
+        .sort((a, b) => b.count - a.count || b.at.localeCompare(a.at))
+        .slice(0, 8),
+      notHelpful: down.map((l) => ({ id: l.id, text: l.text, textEnglish: l.language === "en" ? null : english.get(l.text) ?? null, at: l.askedAt, topic: TOPIC_LABEL[l.topic] })),
+    },
+    knowledge: {
+      sections: sections.map((s) => ({ id: s.id, title: s.title, body: s.body, updatedAt: s.updatedAt, updatedBy: s.updatedBy, uses: uses(`handbook:${s.id}`) })),
+      saved: [...center.savedAnswers].reverse().map((a) => ({ id: a.id, question: a.question, answer: a.answer, keywords: a.keywords, savedBy: a.savedBy, savedAt: a.savedAt, uses: uses(`saved:${a.id}`), fromHandoffId: a.fromHandoffId ?? null })),
+      tables: (Object.keys(TABLE_LABEL) as TableId[]).map((id) => ({ id, label: TABLE_LABEL[id], ...center.tableUpdates[id], uses: uses(`table:${id}`), lines: tableLines[id] })),
+    },
+    families: families.map((f) => ({ id: f.id, label: `${f.parentName} (${f.children.map((c) => c.firstName).join(" and ")})`, language: f.preferredLanguage })),
+  };
+}
+
+/** The console never waits long on the AI; untranslated text is fine. */
+function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 5000): Promise<T> {
+  return Promise.race([promise, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))]);
+}

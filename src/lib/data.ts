@@ -1,7 +1,7 @@
 import "server-only";
 import { centers, families, seedHandbook } from "@/content";
 import { generateHistory, HISTORY_VERSION } from "@/content/history";
-import type { Center, CenterId, Family, HandbookSection, Handoff, QuestionLog } from "@/content";
+import type { Center, CenterId, Family, HandbookSection, Handoff, QuestionLog, SavedAnswer } from "@/content";
 import { getStore } from "./store";
 
 /**
@@ -122,6 +122,35 @@ export async function getSeededAt(): Promise<string | null> {
 export async function addHandoff(handoff: Handoff) {
   const all = await getHandoffs(handoff.centerId);
   await saveHandoffs(handoff.centerId, [...all, handoff]);
+}
+
+/** Changes one handoff in place. Returns the updated handoff, or null if it doesn't exist. */
+export async function updateHandoff(centerId: CenterId, id: string, change: (h: Handoff) => Handoff): Promise<Handoff | null> {
+  const all = await getHandoffs(centerId);
+  const index = all.findIndex((h) => h.id === id);
+  if (index < 0) return null;
+  const updated = change(all[index]);
+  all[index] = updated;
+  await saveHandoffs(centerId, all);
+  return updated;
+}
+
+/* Knowledge edits from the console. Each bumps the center's revision, so cached answers start fresh. */
+
+export async function saveSavedAnswers(centerId: CenterId, savedAnswers: SavedAnswer[]) {
+  const center = await getCenter(centerId);
+  await saveCenter({ ...center, savedAnswers, revision: (center.revision ?? 0) + 1 });
+}
+
+export async function updateHandbookSection(centerId: CenterId, id: string, change: { title: string; body: string; updatedBy: string; updatedAt: string }) {
+  const sections = await getHandbook(centerId);
+  const index = sections.findIndex((s) => s.id === id);
+  if (index < 0) return null;
+  sections[index] = { ...sections[index], ...change };
+  await saveHandbook(centerId, sections);
+  const center = await getCenter(centerId);
+  await saveCenter({ ...center, revision: (center.revision ?? 0) + 1 });
+  return sections[index];
 }
 
 export interface TourBooking {

@@ -1,11 +1,38 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
-import { ChevronDown, RotateCcw, SendHorizontal } from "lucide-react";
+import { useState, type ReactNode, type RefObject } from "react";
+import { ChevronDown, Languages, RotateCcw, SendHorizontal } from "lucide-react";
 import type { Lang } from "@/content/types";
 import type { Action, AskReply, ChipId } from "@/lib/engine/types";
 import type { Strings } from "@/lib/i18n";
 import { ReplyCard, type ActionResult } from "./reply-card";
+
+/** A staff reply to one of the family's handoffs, in their language when it isn't English. */
+export interface StaffReply {
+  by: string;
+  text: string;
+  original: string | null;
+}
+
+/** Staff appear as people, never as Maple, so it's always clear who is AI and who is human. */
+function StaffBubble({ reply, s }: { reply: StaffReply; s: Strings }) {
+  const [showOriginal, setShowOriginal] = useState(false);
+  return (
+    <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] leading-relaxed shadow-sm">
+      <p className="mb-1 text-xs font-bold text-amber-900">{reply.by}</p>
+      <p className="whitespace-pre-line">{showOriginal && reply.original ? reply.original : reply.text}</p>
+      {reply.original && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-900/70">
+          <Languages size={13} aria-hidden />
+          {s.board.translated} ·{" "}
+          <button onClick={() => setShowOriginal((o) => !o)} className="font-semibold underline-offset-2 hover:underline">
+            {showOriginal ? s.board.showTranslation : s.board.showOriginal}
+          </button>
+        </p>
+      )}
+    </div>
+  );
+}
 
 export type ChatItem =
   | { kind: "greeting"; id: string }
@@ -74,7 +101,7 @@ export function ChatThread({
   lang: Lang;
   done: Record<string, Record<number, ActionResult>>;
   feedback: Record<string, "up" | "down">;
-  staffReplies: Map<string, { by: string; text: string }>;
+  staffReplies: Map<string, StaffReply>;
   pending: boolean;
   statusText: string;
   scroller: RefObject<HTMLDivElement | null>;
@@ -121,12 +148,7 @@ export function ChatThread({
               onFeedback={(v) => onFeedback(item.id, item.reply.logId, v)}
               dish={dish}
             />
-            {staff && (
-              <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] leading-relaxed shadow-sm">
-                <p className="mb-1 text-xs font-bold text-amber-900">{staff.by}</p>
-                {staff.text}
-              </div>
-            )}
+            {staff && <StaffBubble reply={staff} s={s} />}
           </div>
         );
       })}
