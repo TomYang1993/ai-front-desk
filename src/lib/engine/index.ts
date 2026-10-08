@@ -298,7 +298,11 @@ export async function ask(req: AskRequest): Promise<AskReply & { checks?: string
   }
 
   /* 6. Saved answers from staff. */
-  const saved = u.savedAnswerId ? center.savedAnswers.find((s) => s.id === u.savedAnswerId) : undefined;
+  const picked = u.savedAnswerId ? center.savedAnswers.find((s) => s.id === u.savedAnswerId) : undefined;
+  // The intake model sometimes reaches for an unrelated saved answer, such as parking for a tuition question.
+  // In English, a saved answer must share one of its keywords with the message; other languages trust the model.
+  const lower = message.toLowerCase();
+  const saved = picked && (language !== "en" || picked.keywords.some((k) => lower.includes(k.toLowerCase()))) ? picked : undefined;
   if (saved) {
     return finish({ mode: "answer", text: await localize(saved.answer, language), language, calm: false, topic: "other", sources: [savedSource(saved)], actions: [] }, message, cacheKey);
   }

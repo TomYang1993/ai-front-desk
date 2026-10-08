@@ -92,6 +92,8 @@ Known gaps:
 - **Backup lunch cutoff.** `/api/actions` now enforces the 10:30 am cutoff (`BACKUP_LUNCH_CUTOFF` in `facts/menu.ts`, shared with the engine), with code `lunch_closed`. The app shows specific messages for both codes. `/api/actions` takes the same `demoNow` test clock as `/api/ask` outside production.
 - **Reset protection.** `POST /api/admin/reset` needs a signed-in director in production; locally it stays open.
 - **The 404 on first load** no longer happens on a fresh load. It was most likely the old family-picker route.
+- **Saved-answer guard.** At the scorecard's test time, the Groq intake model answered "How much is infant care?" with the saved parking answer (scenario 9). In English, a saved answer is now used only when the message contains one of its keywords; other languages still trust the model, so the Spanish "answer once" path isn't blocked.
+- **Scorecard** on October 7: 28 passed, scenario 15 pending until Phase 4. Scenario 26 fails only because of local test data: a backup lunch ordered for Priya with the test clock is now her newest $8 charge. `POST /api/admin/reset` clears it, but the local data is shared with other sessions, so it wasn't reset.
 - **Checked at phone size:** Rosa's Spanish home and the "show original" toggle; logging an absence in Spanish, including a stale button being refused; Priya's backup-lunch button and the after-cutoff message. The successful lunch order was checked with curl and the test clock.
 
 ## Next steps
