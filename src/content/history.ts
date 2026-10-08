@@ -83,14 +83,16 @@ const PINON_TEMPLATES: Template[] = [
 const QUAIL_TEMPLATES: Template[] = [
   { topic: "closures", weight: 7, route: "lookup", sources: ["table:calendar"], texts: {
     en: ["Are you open on Veterans Day?", "Are you closed the Friday after Thanksgiving?", "When is winter break?", "Are you open on Indigenous Peoples' Day?"],
-    zh: ["感恩节后的星期五你们开门吗？", "寒假是什么时候？"] } },
+    zh: ["感恩节后的星期五你们开门吗？", "寒假是什么时候？"],
+    hi: ["क्या आप वेटरन्स डे पर खुले हैं?", "सर्दियों की छुट्टी कब है?"] } },
   { topic: "closures", weight: 0.3, route: "lookup", sources: ["table:calendar"], season: { from: "2026-08-24", to: "2026-09-07", boost: 25 }, texts: { en: ["Are you open on Labor Day?"] } },
   { topic: "hours", weight: 3, route: "facts", sources: ["table:hours"], texts: { en: ["What time do you open?", "What time do you close?"] } },
   { topic: "illness", weight: 8, route: "lookup", sources: ["handbook:illness"], season: { from: "2026-09-14", to: "2026-12-31", boost: 1.6 }, texts: {
     en: ["Temp of 100.5 this morning but acting normal. Ok to come?", "She threw up twice last night. Can she come today?", "Fever broke yesterday at noon. Can he come tomorrow?", "Runny nose and a cough, no fever. Is that ok?"],
-    zh: ["孩子昨晚发烧了，今天可以去吗？", "今天早上体温100.2，可以上学吗？"] } },
+    zh: ["孩子昨晚发烧了，今天可以去吗？", "今天早上体温100.2，可以上学吗？"],
+    hi: ["कल रात बुखार था, क्या आज भेज सकते हैं?", "सुबह तापमान 100.4 था, क्या आज आ सकता है?"] } },
   { topic: "meals", weight: 4, route: "facts", sources: ["table:menu"], texts: { en: ["What's the backup lunch today?"] } },
-  { topic: "meals", weight: 4, route: "lookup", sources: ["handbook:meals", "table:menu"], texts: { en: ["I forgot to pack lunch. Can you give him a backup lunch?", "Forgot her lunch today, sorry! Is there a dairy-free option?"], zh: ["今天忘了带午饭，可以买备用午餐吗？"] } },
+  { topic: "meals", weight: 4, route: "lookup", sources: ["handbook:meals", "table:menu"], texts: { en: ["I forgot to pack lunch. Can you give him a backup lunch?", "Forgot her lunch today, sorry! Is there a dairy-free option?"], zh: ["今天忘了带午饭，可以买备用午餐吗？"], hi: ["आज लंच पैक करना रह गया, क्या बैकअप लंच मिल सकता है?"] } },
   { topic: "meals", weight: 1, route: "handbook", sources: ["handbook:meals"], texts: { en: ["Can you heat up leftovers for lunch?"] } },
   { topic: "allergies", weight: 2, route: "handbook", sources: ["handbook:allergies"], texts: { en: ["Is the center nut-free?", "How do you handle a sesame allergy at snack?"] } },
   { topic: "tuition", weight: 5, route: "lookup", visitor: true, sources: ["handbook:tuition", "table:tuition"], texts: {
@@ -98,10 +100,10 @@ const QUAIL_TEMPLATES: Template[] = [
     zh: ["婴儿班学费多少？"] } },
   { topic: "enrollment", weight: 4, route: "lookup", visitor: true, sources: ["handbook:enrollment", "table:rooms"], texts: { en: ["How long is the infant waitlist?", "We're due in March. When should we join the waitlist?", "Is the waitlist fee refundable?"] } },
   { topic: "tours", weight: 3, route: "lookup", visitor: true, sources: ["table:tours"], texts: { en: ["Can I book a tour?", "Do you have a tour this Friday?"] } },
-  { topic: "pickup", weight: 2, route: "director", sources: ["handbook:pickup"], texts: { en: ["Our nanny is picking up today. She's not on the list.", "My parents are visiting from India. Can they pick up?"] } },
-  { topic: "absence", weight: 3, route: "lookup", sources: ["handbook:attendance"], texts: { en: ["He'll be out tomorrow, we have a doctor's appointment.", "We're on vacation next week."], zh: ["孩子明天请假。"] } },
+  { topic: "pickup", weight: 2, route: "director", sources: ["handbook:pickup"], texts: { en: ["Our nanny is picking up today. She's not on the list.", "My parents are visiting from India. Can they pick up?"], hi: ["मेरे माता-पिता भारत से आए हैं, क्या वे बच्चे को ले जा सकते हैं?"] } },
+  { topic: "absence", weight: 3, route: "lookup", sources: ["handbook:attendance"], texts: { en: ["He'll be out tomorrow, we have a doctor's appointment.", "We're on vacation next week."], zh: ["孩子明天请假。"], hi: ["बच्चा कल नहीं आएगा, डॉक्टर के पास जाना है।"] } },
   { topic: "schedule", weight: 2, route: "handbook", sources: ["handbook:schedule"], texts: { en: ["What time is nap?", "When is morning snack?"] } },
-  { topic: "outdoor", weight: 3, route: "handbook", sources: ["handbook:weather"], texts: { en: ["Do the kids go outside when it rains?", "Does she need rain pants or just boots?"] } },
+  { topic: "outdoor", weight: 3, route: "handbook", sources: ["handbook:weather"], texts: { en: ["Do the kids go outside when it rains?", "Does she need rain pants or just boots?"], hi: ["क्या बारिश में बच्चे बाहर खेलने जाते हैं?"] } },
   { topic: "outdoor", weight: 0.5, route: "handbook", sources: ["handbook:weather"], season: { from: "2026-08-15", to: "2026-09-20", boost: 14 }, texts: {
     en: ["Is the class going outside with the smoke today?", "At what AQI do you keep kids inside?", "My son has asthma. Can he stay in when the air is bad?"],
     zh: ["今天空气不好，孩子们会出去玩吗？"] } },
@@ -110,13 +112,13 @@ const QUAIL_TEMPLATES: Template[] = [
   { topic: "toileting", weight: 1.5, route: "handbook", sources: ["handbook:toileting"], texts: { en: ["When do you start potty training?"] } },
   { topic: "medication", weight: 1, route: "handbook", sources: ["handbook:medication"], texts: { en: ["Can you give her allergy medicine at lunch?"] } },
   { topic: "celebrations", weight: 1.5, route: "handbook", sources: ["handbook:celebrations"], texts: { en: ["Can I bring cupcakes for her birthday?", "How do you celebrate Lunar New Year?"] } },
-  { topic: "child_day", weight: 3, route: "teacher", sources: [], texts: { en: ["Did he eat his lunch today?", "Was she ok after drop-off?"], zh: ["孩子今天午睡了吗？"] } },
+  { topic: "child_day", weight: 3, route: "teacher", sources: [], texts: { en: ["Did he eat his lunch today?", "Was she ok after drop-off?"], zh: ["孩子今天午睡了吗？"], hi: ["क्या बच्चे ने आज खाना खाया?"] } },
   { topic: "behavior", weight: 0.7, route: "teacher", sources: [], texts: { en: ["He's been biting at home. Is it happening at school?"] } },
   { topic: "incident", weight: 0.6, route: "director", sources: [], texts: { en: ["There's a scratch on his arm. Did something happen?"] } },
   { topic: "billing", weight: 1.5, route: "lookup", sources: ["table:billing"], texts: { en: ["Why was I charged $8?", "What's my balance?"] } },
   { topic: "billing", weight: 1, route: "handbook", sources: ["handbook:tuition"], texts: { en: ["Is tuition reduced if we're on vacation?", "How much is the late pickup fee?"] } },
   { topic: "other", weight: 1.5, route: "handbook_gap", sources: [], texts: { en: ["Is there a discount for twins?", "Do you run a summer camp for 5-year-olds?", "Can our nanny do drop-off on Tuesdays?"] } },
-  { topic: "other", weight: 1.5, route: "saved", sources: ["saved:qr-sa-parking"], texts: { en: ["Where should I park at pickup?"], zh: ["接孩子的时候在哪里停车？"] } },
+  { topic: "other", weight: 1.5, route: "saved", sources: ["saved:qr-sa-parking"], texts: { en: ["Where should I park at pickup?"], zh: ["接孩子的时候在哪里停车？"], hi: ["पिकअप के समय गाड़ी कहाँ पार्क करें?"] } },
   { topic: "toileting", weight: 0.8, route: "saved", sources: ["saved:qr-sa-cloth-diapers"], texts: { en: ["Can we use cloth diapers?"] } },
   { topic: "other", weight: 0.3, route: "declined", sources: [], texts: { en: ["Who else in the Orcas has a nut allergy?"] } },
 ];
@@ -136,10 +138,10 @@ const ASKERS: Record<CenterId, string[]> = {
   ],
 };
 
-/** Share of parent messages written in the center's second language. */
-const SECOND_LANGUAGE: Record<CenterId, { lang: Lang; share: number }> = {
-  "pinon-grove": { lang: "es", share: 0.2 },
-  "quail-ridge": { lang: "zh", share: 0.12 },
+/** Share of parent messages written in each of the center's other languages. */
+const OTHER_LANGUAGES: Record<CenterId, { lang: Lang; share: number }[]> = {
+  "pinon-grove": [{ lang: "es", share: 0.2 }],
+  "quail-ridge": [{ lang: "zh", share: 0.12 }, { lang: "hi", share: 0.08 }],
 };
 
 /** Relative chance of a question in each local hour, 0 to 23. */
@@ -214,7 +216,7 @@ export interface GeneratedHistory {
 export function generateHistory(center: Center, now: Date, days = 56): GeneratedHistory {
   const templates = center.id === "pinon-grove" ? PINON_TEMPLATES : QUAIL_TEMPLATES;
   const today = zonedParts(now, center.timeZone).date;
-  const second = SECOND_LANGUAGE[center.id];
+  const others = OTHER_LANGUAGES[center.id];
   const openMin = minutesOf(center.hours.open);
   const closeMin = minutesOf(center.hours.close);
   const logs: QuestionLog[] = [];
@@ -239,8 +241,19 @@ export function generateHistory(center: Center, now: Date, days = 56): Generated
       const template = pickWeighted(rand, templates, (t) =>
         t.season && inRange(date, t.season.from, t.season.to) ? t.weight * t.season.boost : t.weight,
       );
-      const useSecond = Boolean(template.texts[second.lang]) && rand() < second.share * 2;
-      const language: Lang = useSecond ? second.lang : "en";
+      // One draw picks the language. Templates are written in English, and only
+      // some have translations, so the shares are doubled to keep the overall mix.
+      const draw = rand();
+      let edge = 0;
+      let language: Lang = "en";
+      for (const o of others) {
+        if (!template.texts[o.lang]) continue;
+        edge += o.share * 2;
+        if (draw < edge) {
+          language = o.lang;
+          break;
+        }
+      }
       const options = template.texts[language] ?? template.texts.en ?? [];
       const text = options[Math.floor(rand() * options.length)];
 

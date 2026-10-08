@@ -13,7 +13,7 @@ export const HandbookAnswer = z.object({
 });
 export type HandbookAnswer = z.infer<typeof HandbookAnswer>;
 
-const LANG_NAME: Record<Lang, string> = { en: "English", es: "Spanish", zh: "Simplified Chinese" };
+const LANG_NAME: Record<Lang, string> = { en: "English", es: "Spanish", zh: "Simplified Chinese", hi: "Hindi" };
 
 const system = (center: Center, lang: Lang) => `You are Maple, the AI front desk assistant for ${center.name}, a child care center in ${center.city}, ${center.state}. You answer parents using only the center's sources provided.
 

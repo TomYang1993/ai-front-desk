@@ -105,6 +105,10 @@ const SCENARIOS: Scenario[] = [
     expect: { mode: "answer", sources: ["saved:qr-sa-parking"], lanesExclude: ["handbook"] } },
   { id: "30", name: "Closing time", center: "pinon-grove", family: "chavez", message: "What time do you close?",
     expect: { mode: "answer", includes: ["6:00 pm"], lanesExclude: ["handbook"] } },
+  { id: "31", name: "Low fever, Hindi", center: "quail-ridge", family: "sharma", message: "कबीर को आज सुबह 100.6 बुखार था, पर वह बिल्कुल ठीक खेल रहा है। क्या कबीर आज आ सकता है?",
+    expect: { mode: "answer", language: "hi", includes: ["101"] } },
+  { id: "32", name: "Grandparent pickup, Hindi", center: "quail-ridge", family: "sharma", message: "आज कबीर को उसकी दादी लेने आएँगी, क्या यह ठीक है?",
+    expect: { mode: "handoff", language: "hi", includes: ["Hannah"], sources: ["handbook:pickup"] } },
 ];
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";

@@ -3,10 +3,14 @@ import { z } from "zod";
 import type { Lang } from "@/content";
 import { generateJson } from "../llm";
 
-const NAMES: Record<Exclude<Lang, "en">, string> = { es: "Spanish", zh: "Simplified Chinese" };
+const NAMES: Record<Exclude<Lang, "en">, string> = { es: "Spanish", zh: "Simplified Chinese", hi: "Hindi, in Devanagari script" };
 
-/** Matches the interface: Spanish uses the formal "usted". */
-const REGISTER: Record<Exclude<Lang, "en">, string> = { es: ' Address the parent formally, with "usted".', zh: "" };
+/** Matches the interface: formal Spanish, respectful Hindi with Maple speaking as herself. */
+const REGISTER: Record<Exclude<Lang, "en">, string> = {
+  es: ' Address the parent formally, with "usted".',
+  zh: "",
+  hi: ' Address the parent respectfully, with "आप". Maple is female, so use feminine verb forms when she refers to herself.',
+};
 
 /** Every number in the English text, without commas or currency signs. */
 export const numbersIn = (text: string) =>

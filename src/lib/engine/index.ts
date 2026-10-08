@@ -60,6 +60,7 @@ const CHIP_LABEL: Record<ChipId, string> = {
 /** Cheap language guess for paths that must not wait for the AI. */
 export function detectLanguage(text: string): Lang {
   if (/[一-鿿]/.test(text)) return "zh";
+  if (/[\u0900-\u097F]/.test(text)) return "hi";
   if (/[¿¡ñ]|\b(est[aá]|puede|hoy|mañana|niñ[oa]|hij[oa]|por favor|gracias|cu[aá]ndo|qu[eé]|tiene|está|llame|ayuda)\b/i.test(text)) return "es";
   return "en";
 }

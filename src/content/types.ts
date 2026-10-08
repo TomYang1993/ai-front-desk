@@ -4,7 +4,7 @@
  */
 
 export type CenterId = "pinon-grove" | "quail-ridge";
-export type Lang = "en" | "es" | "zh";
+export type Lang = "en" | "es" | "zh" | "hi";
 
 export type Allergen =
   | "dairy"

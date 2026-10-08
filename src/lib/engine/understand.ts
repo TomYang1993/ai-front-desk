@@ -40,7 +40,7 @@ export const SENSITIVE = [
 ] as const;
 
 export const Understanding = z.object({
-  language: z.enum(["en", "es", "zh"]),
+  language: z.enum(["en", "es", "zh", "hi"]),
   intent: z.enum(INTENTS),
   sensitive: z.enum(SENSITIVE),
   childIds: z.array(z.string()),
@@ -68,7 +68,7 @@ export type Understanding = z.infer<typeof Understanding>;
 
 const SYSTEM = `You are the intake step for Maple, the AI front desk of a child care center. You never answer the parent. You read the newest message and return JSON describing it, following these rules exactly.
 
-language: "en", "es" or "zh" for the language of the newest message.
+language: "en", "es", "zh" or "hi" for the language of the newest message. Hindi written in Latin letters (Hinglish) counts as "hi".
 
 intent, pick one:
 - closure: whether the center is open or closed on a day or holiday, or when breaks and closures are.

@@ -6,7 +6,7 @@ import { SignInForm, type DemoCard } from "./signin-form";
 
 export const metadata: Metadata = { title: "Sign in · Maple, the AI front desk" };
 
-const LANG_LABEL = { en: "English", es: "Español", zh: "中文" } as const;
+const LANG_LABEL = { en: "English", es: "Español", zh: "中文", hi: "हिन्दी" } as const;
 
 /** The front door. Sign-in is simulated; the demo accounts sign in with one click. */
 export default function SignInPage() {
