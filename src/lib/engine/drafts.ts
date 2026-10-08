@@ -116,3 +116,45 @@ ${reply}`,
   });
   return r.data;
 }
+
+/**
+ * Groups parents' messages that ask essentially the same thing, so the inbox
+ * can flag a repeated question. Takes English text (translated where needed)
+ * and returns groups of two or more ids. Cached by content; if the AI is
+ * unavailable, falls back to grouping identical wording.
+ */
+export async function groupSimilar(items: { id: string; text: string }[]): Promise<string[][]> {
+  const normalize = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N} ]/gu, "").replace(/\s+/g, " ").trim();
+  const exact = () => {
+    const byText = new Map<string, string[]>();
+    for (const i of items) byText.set(normalize(i.text), [...(byText.get(normalize(i.text)) ?? []), i.id]);
+    return [...byText.values()].filter((g) => g.length > 1);
+  };
+  if (items.length < 2) return [];
+  const key = `similar:v1:${createHash("sha1").update(JSON.stringify(items)).digest("hex")}`;
+  const cached = await getCached<string[][]>(key);
+  if (cached) return cached;
+  try {
+    const r = await generateJson({
+      tier: "small",
+      system: `You group messages that parents sent to a child care center. Put two messages in the same group only if one written answer from the center would fully answer both, even if they're worded differently. Questions about different things stay apart, even on the same topic. Return JSON with one field, "groups": arrays of message ids, only for groups of two or more.`,
+      prompt: JSON.stringify(items),
+      schema: z.object({ groups: z.array(z.array(z.string())) }),
+      temperature: 0,
+    });
+    // Keep only real ids, and put each message in at most one group.
+    const known = new Set(items.map((i) => i.id));
+    const seen = new Set<string>();
+    const groups: string[][] = [];
+    for (const g of r.data.groups) {
+      const ids = [...new Set(g)].filter((id) => known.has(id) && !seen.has(id));
+      if (ids.length < 2) continue;
+      ids.forEach((id) => seen.add(id));
+      groups.push(ids);
+    }
+    await setCached(key, groups, 7 * 24 * 3600);
+    return groups;
+  } catch {
+    return exact();
+  }
+}
