@@ -66,6 +66,7 @@ export function ChatThread({
   onAction,
   onOption,
   onFeedback,
+  dish,
 }: {
   items: ChatItem[];
   greeting: string;
@@ -80,6 +81,7 @@ export function ChatThread({
   onAction: (itemId: string, index: number, action: Action, extra?: { slotId?: string; name?: string }) => void;
   onOption: (text: string) => void;
   onFeedback: (itemId: string, logId: string, value: "up" | "down") => void;
+  dish: (name: string) => string;
 }) {
   return (
     <div ref={scroller} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" aria-live="polite">
@@ -117,6 +119,7 @@ export function ChatThread({
               onOption={onOption}
               feedback={feedback[item.id]}
               onFeedback={(v) => onFeedback(item.id, item.reply.logId, v)}
+              dish={dish}
             />
             {staff && (
               <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] leading-relaxed shadow-sm">

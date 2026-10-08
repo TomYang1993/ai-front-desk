@@ -1,6 +1,9 @@
 import type { Allergen, Center, Child, MenuDay, MenuItem } from "../../content/types";
 import { daysBetween, weekdayOf } from "../time";
 
+/** Pack-lunch centers take backup lunch orders until this local time. */
+export const BACKUP_LUNCH_CUTOFF = "10:30";
+
 export const ALLERGEN_LABEL: Record<Allergen, string> = {
   dairy: "dairy",
   egg: "egg",

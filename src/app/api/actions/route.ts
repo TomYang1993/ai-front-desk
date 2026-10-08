@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { addAbsence, addLunchOrder, addTourBooking, getCenter, getFamily } from "@/lib/data";
-import { dayStatus } from "@/lib/facts/calendar";
-import { menuFor, safeBackupLunch } from "@/lib/facts/menu";
+import { dayStatus, openStatus } from "@/lib/facts/calendar";
+import { BACKUP_LUNCH_CUTOFF, menuFor, safeBackupLunch } from "@/lib/facts/menu";
 import { upcomingTourSlots } from "@/lib/facts/tours";
 import { resolveParent } from "@/lib/session";
-import { zonedParts } from "@/lib/time";
+import { minutesOf, zonedParts } from "@/lib/time";
 
 /**
  * Carries out an action Maple offered. Prices, menu items and open tour
@@ -19,6 +19,8 @@ const Body = z.object({
     z.object({ type: z.literal("order_backup_lunch"), childId: z.string() }),
     z.object({ type: z.literal("book_tour"), slotId: z.string(), name: z.string().trim().min(1).max(80) }),
   ]),
+  /** Test clock, honored only outside production. */
+  demoNow: z.string().datetime().optional(),
 });
 
 const id = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -33,14 +35,17 @@ export async function POST(request: Request) {
   const center = await getCenter(centerId);
   const family = familyId ? await getFamily(centerId, familyId) : undefined;
   if (familyId && !family) return Response.json({ error: "Unknown family" }, { status: 400 });
-  const now = new Date();
-  const today = zonedParts(now, center.timeZone).date;
+  const now = process.env.VERCEL_ENV !== "production" && parsed.data.demoNow ? new Date(parsed.data.demoNow) : new Date();
+  const local = zonedParts(now, center.timeZone);
+  const today = local.date;
 
   if (action.type === "log_absence") {
     const child = family?.children.find((c) => c.id === action.childId);
     if (!family || !child) return Response.json({ error: "Unknown child" }, { status: 400 });
-    const dates = action.dates.filter((d) => d >= today && dayStatus(center, d).open);
-    if (!dates.length) return Response.json({ error: "No open days to log" }, { status: 400 });
+    // Once the center has closed for the day, today is over: the earliest day to log is the next open one.
+    const earliest = openStatus(center, now).nextOpen.date;
+    const dates = action.dates.filter((d) => d >= earliest && dayStatus(center, d).open);
+    if (!dates.length) return Response.json({ error: "No open days to log", code: "day_over" }, { status: 409 });
     await addAbsence(centerId, { id: id("abs"), familyId: family.id, childId: child.id, childName: child.firstName, dates, reason: action.reason, createdAt: now.toISOString() });
     return Response.json({ ok: true, type: action.type, childName: child.firstName, dates });
   }
@@ -49,6 +54,7 @@ export async function POST(request: Request) {
     const child = family?.children.find((c) => c.id === action.childId);
     if (!family || !child) return Response.json({ error: "Unknown child" }, { status: 400 });
     if (center.meals !== "pack_lunch" || !center.fees.backupLunch) return Response.json({ error: "This center provides lunch" }, { status: 400 });
+    if (local.hour * 60 + local.minute > minutesOf(BACKUP_LUNCH_CUTOFF)) return Response.json({ error: "Backup lunch orders have closed for today", code: "lunch_closed", phone: center.phone }, { status: 409 });
     const day = dayStatus(center, today).open ? menuFor(center, today) : null;
     const pick = day ? safeBackupLunch(day, child) : null;
     if (!pick?.item) return Response.json({ error: "No safe backup lunch today" }, { status: 400 });

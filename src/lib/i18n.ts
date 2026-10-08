@@ -1,4 +1,4 @@
-import type { Lang } from "@/content/types";
+import type { Allergen, Lang } from "@/content/types";
 import type { ChipId } from "./engine/types";
 
 /** Interface text for the parent app. Maple's replies are translated by the engine. */
@@ -28,7 +28,44 @@ type Strings = {
   yourName: string;
   tourBooked: (when: string) => string;
   actionFailed: string;
-  board: { today: string; meals: string; nextClosure: string; notices: string; requests: string; noRequests: string; waiting: (name: string) => string; replied: (name: string) => string; absence: (child: string, dates: string) => string; lunch: (item: string, child: string) => string; tour: (when: string) => string; children: string };
+  dayOver: string;
+  lunchClosed: (phone: string) => string;
+  board: {
+    today: string;
+    meals: string;
+    nextClosure: string;
+    notices: string;
+    requests: string;
+    noRequests: string;
+    waiting: (name: string) => string;
+    replied: (name: string) => string;
+    absence: (child: string, dates: string) => string;
+    lunch: (item: string, child: string) => string;
+    tour: (when: string) => string;
+    children: string;
+    openUntil: (time: string) => string;
+    closedOpens: (day: string, time: string) => string;
+    todayWord: string;
+    tomorrowWord: string;
+    weekdays: string;
+    hours: (days: string, open: string, close: string) => string;
+    breakfast: string;
+    lunchLabel: string;
+    snack: string;
+    morningSnack: string;
+    afternoonSnack: string;
+    backupLunch: (price: string) => string;
+    or: string;
+    closureRange: (from: string, to: string) => string;
+    child: (name: string, age: string, room: string, teacher: string) => string;
+    months: (n: number) => string;
+    years: (n: number) => string;
+    allergens: Record<Allergen, string>;
+    allergy: (names: string[]) => string;
+    translated: string;
+    showOriginal: string;
+    showTranslation: string;
+  };
   startOver: string;
   signOut: string;
   home: {
@@ -38,6 +75,8 @@ type Strings = {
     ask: string;
     close: string;
     chatWith: string;
+    frontDesk: string;
+    handbook: string;
   };
   error: string;
 };
@@ -81,6 +120,8 @@ const en: Strings = {
   yourName: "Your name",
   tourBooked: (w) => `Tour booked for ${w}. See you then!`,
   actionFailed: "That didn't go through. Please try again or call the front desk.",
+  dayOver: "That day is already over, so there's nothing to log. Tell Maple which day your child will be out.",
+  lunchClosed: (p) => `Backup lunch orders have closed for today. Please call the front desk at ${p}.`,
   board: {
     today: "Today",
     meals: "Food",
@@ -94,6 +135,31 @@ const en: Strings = {
     lunch: (i, c) => `Backup lunch for ${c}: ${i}`,
     tour: (w) => `Tour: ${w}`,
     children: "Your children",
+    openUntil: (t) => `Open now until ${t}`,
+    closedOpens: (d, t) => `Closed now. Opens ${d} at ${t}`,
+    todayWord: "today",
+    tomorrowWord: "tomorrow",
+    weekdays: "Monday to Friday",
+    hours: (d, o, c) => `${d}, ${o} to ${c}`,
+    breakfast: "Breakfast",
+    lunchLabel: "Lunch",
+    snack: "Snack",
+    morningSnack: "Morning snack",
+    afternoonSnack: "Afternoon snack",
+    backupLunch: (p) => `Backup lunch, ${p}`,
+    or: "or",
+    closureRange: (f, t) => `${f} through ${t}`,
+    child: (n, a, r, t) => `${n}, ${a}, ${r} with ${t}`,
+    months: (n) => `${n} months`,
+    years: (n) => `${n} years`,
+    allergens: { dairy: "dairy", egg: "egg", wheat: "wheat", soy: "soy", peanut: "peanut", tree_nut: "tree nut", fish: "fish", shellfish: "shellfish", sesame: "sesame" },
+    allergy: (names) => {
+      const list = names.join(" and ");
+      return `${list.charAt(0).toUpperCase()}${list.slice(1)} allergy`;
+    },
+    translated: "",
+    showOriginal: "",
+    showTranslation: "",
   },
   startOver: "Start over",
   signOut: "Sign out",
@@ -104,6 +170,8 @@ const en: Strings = {
     ask: "Ask Maple anything…",
     close: "Close chat",
     chatWith: "Chat with Maple",
+    frontDesk: "Front desk",
+    handbook: "Handbook",
   },
   error: "Something went wrong. Please try again, or call the front desk.",
 };
@@ -141,7 +209,14 @@ const es: Strings = {
   call911: "Llamar al 911",
   logAbsence: (c, d) => `Registrar ausencia de ${c}: ${d}`,
   absenceLogged: (c, d, t) => `Ausencia registrada para ${c}: ${d}. ${t} lo verá.`,
+  orderLunch: (i, c, p) => `Pedir ${i} para ${c}, ${p}`,
+  lunchOrdered: (i, c, p) => `Pedido: ${i} para ${c}. Se agregaron ${p} a su cuenta.`,
+  pickTour: "Elija un horario",
+  yourName: "Su nombre",
+  tourBooked: (w) => `Visita reservada para el ${w}. ¡Lo esperamos!`,
   actionFailed: "No se pudo completar. Intente de nuevo o llame a la recepción.",
+  dayOver: "Ese día ya terminó, así que no hay nada que registrar. Dígale a Maple qué día faltará su hijo.",
+  lunchClosed: (p) => `Los pedidos de almuerzo de reserva ya cerraron por hoy. Llame a la recepción al ${p}.`,
   board: {
     ...en.board,
     today: "Hoy",
@@ -153,7 +228,31 @@ const es: Strings = {
     waiting: (n) => `Esperando a ${n}`,
     replied: (n) => `${n} respondió`,
     absence: (c, d) => `Ausencia registrada para ${c}: ${d}`,
+    lunch: (i, c) => `Almuerzo de reserva para ${c}: ${i}`,
+    tour: (w) => `Visita: ${w}`,
     children: "Sus hijos",
+    openUntil: (t) => `Abierto ahora hasta las ${t}`,
+    closedOpens: (d, t) => `Cerrado ahora. Abre ${d} a las ${t}`,
+    todayWord: "hoy",
+    tomorrowWord: "mañana",
+    weekdays: "De lunes a viernes",
+    hours: (d, o, c) => `${d}, de ${o} a ${c}`,
+    breakfast: "Desayuno",
+    lunchLabel: "Almuerzo",
+    snack: "Merienda",
+    morningSnack: "Merienda de la mañana",
+    afternoonSnack: "Merienda de la tarde",
+    backupLunch: (p) => `Almuerzo de reserva, ${p}`,
+    or: "o",
+    closureRange: (f, t) => `del ${f} al ${t}`,
+    child: (n, a, r, t) => `${n}, ${a}, ${r} con ${t}`,
+    months: (n) => `${n} meses`,
+    years: (n) => `${n} años`,
+    allergens: { dairy: "lácteos", egg: "huevo", wheat: "trigo", soy: "soya", peanut: "maní", tree_nut: "nueces", fish: "pescado", shellfish: "mariscos", sesame: "ajonjolí" },
+    allergy: (names) => `Alergia: ${names.join(" y ")}`,
+    translated: "Traducido por Maple",
+    showOriginal: "Ver original",
+    showTranslation: "Ver traducción",
   },
   startOver: "Empezar de nuevo",
   signOut: "Cerrar sesión",
@@ -164,6 +263,8 @@ const es: Strings = {
     ask: "Pregúntale a Maple…",
     close: "Cerrar chat",
     chatWith: "Chatear con Maple",
+    frontDesk: "Recepción",
+    handbook: "Manual",
   },
   error: "Algo salió mal. Intente de nuevo o llame a la recepción.",
 };
@@ -199,7 +300,16 @@ const zh: Strings = {
   sentTo: (n) => `已发送给 ${n}`,
   call: (p) => `致电 ${p}`,
   call911: "拨打 911",
+  logAbsence: (c, d) => `登记${c}缺勤：${d}`,
+  absenceLogged: (c, d, t) => `已为${c}登记缺勤：${d}。${t}会看到。`,
+  orderLunch: (i, c, p) => `为${c}订购${i}，${p}`,
+  lunchOrdered: (i, c, p) => `已为${c}订购${i}。${p}已计入您的账户。`,
+  pickTour: "选择时间",
+  yourName: "您的姓名",
+  tourBooked: (w) => `已预约参观：${w}。到时见！`,
   actionFailed: "操作未成功。请重试或致电前台。",
+  dayOver: "那一天已经过去，无需登记。请告诉 Maple 孩子哪天缺勤。",
+  lunchClosed: (p) => `今天的备用午餐订购已截止。请致电前台 ${p}。`,
   board: {
     ...en.board,
     today: "今天",
@@ -210,7 +320,32 @@ const zh: Strings = {
     noRequests: "目前没有待处理的事项。",
     waiting: (n) => `等待 ${n} 回复`,
     replied: (n) => `${n} 已回复`,
+    absence: (c, d) => `已为${c}登记缺勤：${d}`,
+    lunch: (i, c) => `${c}的备用午餐：${i}`,
+    tour: (w) => `参观：${w}`,
     children: "您的孩子",
+    openUntil: (t) => `正在开放，至${t}`,
+    closedOpens: (d, t) => `现已关闭。${d}${t}开门`,
+    todayWord: "今天",
+    tomorrowWord: "明天",
+    weekdays: "周一至周五",
+    hours: (d, o, c) => `${d}，${o}至${c}`,
+    breakfast: "早餐",
+    lunchLabel: "午餐",
+    snack: "点心",
+    morningSnack: "上午点心",
+    afternoonSnack: "下午点心",
+    backupLunch: (p) => `备用午餐，${p}`,
+    or: "或",
+    closureRange: (f, t) => `${f}至${t}`,
+    child: (n, a, r, t) => `${n}，${a}，${r}班，老师 ${t}`,
+    months: (n) => `${n}个月`,
+    years: (n) => `${n}岁`,
+    allergens: { dairy: "乳制品", egg: "鸡蛋", wheat: "小麦", soy: "大豆", peanut: "花生", tree_nut: "坚果", fish: "鱼", shellfish: "贝类", sesame: "芝麻" },
+    allergy: (names) => `${names.join("、")}过敏`,
+    translated: "由 Maple 翻译",
+    showOriginal: "查看原文",
+    showTranslation: "查看译文",
   },
   startOver: "重新开始",
   signOut: "退出登录",
@@ -221,6 +356,8 @@ const zh: Strings = {
     ask: "向 Maple 提问…",
     close: "关闭聊天",
     chatWith: "和 Maple 聊天",
+    frontDesk: "前台",
+    handbook: "家长手册",
   },
   error: "出错了。请重试或致电前台。",
 };

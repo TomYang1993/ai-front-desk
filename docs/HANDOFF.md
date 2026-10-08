@@ -9,7 +9,7 @@ Last updated October 7, 2026. Read this first in a new session, then `docs/PLAN.
 | Live site | https://ai-front-desk-xi.vercel.app, deployed from `main` |
 | Repo | https://github.com/TomYang1993/ai-front-desk |
 | `main` | Phases 0 to 2 and the Groq provider, merged through pull requests #1 and #2 |
-| `phase-3-parent-app` | Pushed, no pull request yet. First version of the parent app, now being redesigned. Redesign steps 1 to 4 are done: sign-in, removing visitor mode, the front desk home, and Maple version 2 |
+| `phase-3-parent-app` | Pushed, no pull request yet. First version of the parent app, now being redesigned. Phase 3 is done, in pull request #3: sign-in, removing visitor mode, the front desk home, Maple version 2, and the finishing pass |
 
 ## How we work
 
@@ -41,10 +41,8 @@ Working and checked in the browser:
 - Engine fixes: "last night" and "yesterday" pin symptom times to the previous day, symptom times can't be in the future, and after-hours wording no longer says "Not today."
 
 Known gaps:
-- The absence and backup lunch buttons haven't been tested at phone size.
-- The children card says "with" in English for all languages, and the cards' data, such as menus, is English for Spanish and Mandarin families. So are the desk scene's "Front desk" and "Handbook" labels.
-- One unidentified 404 appeared in the dev console on first load.
-- `POST /api/admin/reset` has no protection, so anyone can reset the live data. Limit it to directors or to non-production.
+- "Mateo tiene tos y no va a ir mañana" (a cough plus an absence) is read as an illness question the engine can't settle, so it goes to the director instead of offering the absence button. A plain absence message works. Fixing it means changing how messages are classified, so check the scorecard afterwards.
+- Source chips, such as "Attendance and absences", show the handbook's English section titles. That's by design for now: sources stay in the original.
 
 ## Sign-in, redesign step 1
 
@@ -85,14 +83,27 @@ Known gaps:
 - With reduced motion, Maple uses `useReducedMotion` and shows each state's still pose with no loops. Her old CSS animations are removed.
 - Checked in a temporary gallery of all states, now removed, and on the desk, in the chat header and on the sign-in page. Sampled the wave's arm angles over time and re-checked the desk-to-card flight. The hidden pane throttles animation frames, so the 0.8-second hop was only seen at its start and end.
 
-## Next steps: the Phase 3 redesign
+## Finishing pass, redesign step 5
+
+- **Cards in the family's language.** `parent-view.ts` builds the cards in the family's language. Fixed wording comes from `i18n.ts`: dates, times (`formatClock`), open status, hours, menu labels, ages, the child line, allergy names and the desk labels. Staff-written text (dish names, closure names, notices) goes through `translateList` in `engine/translate.ts`: one AI call per center, language and set of texts, cached for a week under `translate:v2:`. It gives up after 6 seconds and falls back to English, and any item whose numbers change stays in English. Translated text is marked "Translated by Maple", with a "show original" toggle on the closure and notices.
+- **Spanish register.** Translations, including Maple's replies, now use the formal "usted" to match the interface.
+- **Action strings.** The lunch, tour and Mandarin absence strings no longer fall back to English. `view.dishes` maps English dish names to translations for the lunch button, its confirmation and the requests card.
+- **Absences after closing.** With no date given, an absence defaults to today only while the center is open or before it opens; otherwise it goes to the next open day. `/api/actions` refuses days that are already over, with code `day_over`.
+- **Backup lunch cutoff.** `/api/actions` now enforces the 10:30 am cutoff (`BACKUP_LUNCH_CUTOFF` in `facts/menu.ts`, shared with the engine), with code `lunch_closed`. The app shows specific messages for both codes. `/api/actions` takes the same `demoNow` test clock as `/api/ask` outside production.
+- **Reset protection.** `POST /api/admin/reset` needs a signed-in director in production; locally it stays open.
+- **The 404 on first load** no longer happens on a fresh load. It was most likely the old family-picker route.
+- **Checked at phone size:** Rosa's Spanish home and the "show original" toggle; logging an absence in Spanish, including a stale button being refused; Priya's backup-lunch button and the after-cutoff message. The successful lunch order was checked with curl and the test clock.
+
+## Next steps
 
 Decided with the user; details in `docs/PLAN.md`, "Phase 3 redesign."
+
+Phase 3, all done:
 
 1. **Done: simulated sign-in.** A `/signin` page with an email and password form, plus a labeled "Demo accounts" panel for Ana, Rosa, Priya, Wei, Elena and Hannah. Store the role, center and family or staff id in an httpOnly session cookie. Protect app routes with `proxy.ts`. Derive the family from the session, never from the URL. Add sign-out. Directors go to `/console`, which is Phase 4.
 2. **Done: remove visitor mode from the interface.** Keep engine support for visitors.
 3. **Done: front desk home.** The animated desk scene with Maple is the hero, with information cards. Tapping Maple opens the chat card with a Motion shared-layout animation, Maple acts out states in the chat header, and closing it returns her to the desk. Laptops keep the desk and cards visible with the chat docked.
 4. **Done: Maple version 2.** Redraw the SVG with more polish and separately animated parts. Animate with Motion springs and add wave and hop moments. Keep the `<Maple state size />` interface, and respect reduced-motion settings. Pick a Motion version at least two weeks old, and read its current docs.
-5. **Finish Phase 3.** Test the action buttons at phone size, fix the known gaps, run all checks, and open the pull request.
+5. **Done: finish Phase 3.** Test the action buttons at phone size, fix the known gaps, run all checks, and open the pull request.
 
 Then Phase 4, the director console: an inbox with the "answer once" loop, insights, a knowledge editor, a test box and setup from a pasted handbook. Scenario 15 becomes testable then.

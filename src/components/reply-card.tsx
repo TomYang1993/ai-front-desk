@@ -43,6 +43,7 @@ export function ReplyCard({
   onOption,
   feedback,
   onFeedback,
+  dish = (name) => name,
 }: {
   reply: AskReply;
   lang: Lang;
@@ -52,6 +53,8 @@ export function ReplyCard({
   onOption: (text: string) => void;
   feedback?: "up" | "down";
   onFeedback: (value: "up" | "down") => void;
+  /** A dish name in the family's language. */
+  dish?: (name: string) => string;
 }) {
   const [openSource, setOpenSource] = useState<string | null>(null);
   const [tourName, setTourName] = useState("");
@@ -113,7 +116,7 @@ export function ReplyCard({
             if (a.type === "order_backup_lunch") {
               return (
                 <button key={i} onClick={() => onAction(i, a)} className="self-start rounded-full bg-teal-700 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-800">
-                  {s.orderLunch(a.item.toLowerCase(), a.childName, `$${a.price}`)}
+                  {s.orderLunch(dish(a.item).toLowerCase(), a.childName, `$${a.price}`)}
                 </button>
               );
             }

@@ -71,6 +71,7 @@ function load(view: ParentView): Saved {
 export function FrontDesk({ view }: { view: ParentView }) {
   const lang: Lang = view.family.language;
   const s = STRINGS[lang];
+  const dish = (name: string) => view.dishes[name] ?? name;
   const wide = useWide();
   const [saved, setSaved] = useState<Saved>(() => load(view));
   const [open, setOpen] = useState(false);
@@ -233,13 +234,15 @@ export function FrontDesk({ view }: { view: ParentView }) {
           const teacher = view.family.children.find((c) => c.firstName === data.childName)?.teacherName.split(" ")[0] ?? "";
           result = { ok: true, text: s.absenceLogged(data.childName, listDays(data.dates, lang), teacher) };
         } else if (data.type === "order_backup_lunch") {
-          result = { ok: true, text: s.lunchOrdered(String(data.item).toLowerCase(), data.childName, `$${data.price}`) };
+          result = { ok: true, text: s.lunchOrdered(dish(String(data.item)).toLowerCase(), data.childName, `$${data.price}`) };
         } else {
           result = { ok: true, text: s.tourBooked(formatSlot(data.date, data.time, lang)) };
         }
         moodFor("done", 1600);
-      } else if (data.error) {
-        result = { ok: false, text: `${s.actionFailed}` };
+      } else if (data.code === "lunch_closed") {
+        result = { ok: false, text: s.lunchClosed(data.phone) };
+      } else if (data.code === "day_over") {
+        result = { ok: false, text: s.dayOver };
       }
     } catch {
       /* Keep the failure message. */
@@ -333,6 +336,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
       centerId={view.center.id}
       centerName={view.center.shortName}
       directorFirstName={directorFirstName}
+      labels={{ frontDesk: s.home.frontDesk, handbook: s.home.handbook }}
       doorLit={mood === "handoff" || mood === "calm"}
       bubble={open && !wide ? null : bubble}
       maple={
@@ -379,6 +383,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
       onAction={runAction}
       onOption={(o) => send({ text: o })}
       onFeedback={giveFeedback}
+      dish={dish}
     />
   );
 

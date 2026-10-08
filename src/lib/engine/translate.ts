@@ -5,6 +5,9 @@ import { generateJson } from "../llm";
 
 const NAMES: Record<Exclude<Lang, "en">, string> = { es: "Spanish", zh: "Simplified Chinese" };
 
+/** Matches the interface: Spanish uses the formal "usted". */
+const REGISTER: Record<Exclude<Lang, "en">, string> = { es: ' Address the parent formally, with "usted".', zh: "" };
+
 /** Every number in the English text, without commas or currency signs. */
 export const numbersIn = (text: string) =>
   (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map((n) => n.replace(/,/g, "")).filter((n) => Number(n) !== 0);
@@ -21,7 +24,7 @@ export async function translate(text: string, lang: Lang) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const r = await generateJson({
       tier: "small",
-      system: `Translate this message from a child care center's front desk assistant into ${NAMES[lang]} for a parent. Keep every number, price, time, date, percentage, phone number, email address and person's name exactly as written, using the same digits. Keep the tone warm and plain. Don't add gendered pronouns for children; repeat the child's name instead. Return JSON with one field, "text".`,
+      system: `Translate this message from a child care center's front desk assistant into ${NAMES[lang]} for a parent. Keep every number, price, time, date, percentage, phone number, email address and person's name exactly as written, using the same digits. Keep the tone warm and plain. Don't add gendered pronouns for children; repeat the child's name instead.${REGISTER[lang]} Return JSON with one field, "text".`,
       prompt: text,
       schema: z.object({ text: z.string() }),
       temperature: 0,
@@ -32,4 +35,33 @@ export async function translate(text: string, lang: Lang) {
     if (required.every((n) => found.includes(n))) return { text: r.data.text, tokens, model, ok: true };
   }
   return { text, tokens, model, ok: false };
+}
+
+/**
+ * Translates short pieces of center content, such as dish names, closure
+ * names and announcements, in one call. Any piece that comes back missing
+ * or with its numbers changed stays in English.
+ */
+export async function translateList(texts: string[], lang: Lang): Promise<{ texts: string[]; translated: boolean[] }> {
+  const original = { texts, translated: texts.map(() => false) };
+  if (lang === "en" || !texts.length) return original;
+  try {
+    const r = await generateJson({
+      tier: "small",
+      system: `Translate each item, written by staff at a child care center, into ${NAMES[lang]} for a parent. Items are dish names, holiday or closure names, and notices. Keep every number, price, time, date and person's name exactly as written. Keep proper names of places and events recognizable.${REGISTER[lang]} Return JSON with one field, "items": the translations in the same order, one per input item.`,
+      prompt: JSON.stringify(texts),
+      schema: z.object({ items: z.array(z.string()) }),
+      temperature: 0,
+    });
+    if (r.data.items.length !== texts.length) return original;
+    const out = texts.map((text, i) => {
+      const t = r.data.items[i]?.trim();
+      const required = numbersIn(text);
+      const found = t ? numbersIn(t) : [];
+      return t && required.every((n) => found.includes(n)) ? t : null;
+    });
+    return { texts: out.map((t, i) => t ?? texts[i]), translated: out.map(Boolean) };
+  } catch {
+    return original;
+  }
 }

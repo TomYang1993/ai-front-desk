@@ -14,6 +14,7 @@ export function DeskScene({
   centerId,
   centerName,
   directorFirstName,
+  labels,
   doorLit,
   maple,
   bubble,
@@ -21,6 +22,7 @@ export function DeskScene({
   centerId: CenterId;
   centerName: string;
   directorFirstName: string;
+  labels: { frontDesk: string; handbook: string };
   doorLit: boolean;
   maple: ReactNode;
   bubble?: ReactNode;
@@ -45,7 +47,7 @@ export function DeskScene({
         ))}
         <rect x="74" y="111" width="34" height="17" rx="2" fill="#FFF" opacity="0.9" />
         <text x="91" y="122.5" textAnchor="middle" fontSize="7" fontWeight="700" fill="#7A5A3A">
-          Handbook
+          {labels.handbook}
         </text>
 
         {/* Notice board */}
@@ -87,7 +89,7 @@ export function DeskScene({
           {centerName}
         </text>
         <text x="180" y="217" textAnchor="middle" fontSize="8.5" fill="#D7F2E8">
-          Front desk
+          {labels.frontDesk}
         </text>
       </svg>
     </div>

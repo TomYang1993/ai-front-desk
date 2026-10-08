@@ -17,3 +17,12 @@ export const shortDate = (date: string, lang: Lang) =>
   new Date(`${date.slice(0, 10)}T12:00:00Z`).toLocaleDateString(LOCALE[lang], { month: "short", day: "numeric", timeZone: "UTC" });
 
 export const listDays = (dates: string[], lang: Lang) => dates.map((d) => formatDay(d, lang)).join(lang === "zh" ? "、" : "; ");
+
+/** "7:00 am" in English, the locale's own form otherwise, for an HH:MM time. */
+export const formatClock = (time: string, lang: Lang) => {
+  if (lang === "en") {
+    const [h, m] = time.split(":").map(Number);
+    return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "pm" : "am"}`;
+  }
+  return new Date(`2000-01-01T${time}:00Z`).toLocaleTimeString(LOCALE[lang], { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
+};
