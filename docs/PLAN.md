@@ -26,7 +26,7 @@ Who we design for, from the brightwheel primer:
 - Operator console per center: overview, handoff inbox with the "answer once" loop, knowledge editor, test box.
 - Set up a new center by pasting a handbook.
 - Two fictional centers in different regions with realistic local rules.
-- Replies in the parent's language: English, Spanish, Mandarin.
+- Replies in the parent's language: English, Spanish, Mandarin, Hindi.
 - A scorecard of tricky test questions run against the answer engine.
 - Demo mode: parent phone and operator console side by side, for the video.
 
@@ -58,7 +58,7 @@ All facts below become each center's own handbook and tables, stated as center p
 | Veterans Day, Wed Nov 11 | **Open** | **Closed** |
 | Other closures | Labor Day, Thanksgiving Thu and Fri, Dec 24 to Jan 1, MLK Day, Memorial Day, July 5, one staff training day | Labor Day, Veterans Day, Thanksgiving and Native American Heritage Day Nov 26 and 27, Dec 24 to Jan 1, MLK Day, Presidents Day, Memorial Day, Juneteenth observed Fri Jun 18, July 5 |
 | Local life | Balloon Fiesta Oct 3 to 11, flexible drop-off until 9:30 that week. Indigenous Peoples' Day and Día de los Muertos in class | Lunar New Year in class. Grandparents often visit for months to help |
-| Languages | English, Spanish | English, Mandarin |
+| Languages | English, Spanish | English, Mandarin, Hindi |
 | Tours | Tue and Thu, 9:30 am and 4:00 pm | Wed 10:00 am, Fri 3:30 pm |
 | Staff | Owner-director, assistant director for enrollment, lead teacher per room | Same structure |
 
@@ -72,6 +72,7 @@ Every center also has: pickup authorization rules, medication rules, illness exc
 | Piñon Grove | Rosa Chávez | Mateo, 4, Pre-K | Spanish. Halloween question that starts the "answer once" loop. Balloon Fiesta drop-off |
 | Quail Ridge | Priya Raman | Anika, 2, Toddlers, dairy allergy | Backup lunch with allergy check and fee, rain gear, fever rule under WA policy |
 | Quail Ridge | Wei Chen | Ethan, 4, Pre-K | Mandarin. Visiting grandparent not on the pickup list goes to staff |
+| Quail Ridge | Meera Sharma | Kabir, 3, Preschool, egg allergy | Hindi. Fever rule under WA policy. Visiting grandmother is on the pickup list, yet pickup still goes to staff |
 
 Visitor mode per center covers prospective families: tuition, waitlist, tours.
 
@@ -142,7 +143,7 @@ Code handles everything that is well defined. AI is used only to understand free
 
 | Lane | Who does the work | Used for | Rough tokens |
 |---|---|---|---|
-| Safety check | Code keyword rules, in English, Spanish and Mandarin | Emergencies, custody, abuse, injuries, pickup changes | 0 |
+| Safety check | Code keyword rules, in English, Spanish, Mandarin and Hindi | Emergencies, custody, abuse, injuries, pickup changes | 0 |
 | Quick facts | Code | Buttons and chips: today's lunch, hours, next closure, tuition | 0 |
 | Understand | Small, fast AI model | Every typed message. Returns intent, child, dates, symptoms and times, language, sensitive flags, and a matching saved answer if one exists | about 2,000 |
 | Look up | Code | Closures, menus and allergens, tuition and waitlist, tour slots, illness return times, billing items | 0 |
@@ -155,7 +156,7 @@ How the lanes connect:
 1. **Safety check** runs first on every message. A match skips straight to a person, with "call 911" first for emergencies.
 2. **Quick facts** answer button taps with no AI at all.
 3. **Understand** runs on typed messages. Its sensitive flags back up the keyword list, because keyword lists can't cover every language and phrasing.
-4. If the intent is well defined, **Look up** computes the answer from tables and a template fills it in. The small model only rephrases it when the parent writes in Spanish or Mandarin.
+4. If the intent is well defined, **Look up** computes the answer from tables and a template fills it in. The small model only rephrases it when the parent writes in Spanish, Mandarin or Hindi.
 5. If a saved answer matches, it is returned directly. This is how the "answer once" loop makes the system both smarter and cheaper over time.
 6. Otherwise **Read the handbook** answers with citations, then **Double-check** verifies it.
 7. Anything unsure, uncovered or blocked goes to **a person**: the teacher for same-day child questions, the director for everything else.
