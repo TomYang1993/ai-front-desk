@@ -346,7 +346,7 @@ export function FrontDesk({ view }: { view: ParentView }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => (wide ? textarea.current?.focus() : openChat())}
-      className={`absolute left-1/2 top-[3%] max-w-[44%] -translate-x-1/2 rounded-2xl px-2.5 py-1.5 text-center text-[11px] font-semibold leading-snug shadow-sm ring-1 sm:text-sm ${
+      className={`block rounded-2xl px-2.5 py-1.5 text-center text-[11px] font-semibold leading-snug shadow-sm ring-1 sm:text-sm ${
         unread.length && !wide ? "bg-amber-50 text-amber-900 ring-amber-200" : "bg-white text-stone-700 ring-stone-200"
       }`}
       aria-live="polite"
