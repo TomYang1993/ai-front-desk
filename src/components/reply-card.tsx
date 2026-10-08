@@ -9,25 +9,6 @@ import { formatSlot, listDays, shortDate } from "@/lib/format";
 
 export type ActionResult = { ok: boolean; text: string };
 
-function howLine(reply: AskReply, s: Strings) {
-  const l = reply.lanes;
-  // Code wrote the answer; for other languages, AI translated it.
-  const how = l.includes("quick_facts")
-    ? reply.models.length
-      ? s.how.factsTranslated
-      : s.how.facts
-    : l.includes("handbook")
-      ? s.how.handbook
-      : l.includes("person") && l.includes("safety") && !l.includes("understand")
-        ? s.how.safety
-        : l.includes("person")
-          ? s.how.person
-          : reply.sources.some((x) => x.id.startsWith("saved:"))
-            ? s.how.saved
-            : s.how.lookup;
-  return `${how} · ${s.seconds((reply.ms / 1000).toFixed(1))}`;
-}
-
 const MODE_STYLE: Record<AskReply["mode"], string> = {
   answer: "bg-white border-stone-200",
   clarify: "bg-white border-stone-200",
@@ -178,9 +159,8 @@ export function ReplyCard({
         </div>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">
-        <span>{howLine(reply, s)}</span>
-        {reply.mode === "answer" && (
+      {reply.mode === "answer" && (
+        <div className="mt-2 flex flex-wrap items-center justify-end gap-2 text-xs text-stone-500">
           <span className="flex items-center gap-1">
             {feedback ? (
               <span>{s.thanks}</span>
@@ -196,8 +176,8 @@ export function ReplyCard({
               </>
             )}
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

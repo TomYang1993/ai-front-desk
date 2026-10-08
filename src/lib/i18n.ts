@@ -15,8 +15,6 @@ type Strings = {
   updated: (date: string, by?: string) => string;
   helpful: string;
   thanks: string;
-  how: Record<"facts" | "factsTranslated" | "lookup" | "saved" | "handbook" | "person" | "safety", string>;
-  seconds: (s: string) => string;
   sentTo: (name: string) => string;
   call: (phone: string) => string;
   call911: string;
@@ -120,16 +118,6 @@ const en: Strings = {
   updated: (d, by) => `Updated ${d}${by ? ` by ${by}` : ""}`,
   helpful: "Was this helpful?",
   thanks: "Thanks for the feedback",
-  how: {
-    facts: "From the center's data, no AI",
-    factsTranslated: "From the center's data, translated by AI",
-    lookup: "AI read your message, then the answer was looked up in the center's data",
-    saved: "A saved answer from staff",
-    handbook: "Read in the family handbook and double-checked against it",
-    person: "Passed to a person",
-    safety: "Handled by the safety check, no AI",
-  },
-  seconds: (s) => `${s} s`,
   sentTo: (n) => `Sent to ${n}`,
   call: (p) => `Call ${p}`,
   call911: "Call 911",
@@ -236,15 +224,6 @@ const es: Strings = {
   updated: (d, by) => `Actualizado ${d}${by ? ` por ${by}` : ""}`,
   helpful: "¿Le ayudó?",
   thanks: "Gracias por su opinión",
-  how: {
-    facts: "De los datos del centro, sin IA",
-    factsTranslated: "De los datos del centro, traducido con IA",
-    lookup: "La IA leyó su mensaje y la respuesta salió de los datos del centro",
-    saved: "Una respuesta guardada por el personal",
-    handbook: "Leído en el manual para familias y verificado",
-    person: "Enviado a una persona",
-    safety: "Atendido por el filtro de seguridad, sin IA",
-  },
   sentTo: (n) => `Enviado a ${n}`,
   call: (p) => `Llamar al ${p}`,
   call911: "Llamar al 911",
@@ -349,15 +328,6 @@ const zh: Strings = {
   updated: (d, by) => `${d} 更新${by ? `，更新人 ${by}` : ""}`,
   helpful: "这个回答有帮助吗？",
   thanks: "谢谢您的反馈",
-  how: {
-    facts: "来自中心的数据，未使用 AI",
-    factsTranslated: "来自中心的数据，由 AI 翻译",
-    lookup: "AI 理解您的消息后，从中心的数据中查到答案",
-    saved: "工作人员保存的回答",
-    handbook: "查阅家长手册并核对过",
-    person: "已转给工作人员",
-    safety: "由安全检查处理，未使用 AI",
-  },
   sentTo: (n) => `已发送给 ${n}`,
   call: (p) => `致电 ${p}`,
   call911: "拨打 911",
@@ -461,16 +431,6 @@ const hi: Strings = {
   updated: (d, by) => `${d} को अपडेट किया गया${by ? `, ${by} द्वारा` : ""}`,
   helpful: "क्या यह मददगार था?",
   thanks: "आपकी राय के लिए धन्यवाद",
-  how: {
-    facts: "सेंटर के डेटा से, बिना AI के",
-    factsTranslated: "सेंटर के डेटा से, AI द्वारा अनुवादित",
-    lookup: "AI ने आपका संदेश पढ़ा, फिर जवाब सेंटर के डेटा से लिया गया",
-    saved: "स्टाफ़ का सहेजा हुआ जवाब",
-    handbook: "परिवार हैंडबुक में पढ़ा गया और उससे दोबारा जाँचा गया",
-    person: "एक व्यक्ति को भेजा गया",
-    safety: "सुरक्षा जाँच ने संभाला, बिना AI के",
-  },
-  seconds: (s) => `${s} सेकंड`,
   sentTo: (n) => `${n} को भेजा गया`,
   call: (p) => `${p} पर कॉल करें`,
   call911: "911 पर कॉल करें",
