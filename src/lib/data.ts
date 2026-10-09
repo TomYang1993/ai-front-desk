@@ -41,7 +41,9 @@ export async function resetDemo(now = new Date()) {
   const store = getStore();
   for (const center of centers) {
     const { logs, handoffs } = generateHistory(center, now);
-    await store.set(keys.center(center.id), center);
+    // Reply caches are keyed by revision. Starting each reset from a new number means a
+    // retake can't be served an answer cached during the last one, such as a saved answer worded differently.
+    await store.set(keys.center(center.id), { ...center, revision: now.getTime() });
     await store.set(keys.handbook(center.id), seedHandbook(center.id));
     await store.set(
       keys.families(center.id),

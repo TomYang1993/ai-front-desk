@@ -160,6 +160,16 @@ Found by the user in the deployed app on October 8:
 - **Local and deployed data are separate.** The store prefix is `afd:` plus `VERCEL_ENV`, so local is `afd:local:` and production is `afd:production:`. They are seeded from the same content, but whatever people ask on the live site only exists there.
 - **Local testing and the live site share the AI keys.** The keys pulled from Vercel are the same ones the live site uses. On October 8 the local health check showed Groq's small model and Gemini's 2.5 flash-lite at their daily limits, so a question became a handoff. Avoid scorecard runs close to recording or review.
 
+### Demo reset and recording (branch `phase-5-demo-reset`)
+
+- **Reset button.** "Reset demo data" sits at the bottom of the control center's sidebar (on phones, under "Signed in as"). It asks first, then calls `POST /api/admin/reset`, which needs a signed-in director in production. It resets both centers.
+- **Fresh revision on every reset.** `resetDemo()` sets each center's `revision` to the reset time. Reply caches are keyed by revision, so a retake can't be served an answer cached in the last take, such as Ana's costume answer worded the way Elena saved it before.
+- **Tabs start over after a reset.** `ConsoleView.seededAt` keys the tab content, so no open message or form survives a reset.
+- **More waiting questions at Piñon Grove** (`plantedOpenHandoffs` in `src/content/history.ts`): two Halloween costume questions (English, and Spanish from Diego's parent), a second swim-lessons question and a volunteer-to-read question. Piñon Grove starts with 7 waiting; Quail Ridge still has 3. In the inbox, the costume pair and the swim-lessons pair each show "Repeated question", so Rosa's live question joins a group of three, and saving one answer can send it to all of them. The grouping uses the small model; without AI it falls back to identical wording, and the costume questions are worded differently.
+- **`HISTORY_VERSION` is `h3`.** A seed change reseeds every environment on its first request after deploy, so merging this resets the live site.
+- **Before recording:** press Reset right before you start, since history and waiting questions are timed from the reset. Record on a weekday morning while the centers are open (Quail Ridge's backup-lunch cutoff is 10:30 am Pacific), and before Friday, October 30. Don't run the scorecard that day, since it shares the live site's AI quota. Parents sign out between takes to clear their chats.
+- **Local data** was reset on October 9 at 01:45 UTC with the new seed, which cleared the October 8 test entries.
+
 ## Next steps
 
 Decided with the user; details in `docs/PLAN.md`, "Phase 3 redesign."
@@ -195,7 +205,7 @@ Collected while building, for the phase after Phase 4 merges.
 - Scenario 13 (snow) is flaky. The claim check rejects common-sense lines ("if APS stays open, we keep our normal hours"), possibly because Rosa's answer is in Spanish while the sources are English. Also, heavy testing on one day exhausts Groq's large model, and Gemini sometimes returns "high demand".
 - The two-thumbs-down offer of "Talk to a person" hasn't been clicked through in the browser yet; the pane was in use.
 - Menu editing: the user may want a small tool of its own for it, possibly for kitchen staff. Tour times stay view-only for now.
-- Local test data from October 8 (also a thumbs-down on the Hours chip and a rate-limited "What time do you close?" handoff from Ana, from checking the table link): several open handoffs (repeated "Snow tomorrow" from scorecard runs, test custody and staff-concern messages) and a saved "swim lessons" answer. Reset local data before recording anything.
+- Local test data from October 8 was cleared by the reset on October 9 (see "Demo reset and recording").
 - The browser pane is shared with the user, so a session can find it signed in as someone else or signed out. To check a page without changing their sign-in, render it on a temporary public page (temporarily add the path to `PUBLIC` in `src/proxy.ts`) in a separate tab, then remove it.
 
 **Organizing**
