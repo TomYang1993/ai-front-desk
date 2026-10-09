@@ -7,6 +7,7 @@ import type { ConsoleView } from "@/lib/console-view";
 import { signOut } from "@/lib/auth-actions";
 import { CenterLogo } from "../center-logo";
 import { ConsoleLink } from "./console-link";
+import { ResetDemo } from "./reset-demo";
 import { Inbox } from "./inbox";
 import { OverviewPanel } from "./overview";
 import { SourceOfTruth } from "./source-of-truth";
@@ -65,7 +66,10 @@ export function ConsoleApp({ view }: { view: ConsoleView }) {
             </ConsoleLink>
           ))}
         </nav>
-        <div className="hidden items-center justify-between gap-2 border-t border-stone-200 px-5 py-4 lg:mt-auto lg:flex">
+        <div className="hidden px-2 pb-2 lg:mt-auto lg:block">
+          <ResetDemo />
+        </div>
+        <div className="hidden items-center justify-between gap-2 border-t border-stone-200 px-5 py-4 lg:flex">
           <span className="truncate text-sm font-semibold text-stone-700">{view.me.name}</span>
           <form action={signOut}>
             <button type="submit" className="rounded-full p-2 text-stone-500 hover:bg-stone-100" aria-label="Sign out" title="Sign out">
@@ -76,18 +80,24 @@ export function ConsoleApp({ view }: { view: ConsoleView }) {
       </aside>
 
       <main className="min-w-0 px-4 py-5 lg:px-8 lg:py-7">
-        <div className="mb-5 flex items-center justify-between gap-3 lg:hidden">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 lg:hidden">
           <p className="text-sm text-stone-600">Signed in as {view.me.name}</p>
           <form action={signOut}>
             <button type="submit" className="flex items-center gap-1.5 rounded-full border border-stone-300 px-3 py-1 text-sm font-semibold text-stone-600">
               <LogOut size={15} /> Sign out
             </button>
           </form>
+          <div className="w-full">
+            <ResetDemo />
+          </div>
         </div>
-        {tab === "inbox" && <Inbox items={view.inbox} me={view.me} selectedId={item} />}
-        {tab === "overview" && <OverviewPanel overview={view.overview} />}
-        {tab === "source" && <SourceOfTruth knowledge={view.knowledge} focus={section} />}
-        {tab === "test" && <TestBox families={view.families} centerName={view.center.shortName} />}
+        {/* After a demo reset, every tab starts over instead of keeping an open message or form. */}
+        <div key={view.seededAt ?? "seed"}>
+          {tab === "inbox" && <Inbox items={view.inbox} me={view.me} selectedId={item} />}
+          {tab === "overview" && <OverviewPanel overview={view.overview} />}
+          {tab === "source" && <SourceOfTruth knowledge={view.knowledge} focus={section} />}
+          {tab === "test" && <TestBox families={view.families} centerName={view.center.shortName} />}
+        </div>
       </main>
     </div>
   );

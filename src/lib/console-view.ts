@@ -1,6 +1,6 @@
 import "server-only";
 import type { CenterId, Handoff, Lang, QuestionLog, TableId, Topic } from "@/content";
-import { getCenter, getFamilies, getFeedback, getHandbook, getHandledFeedback, getHandoffs, getLogs, getTourBookings, type HandledFeedback } from "./data";
+import { getCenter, getFamilies, getFeedback, getHandbook, getHandledFeedback, getHandoffs, getLogs, getSeededAt, getTourBookings, type HandledFeedback } from "./data";
 import { dayStatus, formatDate, formatTime, hoursLine, upcomingClosures, weekdayName } from "./facts/calendar";
 import { ALLERGEN_LABEL, menuFor } from "./facts/menu";
 import { upcomingTourSlots } from "./facts/tours";
@@ -90,6 +90,8 @@ export interface ConsoleView {
   overview: Overview;
   knowledge: KnowledgeView;
   families: { id: string; label: string; language: Lang }[];
+  /** When the demo data was last reset. The page starts fresh when it changes. */
+  seededAt: string | null;
 }
 
 export const TOPIC_LABEL: Record<Topic, string> = {
@@ -104,7 +106,7 @@ const TABLE_LABEL: Record<TableId, string> = { calendar: "Calendar and closures"
 const handled = (l: QuestionLog) => l.outcome === "answered" || l.outcome === "declined";
 
 export async function getConsoleView(centerId: CenterId, staffId: string | null, now = new Date()): Promise<ConsoleView> {
-  const [center, families, sections, handoffs, logs, feedback, handledFeedback, bookings] = await Promise.all([
+  const [center, families, sections, handoffs, logs, feedback, handledFeedback, bookings, seededAt] = await Promise.all([
     getCenter(centerId),
     getFamilies(centerId),
     getHandbook(centerId),
@@ -113,6 +115,7 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
     getFeedback(centerId),
     getHandledFeedback(centerId),
     getTourBookings(centerId),
+    getSeededAt(),
   ]);
   const me = center.staff.find((s) => s.id === staffId) ?? center.staff.find((s) => s.role === "director")!;
   const t = now.getTime();
@@ -229,6 +232,7 @@ export async function getConsoleView(centerId: CenterId, staffId: string | null,
   return {
     center: { id: center.id, name: center.name, shortName: center.shortName, city: center.city, state: center.state },
     me: { name: me.name, firstName: me.name.split(" ")[0] },
+    seededAt,
     inbox: shown.map(inboxItem),
     overview: {
       questions: week.length,

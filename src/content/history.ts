@@ -206,7 +206,7 @@ const STAFF_REPLY_NAME: Record<CenterId, Record<"teacher" | "director", string>>
 };
 
 /** Bump when the generator changes, so stored history regenerates. */
-export const HISTORY_VERSION = "h2";
+export const HISTORY_VERSION = "h3";
 
 export interface GeneratedHistory {
   logs: QuestionLog[];
@@ -331,6 +331,12 @@ function plantedOpenHandoffs(center: Center, now: Date): Handoff[] {
       { id: "pg-h-open-1", centerId: center.id, familyId: null, askedBy: "Parent of Sam, Roadrunners", createdAt: ago(35), language: "en", text: "Can our neighbor Mrs. Lopez pick up Sam today at 4? She's not on the list.", topic: "pickup", reason: "Pickup permission needs staff", priority: "urgent", to: "director", status: "open" },
       { id: "pg-h-open-2", centerId: center.id, familyId: null, askedBy: "Parent of Lucas, Sunflowers", createdAt: ago(190), language: "en", text: "Do you offer swim lessons in the summer?", topic: "other", reason: "Not covered by the handbook", priority: "normal", to: "director", status: "open" },
       { id: "pg-h-open-3", centerId: center.id, familyId: null, askedBy: "Parent of Ella, Jackrabbits", createdAt: ago(80), language: "es", text: "Ella llegó a casa con un rasguño en la mejilla. ¿Qué pasó?", topic: "incident", reason: "Injury questions go to staff", priority: "normal", to: "teacher", status: "open" },
+      // Repeats for the video. Two families asked about Halloween costumes before Rosa does, so one saved answer reaches all
+      // three, and a second family is waiting on swim lessons. The handbook covers none of these.
+      { id: "pg-h-open-4", centerId: center.id, familyId: null, askedBy: "Parent of Isla, Coyotes", createdAt: ago(14 * 60), language: "en", text: "Is it ok for kids to wear Halloween costumes on Friday, the day before Halloween?", topic: "celebrations", reason: "Not covered by the handbook", priority: "normal", to: "director", status: "open" },
+      { id: "pg-h-open-5", centerId: center.id, familyId: null, askedBy: "Parent of Diego, Sunflowers", createdAt: ago(50), language: "es", text: "¿Pueden los niños venir disfrazados el viernes antes de Halloween?", topic: "celebrations", reason: "Not covered by the handbook", priority: "normal", to: "director", status: "open" },
+      { id: "pg-h-open-6", centerId: center.id, familyId: null, askedBy: "Parent of Ava, Roadrunners", createdAt: ago(22 * 60), language: "en", text: "Will there be swimming lessons over the summer?", topic: "other", reason: "Not covered by the handbook", priority: "normal", to: "director", status: "open" },
+      { id: "pg-h-open-7", centerId: center.id, familyId: null, askedBy: "Parent of Nico, Coyotes", createdAt: ago(130), language: "en", text: "Could I come in one morning to read a story to the class?", topic: "other", reason: "Not covered by the handbook", priority: "normal", to: "director", status: "open" },
     ];
   }
   return [
