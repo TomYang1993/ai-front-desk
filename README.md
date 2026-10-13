@@ -10,6 +10,7 @@ Learning in Seattle, and their families.
 
 - Plan: [docs/PLAN.md](docs/PLAN.md)
 - Behavior scenarios and test set: [docs/SCENARIOS.md](docs/SCENARIOS.md)
+- How the system works, flow by flow: [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md)
 
 ## Run locally
 

@@ -1,6 +1,6 @@
 # Handoff: where the project stands
 
-Last updated October 8, 2026, evening. Read this first in a new session, then `docs/PLAN.md` and `docs/SCENARIOS.md`.
+Last updated October 8, 2026, evening. Read this first in a new session, then `docs/PLAN.md` and `docs/SCENARIOS.md`. `docs/SYSTEM-DESIGN.md` explains every flow in the current code.
 
 ## Status
 
