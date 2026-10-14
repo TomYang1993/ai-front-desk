@@ -318,10 +318,10 @@ sequenceDiagram
 **Trigger:** a director replies to a general question, one the handbook didn't cover or Maple wasn't sure about.
 
 1. When the inbox loads, general questions from the last 4 weeks are grouped by one small-model call on their English text. Each group shows as "Repeated question" on its members. Without a model, only identical wording groups.
-2. After replying, "Save as an answer for everyone" asks the small model to draft a nameless question, a general answer and keywords. The director edits and saves.
+2. After replying, "Save as an answer for everyone" asks the large model to draft a nameless question, a general answer and keywords, and opens them in a form. Nothing is saved or sent until the director edits and presses Save.
 3. Saving adds the answer to the center and bumps the revision, so no cached reply outlives the change.
 4. "Also send this answer to the others still waiting" is ticked for every open message in the group. Each family gets the answer in their language, and their handoff is marked answered.
-5. The next parent who asks gets the saved answer through the Understand step, with no handbook read.
+5. The next parent who asks gets the saved answer through the Understand step, with no handbook read. Understand sees each saved answer's id and question, not its text, and returns an id only when one clearly answers the message.
 6. When a group already has a saved answer, a new message in it shows "Send it to {parent}".
 
 ```mermaid
